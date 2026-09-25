@@ -1,33 +1,25 @@
 {
-  "model_version": "mobilenetv3_silage_v2.0",
+  "model_version": "mobilenetv3_silage_v2.1",
   "architecture": "MobileNetV3-Small",
   "input_resolution": "224x224 RGB",
-  "accuracy": 1.0,
-  "macro_f1": 1.0,
-  "macro_precision": 1.0,
-  "macro_recall": 1.0,
+  "dataset_type": "SYNTHETIC_PROTOTYPE_TEXTURES",
+  "is_field_validation": false,
+  "synthetic_benchmark_accuracy": 1.0,
+  "synthetic_benchmark_macro_f1": 1.0,
+  "synthetic_benchmark_macro_precision": 1.0,
+  "synthetic_benchmark_macro_recall": 1.0,
   "classes": [
     "Safe",
     "Caution",
     "Unsafe"
   ],
   "confusion_matrix": [
-    [
-      16,
-      0,
-      0
-    ],
-    [
-      0,
-      12,
-      0
-    ],
-    [
-      0,
-      0,
-      12
-    ]
+    [16, 0, 0],
+    [0, 12, 0],
+    [0, 0, 12]
   ],
-  "evaluation_notes": "Evaluated on holdout prototype validation split. Real-world validation dataset is currently limited; model performance on synthetic/prototype data should not be interpreted as field accuracy.",
-  "scientific_disclaimer": "This vision model performs qualitative surface visual anomaly screening only. It DOES NOT quantify biochemical aflatoxin, mycotoxin ppb, or nutritional fractions."
+  "evaluation_context": "Evaluated on holdout split of 160 procedurally drawn PIL image textures.",
+  "synthetic_benchmark_warning": "100% metrics are an artifact of easily separable synthetic shapes (lines vs dots). They DO NOT represent real-world agricultural visual performance.",
+  "field_validation_status": "PENDING (Physical on-farm photo collection required)",
+  "scientific_boundary": "Detects visible surface anomalies and mould-like discoloration patterns. DOES NOT quantify chemical mycotoxins, aflatoxin ppb, or nutritional fractions."
 }

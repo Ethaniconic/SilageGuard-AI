@@ -24,6 +24,7 @@ export interface ProbeTelemetryData {
   is_valid: boolean;
   validation_error?: string;
   is_demo: boolean;
+  mode?: "REAL_SENSOR" | "WOKWI_SIMULATION";
 }
 
 export interface CalibrationProfile {
@@ -68,7 +69,8 @@ class BLEServiceManager {
     rssi: -58,
     timestamp: Date.now(),
     is_valid: true,
-    is_demo: false
+    is_demo: false,
+    mode: "WOKWI_SIMULATION"
   };
 
   getCalibration(): CalibrationProfile {
@@ -235,7 +237,8 @@ class BLEServiceManager {
         timestamp: Date.now(),
         is_valid: validation.isValid,
         validation_error: validation.error,
-        is_demo: isDemo
+        is_demo: isDemo,
+        mode: isDemo ? "WOKWI_SIMULATION" : (this.currentTelemetry.mode || "REAL_SENSOR")
       };
 
       this.notifyTelemetry(this.currentTelemetry);

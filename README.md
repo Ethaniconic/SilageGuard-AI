@@ -1,254 +1,310 @@
-# 🌾 SILAGEGUARD AI V2
+# 🌾 SILAGEGUARD AI V2.1
 
 **SIH26111 — Smart AI-Enabled Rapid Feed and Silage Quality Testing System for Dairy Farmers**  
 *Ministry of Fisheries, Animal Husbandry & Dairying • Department of Animal Husbandry & Dairying • Smart India Hackathon 2026*  
-**Team**: The Bro-grammers
+**Team**: The Bro-grammers  
+**Design Philosophy**: Offline-First • Edge AI • Low-Cost • Multimodal • Farmer-Friendly • Scientifically Transparent
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](LICENSE)
-[![Framework: Expo React Native](https://img.shields.io/badge/Mobile-Expo_React_Native-blue.svg)](mobile/)
+[![Mobile: Expo React Native](https://img.shields.io/badge/Mobile-Expo_React_Native-blue.svg)](mobile/)
 [![Embedded: ESP32-S3](https://img.shields.io/badge/Hardware-ESP32--S3_DevKit-orange.svg)](hardware/wokwi/)
 [![AI: Pure On-Device](https://img.shields.io/badge/AI-100%25_On--Device_Offline-green.svg)](mobile/ai/)
-[![Data: Provenance Controlled](https://img.shields.io/badge/Data-Provenance_Controlled-purple.svg)](datasets/)
 [![Validation: Group--Aware KFold](https://img.shields.io/badge/Validation-Group--Aware_Pit_KFold-teal.svg)](validation/)
+[![Scientific Integrity: Audited](https://img.shields.io/badge/Scientific_Status-Audited_V2.1-gold.svg)](docs/validation_status.md)
 
 ---
 
-## 📌 Executive Summary & V2 Core Vision
+## 1. Problem
 
-SILAGEGUARD AI V2 is an **offline-first, multimodal rapid screening system** combining a low-cost ESP32-S3 sensor probe and smartphone edge computer vision. It is engineered specifically for dairy farmers in rural India, where internet access in silage bunker pits is zero, and rapid triage is essential to protect cattle from spoiled feed.
+In rural India, over 70% of dairy cattle nutrition depends on conserved forage and silage during dry summer months. However, poor anaerobic compaction, delayed pit sealing, and oxygen intrusion trigger clostridial spoilage, aerobic heating, and toxic mold proliferation.
 
-### ⚠️ Rapid Screening Tool — Not a Laboratory Replacement
-SILAGEGUARD AI is designed as a **rapid triage screening tool**, NOT a laboratory replacement. Every technical claim is grounded in traceable evidence, synthetic data is isolated, data leakage is prevented via group-aware validation, and AI predictions remain strictly decoupled from agronomic safety rules.
-
----
-
-## 🚫 What SILAGEGUARD AI Does NOT Claim
-
-In accordance with scientific integrity and agronomic realities, SILAGEGUARD AI explicitly states:
-
-1. **No Direct Mycotoxin Quantification (ppb)**:
-   Mycotoxins (Aflatoxin B1, Deoxynivalenol, Zearalenone) are microscopic secondary fungal metabolites occurring at parts-per-billion concentrations. Standard smartphone RGB cameras cannot detect or quantify ppb chemical concentrations. SILAGEGUARD AI screens for **macroscopic surface mould patterns, discoloration, and fungal hyphae**. If mycotoxicosis or animal illness is suspected, certified laboratory ELISA or HPLC testing is mandatory.
-2. **No Direct Urea Quantification**:
-   Analog glass pH probes measure hydronium ion activity ($-\log[H^+]$), not urea molecule concentration. Abnormal alkalization indicates clostridial degradation, ammonia accumulation, or buffering anomalies, but does NOT isolate urea without laboratory assays.
-3. **Estimated Moisture ≠ Oven-Dried Laboratory Dry Matter**:
-   Capacitive moisture sensors measure relative dielectric permittivity, which varies with compaction pressure and forage chop length. Readings are labeled as **Estimated Moisture** and must be calibrated against reference methods.
-4. **Model Confidence ≠ Real-World Safety Probability**:
-   A classifier confidence score reflects distance from decision boundaries on prototype data, not an absolute certainty of livestock safety. Predictions are grouped into operational confidence bands: **HIGH**, **MODERATE**, and **LOW_UNCERTAIN**.
-5. **Screening Verdict ≠ Guaranteed Absolute Feed Safety**:
-   Deep localized contamination pockets may escape single-point probe insertions. Farmers must inspect feed texture and smell, and consult licensed dairy veterinarians.
+Dairy farmers face severe challenges:
+* **No Field Testing Tools**: Traditional wet-chemistry feed analysis takes 5–10 days and costs ₹1,500–₹3,000 per sample, requiring transport to regional agricultural universities.
+* **Invisible Spoilage**: Silage can appear normal on top while harboring dangerous clostridial degradation or runaway heating deeper inside the pit.
+* **Zero Connectivity**: Bunker pits and trenches are located in rural fields with zero cellular connectivity, rendering cloud-dependent AI applications unusable.
+* **Economic Losses**: Feeding degraded silage leads to acidosis, severe milk yield drops (15–30%), reproductive failures, and animal mortality.
 
 ---
 
-## 💡 V2 Core Architectural Highlights
+## 2. Solution
+
+**SILAGEGUARD AI V2.1** is an **offline-first, multimodal rapid screening system** combining a low-cost ESP32-S3 multi-sensor core probe with smartphone edge computer vision.
+
+Within 60 seconds of probe insertion and a 3-photo camera capture, the smartphone runs two independent on-device AI models, fuses the telemetry, checks agronomic safety rules, and delivers:
+1. **Multimodal Silage Safety Index (MSSI)**: Continuous 0–100 quality score.
+2. **Traffic-Light Triage**: Clear result (`LOW SCREENING RISK`, `FEED WITH CAUTION`, `UNSAFE / DO NOT FEED`).
+3. **Data-Driven Explainability**: Direct breakdown of measured pH, core heat rise ($\Delta T$), estimated moisture, and visual mold signals.
+4. **Multilingual Actionable Advisory**: Instant voice playback in Marathi, Hindi, and English.
+5. **Offline Record & QR Verification**: Stored in local SQLite and encoded into a scannable batch report QR.
+
+> ⚠️ **Scientific Classification**: SILAGEGUARD AI is an **on-farm rapid triage screening tool**, NOT a laboratory replacement.
+
+---
+
+## 3. Architecture
 
 ```text
-Sensor Model (Random Forest) ──► Sensor Evidence Score (0–100)
-                                            │
-Vision Model (MobileNetV3)   ──► Vision Evidence Score (0–100)
-                                            │
-                                 Multimodal Fusion (MSSI)
-                               Continuous Screening Score (0–100)
-                                            │
-                                 Safety Rule Engine (Decoupled)
-                               Hard Agronomic Boundary Checks
-                                            │
-                                 Final Screening Verdict
-                          (Safe / Caution / Unsafe / Do Not Feed)
-                                            │
-                     ┌──────────────────────┼─────────────────────┐
-                     │                      │                     │
-               Explainability       Multilingual Voice       Confidence Level
-            ("Why This Result?")    (EN, HI, MR, KN, TE)   (High/Moderate/Low)
+ESP32-S3 Core Probe (GPIO 1, 2, 4)
+      │
+      │ BLE 5.0 GATT (1 Hz JSON Telemetry)
+      ▼
+React Native Mobile App (100% Offline)
+      │
+      ├── Sensor AI (On-Device Random Forest, pure TypeScript JSON traversal)
+      ├── Vision AI (On-Device MobileNetV3-Small, quantized TFLite)
+      ├── Multimodal Fusion Engine (MSSI Continuous Score 0–100)
+      ├── Decoupled Safety Rule Engine (Hard Agronomic Override Thresholds)
+      ├── Explainability Chain ("WHY THIS RESULT?" Data-Driven Traceability)
+      ├── Multilingual Advisory Engine (Marathi / Hindi / English TTS)
+      └── Local Persistence (Offline SQLite DB & QR Code Generator)
 ```
 
-1. **Decoupled Safety Rule Engine**:
-   Agronomic safety rules (pH > 5.80, $\Delta T > 10.0^\circ\text{C}$, Visible Mould $> 60\%$) operate independently from ML probabilistic models. If a severe risk rule triggers, it overrides the model and flags `rule_override = true` on the screen.
-2. **Multi-Image 3-Photo Workflow**:
-   Vision screening processes 3 distinct photographs (Surface Crust, Working Face, Trench Base) and aggregates predictions via mean probability, eliminating single-frame glare or shadow bias.
-3. **Traceable Explainability ("WHY THIS RESULT?")**:
-   Every verdict produces a granular reasoning chain detailing exact measured parameters (pH, Thermal Rise $\Delta T$, Estimated Moisture, Mould Signal) with color-coded status badges (`NORMAL`, `BORDERLINE`, `ALERT`).
-4. **100% Offline Relational Persistence**:
-   Stores scans in local SQLite with complete reproducibility metadata: model versions (`sensor_rf_v2.0`, `mobilenetv3_silage_v2.0`, `mssi_v2.0`, `rules_v2.0`), raw telemetry, and explainability points.
-5. **Clean Data Separation**:
-   Demo mode scans are tagged `is_demo = 1` and never contaminate field observation records or model metrics.
+The app architecture strictly separates:
+* **Evidence Generation**: Sensor AI and Vision AI produce independent probability vectors.
+* **Fusion Score**: Continuous MSSI calculation with transparent prototype weights (55% sensor / 45% vision).
+* **Safety Rules**: Decoupled agronomic checks that override statistical probabilities during critical spoilage.
+* **Triage Presentation**: Clear screening recommendations with verified limitations.
 
 ---
 
-## 📊 Honest Evaluation Metrics
+## 4. Hardware
 
-Unlike prototypes that manipulate datasets to report artificial "100% accuracy", SILAGEGUARD AI V2 reports **honest, group-aware cross-validated metrics on holdout pits**:
+The hardware probe is engineered for rugged farm conditions with standard, low-cost off-the-shelf components:
 
-### Sensor AI Model (Random Forest, 25 Trees)
-- **Dataset**: `datasets/processed/silage_sensor_v2.csv` (2,400 samples across 60 independent bunker pits with continuous variation and boundary overlap).
-- **Validation**: 5-Fold `StratifiedGroupKFold` grouped strictly by `pit_id` (Zero pit-level data leakage).
-- **Holdout Test Set**: 12 completely unseen independent pits (480 samples).
-- **Evaluation Status**: Prototype / Field validation in progress.
-- **Metrics**:
-  - Test Accuracy: **94.38%**
-  - Macro Precision: **94.61%**
-  - Macro Recall: **94.61%**
-  - Macro F1-Score: **94.61%**
-  - Brier Calibration Score: **0.0290** (High probabilistic reliability)
-  - Confusion Matrix:
-    - Safe: 153/160 correct (95.6%)
-    - Caution: 151/160 correct (94.4%)
-    - Unsafe: 149/160 correct (93.1%)
+| Component | Interface | Measurement | Agronomic Role |
+|---|---|---|---|
+| **ESP32-S3 DevKitC-1** | 240 MHz Dual-Core, BLE 5.0 | Microcontroller & BLE Server | Telemetry transmission & sequence tracking |
+| **Industrial Glass pH Probe** | Analog BNC to ADC1 Ch1 (GPIO 2) | Hydronium ion activity ($2.0–12.0$ pH) | Fermentation acidity & clostridial warning |
+| **Capacitive Moisture v1.2** | Analog ADC1 Ch0 (GPIO 1) | Relative dielectric permittivity ($0–100\%$) | Compaction & effluent leaching risk |
+| **DS18B20 Digital Probe** | 1-Wire Digital Bus (GPIO 4) | Core temperature ($-10^\circ\text{C to } 75^\circ\text{C}$) | Aerobic yeast/mold runaway heating |
+| **Ambient Air Temp Sensor** | 1-Wire handle sensor | Ambient baseline temp | Reference for thermal differential ($\Delta T$) |
 
-### Vision AI Model (MobileNetV3-Small INT8)
-- **Input**: 224 × 224 RGB image tensor normalized with ImageNet statistics.
-- **Quantization**: INT8 quantization (1.8 MB container size, < 180 ms latency).
-- **Multi-Frame Aggregation**: 3-photo mean probability across representative bunker zones.
-- **Scope**: Qualitative surface fungal hyphae and aerobic discoloration screening.
+### Hardware Honesty & Simulation Mode Separation
+* Firmware (`hardware/wokwi/sketch.ino`) automatically detects physical sensor attachment.
+* Telemetry JSON includes explicit mode flag: `"mode": "REAL_SENSOR"` vs `"mode": "WOKWI_SIMULATION"`.
+* The mobile app visibly displays whether live data originates from a physical probe or a simulated telemetry stream.
 
 ---
 
-## 📁 Repository Structure
+## 5. AI Pipeline
+
+### A. Sensor AI: On-Device Random Forest
+* **Architecture**: Random Forest (25 estimators, max depth 8, balanced class weights).
+* **Inputs**: Measured pH, estimated moisture, core temperature, ambient temperature, and derived thermal differential ($\Delta T = \text{core} - \text{ambient}$).
+* **Execution**: Exported to pure JSON tree schema (`sensor_rf_model.json`, 18 KB) and executed natively in TypeScript on Hermes in **< 2 milliseconds**.
+* **Zero Dependencies**: Requires no Python, PyTorch, or native C++ bridges on the mobile client.
+
+### B. Vision AI: MobileNetV3-Small
+* **Architecture**: Lightweight MobileNetV3-Small with custom classification head.
+* **Inputs**: 224x224 RGB image captured from smartphone camera.
+* **Role**: Screens for visible macroscopic surface mold colonies, discoloration, and aerobic crusting.
+* **Quantization**: INT8/FP16 quantized TensorFlow Lite container (~1.2 MB).
+
+### C. Missing Modality Handling
+The system handles all four operational states without fabricating data:
+* **Case 1 (Both Available)**: Full multimodal fusion (0.55 sensor / 0.45 vision).
+* **Case 2 (Sensor Only)**: Sensor-only triage; vision explicitly flagged as unassessed.
+* **Case 3 (Vision Only)**: Surface visual anomaly screening; sensor core chemistry flagged unmeasured.
+* **Case 4 (Neither Available)**: Returns `INSUFFICIENT DATA` with zero score and prompts the user.
+
+---
+
+## 6. Dataset Provenance
+
+In adherence to scientific integrity principles, all project data is cataloged in `datasets/dataset_registry.json` and `datasets/DATASET_CARD.md`:
+
+```
+datasets/
+├── processed/
+│   └── silage_sensor_v2.csv        # Research-informed synthetic sensor benchmark (2,400 rows)
+├── synthetic/
+│   └── vision/                     # Synthetic procedural surface textures (160 images)
+├── field/
+│   └── field_pilot_observations.csv# Real on-farm observations schema & preliminary records
+└── metadata/
+    ├── silage_sensor_v2.json       # Machine-readable provenance for sensor dataset
+    ├── literature_provenance.json  # Peer-reviewed publication documentation
+    └── field_pilot_metadata.json   # Field schema and label source specification
+```
+
+### Data Circularity Disclosure
+* In the 2,400-sample sensor dataset (`silage_sensor_v2.csv`), ground truth labels were generated algorithmically by threshold logic on the generated features.
+* The Random Forest model essentially learns this synthetic rule boundary.
+* **High ML benchmark metrics do not guarantee real-world field accuracy.**
+* The benchmark is therefore strictly designated as a **Research-Informed Synthetic Benchmark**.
+
+---
+
+## 7. Evaluation
+
+The evaluation of SILAGEGUARD AI strictly separates four distinct scientific tiers:
+
+### Tier 1: Synthetic Sensor Benchmark
+* **Dataset**: 2,400 synthetic rows grouped into 60 pits and 10 farms.
+* **Validation Method**: 5-Fold `StratifiedGroupKFold` on `pit_id` (leakage-safe split).
+* **Holdout Test Set**: 480 samples across 12 unseen pits (20% holdout).
+* **Metrics**:
+  * Accuracy: **94.38%**
+  * Macro F1: **94.61%**
+  * Macro Recall: **94.82%**
+  * Brier Score Loss: **0.0526** (well-calibrated probabilities)
+
+### Tier 2: Synthetic Vision Prototype Benchmark
+* **Dataset**: 160 procedurally drawn PIL image textures (green fibers, brown patches, cyan/white stipples).
+* **Metrics**: 100% Validation Accuracy, 1.00 Macro F1.
+* **Qualification**: 100% metrics reflect toy procedural separation and must **not** be presented as real-world agricultural computer vision accuracy.
+
+### Tier 3: Real Field Pilot Trials
+* **Location**: Vidarbha Dairy Belt (Nagpur, Amravati, Wardha districts, Maharashtra).
+* **Observations**: Preliminary 5-pit cohort testing probe physical insertion depth (15–80 cm), stabilization duration (60 seconds), and mobile UI flow.
+* **Statistical Status**: Small-cohort pilot validation. Full multi-season field trials (50+ farms) are planned.
+
+### Tier 4: Certified Laboratory Validation
+* **Status**: **Pending**. Wet-chemistry HPLC (lactic/acetic/butyric acids) and Kjeldahl (ammonia-N % total N) correlation trials represent our post-hackathon scaling roadmap.
+
+---
+
+## 8. Field Validation Status
+
+Detailed in [docs/validation_status.md](docs/validation_status.md):
+
+| Subsystem | Scientific Status | Evidence |
+|---|---|---|
+| Sensor Model Prototype | **Verified** | Reproducible training and JSON export in `sensor_model/` |
+| Synthetic Sensor Benchmark | **Verified** | 94.38% Accuracy on group-aware synthetic holdout |
+| Real Field Sensor Validation | **Pending / In Progress** | Protocol & schema established in `datasets/field/` |
+| Vision Model Prototype | **Verified** | MobileNetV3-Small pipeline in `vision_model/` |
+| Real Vision Validation | **Pending** | On-farm outdoor photography collection required |
+| Physical pH Calibration | **In Progress** | 2-point buffer calibration implemented; physical probe immersion ongoing |
+| Physical Moisture Calibration | **In Progress** | Capacitive air/water ADC calibration implemented; gravimetric oven drying pending |
+| Offline Pipeline | **Verified** | Zero network calls; verified in `validation/offline/` |
+| Mobile Parity | **Verified** | 8/8 test cases pass with 0.00% difference in `validation/parity/` |
+| Laboratory Correlation | **Pending** | Formal wet-chemistry correlation planned |
+
+---
+
+## 9. Offline Capability
+
+SILAGEGUARD AI requires **zero internet connection** for scanning, inference, rule evaluation, advisory generation, and record saving:
 
 ```text
-silageguard-ai/
-│
-├── datasets/                            # Provenance-Controlled Dataset Registry
-│   ├── raw/                             # Original source files and literature extractions
-│   ├── processed/                       # Cleaned, standardized, group-indexed CSVs
-│   ├── synthetic/                       # Prototype & edge-case development data (isolated)
-│   ├── field/                           # Pilot field observations with nullable ground truth
-│   ├── metadata/                        # JSON metadata records per dataset
-│   ├── dataset_registry.json            # Machine-readable provenance catalog
-│   └── DATASET_CARD.md                  # Academic dataset specification
-│
-├── sensor_model/                        # Sensor Machine Learning Pipeline
-│   ├── train_sensor_model.py            # Leakage-safe GroupKFold training & calibration
-│   ├── verify_parity_export.py          # Python vs Mobile JSON parity test suite
-│   └── sensor_model_metrics.json        # Full uninflated evaluation report
-│
-├── vision_model/                        # Computer Vision Pipeline
-│   ├── train_mobilenetv3.py             # MobileNetV3-Small transfer learning head
-│   ├── export_tflite.py                 # INT8 quantization & mobile packaging
-│   └── sample_predictions.json          # Predictions on representative images
-│
-├── hardware/wokwi/                      # ESP32-S3 Embedded Firmware
-│   ├── sketch.ino                       # Arduino C++ BLE GATT firmware with calibration
-│   ├── diagram.json                     # Wokwi circuit schematic
-│   └── libraries.txt                    # Arduino dependencies
-│
-├── mobile/                              # Offline-First React Native / Expo Application
-│   ├── app/                             # Expo Router 9-Screen Navigation
-│   │   ├── index.tsx                    # Screen 1: Splash & Offline Health Checks
-│   │   ├── home.tsx                     # Screen 2: Farmer Dashboard & Trajectory Trends
-│   │   ├── ble.tsx                      # Screen 3: BLE Connection & Live 1Hz Telemetry
-│   │   ├── camera.tsx                   # Screen 4: Guided 3-Photo Multi-Region Camera QA
-│   │   ├── processing.tsx               # Screen 5: Multi-Stage On-Device AI Pipeline
-│   │   ├── result.tsx                   # Screen 6: Verdict, "Why This Result?", Audio, QR
-│   │   ├── history.tsx                  # Screen 7: SQLite Offline Batch History & Filters
-│   │   ├── details.tsx                  # Screen 8: Diagnostic Audit & Model Provenance
-│   │   └── settings.tsx                 # Screen 9: 5 Languages, pH Calibration, Disclaimers
-│   ├── ai/                              # Pure Edge AI Interpreters
-│   │   ├── sensorInference.ts           # Pure TS Random Forest JSON Traversal
-│   │   ├── visionInference.ts           # 3-Photo Mean Probability Aggregation
-│   │   └── imageQualityChecker.ts       # IQA: Blur, Glare, Tilt, and Coverage Checks
-│   ├── features/
-│   │   ├── ble/                         # BLE GATT service & physical sanity validator
-│   │   ├── fusion/                      # Multimodal Fusion & Decoupled Safety Rules
-│   │   └── advisory/                    # Multilingual Advisory Engine (5 Languages)
-│   ├── sqlite/                          # Relational Storage & Reproducibility Snapshot
-│   └── assets/models/                   # Exported INT8 TFLite, Decision Trees, Metadata
-│
-├── validation/                          # End-to-End Verification Suites
-│   ├── parity/model_parity_report.json  # Parity report between Python and Mobile
-│   └── offline/verify_offline_flow.py   # 100% offline self-containment test script
-│
-├── docs/                                # Technical Documentation
-│   ├── architecture.md                  # Comprehensive system architecture specification
-│   ├── data_provenance.md               # Scientific literature citations & data cards
-│   ├── model_card_sensor.md             # Sensor Model Card (Model Card format)
-│   ├── model_card_vision.md             # Vision Model Card
-│   ├── safety_rules.md                  # Agronomic safety rule definitions & thresholds
-│   └── limitations.md                   # Detailed scientific limitations & non-claims
-│
-├── V2_AUDIT_REPORT.md                   # Systematic V1 audit identifying previous gaps
-├── DEVELOPMENT_RUN_REPORT.md            # Detailed chronological run reports
-└── README.md
+Airplane Mode ON (Wi-Fi OFF, Cellular Data OFF)
+      ↓
+App Launches Instantly
+      ↓
+Connects to Probe via BLE GATT (Local Radio)
+      ↓
+Streams Real-Time Telemetry (1 Hz)
+      ↓
+Captures 3 Silage Photos (Local Camera)
+      ↓
+Runs Sensor RF Inference (< 2 ms on Hermes JS)
+      ↓
+Runs Vision Inference (On-Device TFLite)
+      ↓
+Evaluates Multimodal Fusion & Agronomic Rules
+      ↓
+Plays Marathi / Hindi Audio Advisory (Local TTS)
+      ↓
+Saves Scan to Offline SQLite Database
+      ↓
+Generates Silage Verification QR Code
+```
+
+Automated verification script `validation/offline/verify_offline_flow.py` validates that no network requests occur during the core pipeline.
+
+---
+
+## 10. Explainability
+
+Every result is accompanied by a transparent **"WHY THIS RESULT?"** evidence chain grounded in actual physical measurements:
+
+```text
+LOW SCREENING RISK (Based on available screening evidence)
+Screening Score: 88/100 • Confidence: High (94%)
+
+WHY THIS RESULT?
+* Silage pH: 3.98 pH (NORMAL) — Within optimal lactic preservation band (3.8–4.2).
+* Core Heat Rise (ΔT): +1.2°C (NORMAL) — Core temperature in stable equilibrium with ambient air.
+* Estimated Moisture: 64.2% (NORMAL) — Ideal moisture band for anaerobic pit packing (60–68%).
+* Visual Mould Pattern: 4% signal (NORMAL) — No abnormal mycelial or fungal colonies observed.
+
+Important:
+This is a screening result, not laboratory confirmation.
 ```
 
 ---
 
-## 🚀 Quickstart & Setup Guide
+## 11. Limitations
+
+1. **Screening vs. Diagnostic Boundary**: SILAGEGUARD AI is an on-farm rapid triage screening tool. It does not replace official analytical wet-chemistry laboratories.
+2. **No Direct Mycotoxin Quantification**: Standard RGB cameras detect visual surface discoloration and mold-like patterns; they cannot quantify aflatoxin or mycotoxin concentrations in parts-per-billion (ppb).
+3. **No Direct Urea Quantification**: Analog pH electrodes measure hydronium ion activity ($-\log[H^+]$), not urea or ammonium molecules directly.
+4. **Moisture Is An Estimate**: Capacitive sensors measure dielectric permittivity, which varies with packing density and chop length; readings represent estimated moisture.
+5. **Single-Point Insertion**: A single probe insertion evaluates one localized core region; multiple depth insertions (surface, core, edge) are recommended for large bunker pits.
+
+---
+
+## 12. Setup & Installation
 
 ### Prerequisites
-- **Python**: 3.10+ (Tested on Python 3.13)
-- **Node.js**: v18+ (Tested on Node v24)
-- **Git**
+* Node.js v18+ and npm
+* Python 3.10+
+* Expo CLI (`npm install -g expo-cli`)
 
-### Step 1: Install Dependencies
+### Mobile App Setup
 ```bash
-git clone https://github.com/silageguard-ai/silageguard-ai.git
-cd silageguard-ai
-
-# Python ML dependencies
-pip install -r sensor_model/requirements.txt
-pip install -r vision_model/requirements.txt
-
-# Mobile dependencies
+# Navigate to mobile directory
 cd mobile
+
+# Install dependencies
 npm install
-cd ..
+
+# Start local Expo development server
+npx expo start
 ```
 
-### Step 2: Run End-to-End Offline Verification
-Verify that all 8 pipeline steps run 100% locally with zero internet:
+### Python AI Pipeline Setup
 ```bash
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Run sensor model training & group-aware evaluation
+python sensor_model/train_sensor_model.py
+
+# Verify Python-to-Mobile inference parity
+python validation/parity/test_model_parity.py
+
+# Run automated claim & scientific integrity validator
+python validation/claims/validate_claims.py
+
+# Run complete offline workflow verification
 python validation/offline/verify_offline_flow.py
 ```
 
-### Step 3: Run Mobile Application (Expo)
-```bash
-cd mobile
-npx expo start
-```
-- Press **`w`** for instant Web demo mode in your browser.
-- Press **`a`** for connected Android device / emulator.
-- Scan QR code with **Expo Go** on your smartphone.
+---
 
-### Step 4: Run Embedded Probe Simulation (Wokwi)
-1. Open the [Wokwi ESP32-S3 Simulator](https://wokwi.com/projects/new/esp32-s3).
-2. Load files from `hardware/wokwi/` (`sketch.ino`, `diagram.json`, `libraries.txt`).
-3. Start simulation and observe 1 Hz JSON telemetry over BLE:
-   ```json
-   {"ph": 4.12, "moisture": 64.5, "temp": 24.8, "ambient": 22.1, "battery": 94, "probe_id": "SILAGE-ESP32-S3-01", "seq": 142}
-   ```
+## 13. Demo Guide
+
+For hackathon jury evaluations:
+1. **Launch App**: Open the SILAGEGUARD AI mobile app.
+2. **Connect Probe (`/ble`)**: Click **"PAIR & CONNECT ESP32-S3"**.
+   * Toggle between **SAFE**, **CAUTION**, and **UNSAFE** demo presets.
+   * Observe live 1 Hz telemetry updates and the **"WOKWI SIMULATION MODE"** badge.
+3. **Capture Photos (`/camera`)**: Take 3 photos (or load demo images) representing top surface, middle face, and lower trench.
+4. **Review Screening Result (`/result`)**:
+   * View the Traffic Light Card (`LOW SCREENING RISK`, `FEED WITH CAUTION`, `UNSAFE`).
+   * Inspect the MSSI continuous gauge and Confidence Level badge.
+   * Review the **"WHY THIS RESULT?"** explainability chain.
+   * Listen to multilingual voice advice in Marathi or Hindi.
+   * Scan the generated Silage Verification QR code.
+5. **Offline Demonstration**: Turn off Wi-Fi and Mobile Data, and repeat the scan to demonstrate zero cloud dependency.
 
 ---
 
-## 🎯 Step-by-Step SIH 2026 Demonstration Flow
+## 14. Future Work
 
-1. **Step 1**: Open app. Show the **"100% Offline AI Screening"** banner in full Airplane Mode.
-2. **Step 2**: Pair the ESP32-S3 probe via BLE (or toggle isolated Demo Mode).
-3. **Step 3**: Observe live 1 Hz telemetry: pH, Estimated Moisture, Core Temp, Ambient, and Battery.
-4. **Step 4**: Capture 3 representative photos (Photo 1: Surface Crust, Photo 2: Working Face, Photo 3: Deep Region).
-5. **Step 5**: Observe Image Quality Assurance (IQA) real-time checks (Sharpness, Glare, Tilt, Coverage).
-6. **Step 6**: Execute on-device AI inference pipeline:
-   - Random Forest on physical sensors (< 25 ms)
-   - MobileNetV3-Small on multi-photo stack (~180 ms)
-   - Continuous Multimodal Fusion (MSSI)
-   - Decoupled Safety Rule Engine
-7. **Step 7**: Display Quality Assessment Report:
-   - Big Traffic Light Verdict & Confidence Band (**HIGH**, **MODERATE**, **LOW_UNCERTAIN**)
-   - Safety Rule Override Banner (if critical threshold breached)
-   - Dedicated **"WHY THIS RESULT?"** explainability chain
-   - Physical Sensor & Vision metrics breakdown
-8. **Step 8**: Play actionable farmer advisory via offline voice TTS in **Marathi**, **Hindi**, or **English**.
-9. **Step 9**: Save full reproducible scan snapshot into local SQLite.
-10. **Step 10**: View historical scans in Batch History and generate a verifiable QR Digital Certificate.
-11. **Step 11**: Physically disable Wi-Fi and mobile data to prove zero cloud latency and complete data privacy.
-
----
-
-## 👥 Project Information & Acknowledgements
-
-- **Problem Statement**: SIH26111 — Smart AI-Enabled Rapid Feed and Silage Quality Testing System for Dairy Farmers
-- **Organization**: Ministry of Fisheries, Animal Husbandry & Dairying
-- **Department**: Department of Animal Husbandry & Dairying
-- **Theme**: Agriculture, FoodTech & Rural Development
-- **Team**: The Bro-grammers
-- **Literature References**: Kung et al. (2018), Borreani et al. (2018), Wilkinson et al. (2003)
-- Built for **Smart India Hackathon 2026**
+* **Physical Multi-Season Farm Trials**: Expand the preliminary pilot in the Vidarbha dairy belt to 50+ commercial dairy farms across winter and summer ensiling seasons.
+* **Laboratory HPLC & Kjeldahl Correlation**: Partner with regional agricultural university laboratories to correlate probe telemetry against gold-standard volatile fatty acid chromatography and crude protein assays.
+* **Custom Probe Mechanical Hardening**: Fabricate a stainless steel (SS316) food-grade lance enclosure with protective filtration membranes for the pH glass bulb.
+* **Expanded Regional Languages**: Add voice advisory support for Gujarati, Punjabi, Kannada, and Telugu.

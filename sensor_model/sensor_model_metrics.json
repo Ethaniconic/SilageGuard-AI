@@ -1,65 +1,47 @@
 {
-  "model_version": "sensor_rf_v2.0",
+  "model_version": "sensor_rf_v2.1",
+  "model_type": "RandomForestClassifier",
   "training_date": "2026-09-25",
+  "dataset_type": "RESEARCH_INFORMED_SYNTHETIC_BENCHMARK",
+  "is_field_validation": false,
   "split_method": "StratifiedGroupKFold on pit_id (Leakage-Safe)",
   "train_samples": 1920,
   "test_samples": 480,
   "train_pits": 48,
   "test_pits": 12,
-  "accuracy": 0.9437,
-  "macro_precision": 0.9455,
-  "macro_recall": 0.9481,
-  "macro_f1": 0.9461,
+  "evaluation_context": "Evaluated on group-aware holdout test split of the 2,400 synthetic sample dataset.",
+  "synthetic_benchmark_accuracy": 0.9438,
+  "synthetic_benchmark_macro_precision": 0.9443,
+  "synthetic_benchmark_macro_recall": 0.9482,
+  "synthetic_benchmark_macro_f1": 0.9461,
+  "brier_score": 0.0526,
   "per_class_f1": {
-    "Safe": 0.9685,
-    "Caution": 0.9235,
-    "Unsafe": 0.9462
+    "Safe": 0.9572,
+    "Caution": 0.9328,
+    "Unsafe": 0.9484
   },
   "per_class_recall": {
-    "Safe": 0.984,
-    "Caution": 0.9477,
-    "Unsafe": 0.9126
+    "Safe": 0.9620,
+    "Caution": 0.9250,
+    "Unsafe": 0.9577
   },
   "per_class_precision": {
-    "Safe": 0.9535,
-    "Caution": 0.9006,
-    "Unsafe": 0.9824
+    "Safe": 0.9524,
+    "Caution": 0.9408,
+    "Unsafe": 0.9397
   },
-  "brier_score": 0.029,
-  "confusion_matrix": [
-    [
-      123,
-      2,
-      0
-    ],
-    [
-      6,
-      163,
-      3
-    ],
-    [
-      0,
-      16,
-      167
-    ]
-  ],
   "classes": [
     "Safe",
     "Caution",
     "Unsafe"
   ],
   "feature_importances": {
-    "temp_rise": 0.246,
-    "ph_deviation": 0.2213,
-    "ph": 0.2107,
-    "delta_temp": 0.1572,
-    "moisture": 0.0773,
-    "moisture_deviation": 0.0446,
-    "temperature": 0.0354,
-    "ambient": 0.0075
+    "ph": 0.3842,
+    "temp_rise": 0.2815,
+    "moisture": 0.2184,
+    "temperature": 0.0712,
+    "ambient": 0.0447
   },
-  "dataset_limitations": [
-    "Trained on grouped synthetic-agronomic distributions; physical farm pilot data will calibrate feature coefficients",
-    "Screening model is designed for risk triage and does not replace official lab VFA chromatography"
-  ]
+  "data_circularity_disclosure": "Because ground-truth labels were generated algorithmically from threshold functions of the same features, ML performance reflects adherence to the synthetic ruleset. It must not be cited as real-world field accuracy.",
+  "field_validation_status": "PENDING (Physical farm pilot trials ongoing in Vidarbha Dairy Belt)"
 }

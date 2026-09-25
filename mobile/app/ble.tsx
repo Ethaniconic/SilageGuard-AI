@@ -72,6 +72,11 @@ export default function BleScreen() {
                 <Text style={styles.deviceSub}>
                   UUID: 4fafc201-1fb5-459e-8fcc-c5c9c331914b
                 </Text>
+                <View style={[styles.modeBadge, telemetry.mode === "REAL_SENSOR" ? styles.modeReal : styles.modeSim]}>
+                  <Text style={styles.modeText}>
+                    {telemetry.mode === "REAL_SENSOR" ? "🟢 REAL SENSOR MODE" : "🔵 WOKWI SIMULATION MODE"}
+                  </Text>
+                </View>
               </View>
             </View>
 
@@ -263,6 +268,29 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "600",
     marginTop: 2
+  },
+  modeBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginTop: 4
+  },
+  modeReal: {
+    backgroundColor: "rgba(16, 185, 129, 0.2)",
+    borderWidth: 1,
+    borderColor: THEME_COLORS.safe
+  },
+  modeSim: {
+    backgroundColor: "rgba(56, 189, 248, 0.15)",
+    borderWidth: 1,
+    borderColor: "#38BDF8"
+  },
+  modeText: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: "#F8FAFC",
+    letterSpacing: 0.5
   },
   rssiBadge: {
     flexDirection: "row",

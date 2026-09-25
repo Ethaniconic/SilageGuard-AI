@@ -1,19 +1,20 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "project": "SILAGEGUARD AI V2",
+  "project": "SILAGEGUARD AI V2.1",
   "problem_statement": "SIH26111 — Smart AI-Enabled Rapid Feed and Silage Quality Testing System",
-  "registry_version": "2.0.0",
+  "registry_version": "2.1.0",
   "last_updated": "2026-09-25",
   "datasets": [
     {
-      "id": "DS-SYNTH-SENSOR-01",
-      "name": "SilageGuard Synthetic Fermentation Benchmark",
-      "category": "synthetic",
-      "purpose": "Edge ML pipeline prototyping, mobile JSON tree parsing verification, and UI integration testing",
+      "id": "DS-SYNTH-SENSOR-V2",
+      "name": "Research-Informed Synthetic Sensor Benchmark (2,400 Samples)",
+      "category": "synthetic_benchmark",
+      "purpose": "Group-aware Random Forest training, JSON tree serialization, and mobile TypeScript execution benchmarking",
       "real_or_synthetic": "synthetic",
-      "file_path": "datasets/synthetic/synthetic_sensor_benchmark.csv",
-      "metadata_path": "datasets/metadata/synthetic_sensor_benchmark.json",
-      "sample_count": 3200,
+      "file_path": "datasets/processed/silage_sensor_v2.csv",
+      "metadata_path": "datasets/metadata/silage_sensor_v2.json",
+      "sample_count": 2400,
+      "cluster_groups": "60 simulated pits, 10 farms",
       "features": [
         "ph",
         "moisture",
@@ -22,65 +23,52 @@
         "dry_matter"
       ],
       "labels": ["Safe", "Caution", "Unsafe"],
-      "label_source": "AGRONOMIC_RULE_SYNTHETIC",
+      "label_source": "AGRONOMIC_MULTIFACTOR_REFERENCE",
       "license": "CC0-1.0 (Public Domain)",
-      "collection_method": "Synthetic parametric generation based on Kung et al. (2018) silage fermentation guidelines",
+      "collection_method": "Parametric generation using Gaussian/uniform distributions constrained by Kung et al. (2018)",
       "not_for_field_validation": true,
-      "known_limitations": [
-        "Temperature rise is generated algorithmically and does not represent physical thermo-couple recordings",
-        "Uniform class boundary sampling reduces realistic continuous overlap seen in degraded bunker pits"
-      ]
+      "data_circularity_warning": "Ground-truth labels were generated using threshold rules on the generated features. ML models trained on this dataset learn this synthetic rule set. Benchmark performance does not equal real field performance."
     },
     {
       "id": "DS-SYNTH-VISION-02",
-      "name": "Silage Surface Texture Synthetic Prototype",
-      "category": "synthetic",
-      "purpose": "Computer vision pipeline testing, Albumentations tuning, and mobile TFLite asset export",
+      "name": "Silage Surface Texture Synthetic Prototype (160 Images)",
+      "category": "synthetic_prototype",
+      "purpose": "Vision pipeline verification, Albumentations augmentations, and MobileNetV3 TFLite export validation",
       "real_or_synthetic": "synthetic",
-      "file_path": "datasets/synthetic/vision/",
+      "file_path": "datasets/vision/",
       "metadata_path": "datasets/metadata/synthetic_vision_textures.json",
       "sample_count": 160,
       "features": ["224x224 RGB image arrays"],
       "labels": ["Safe", "Caution", "Unsafe"],
       "label_source": "SYNTHETIC",
       "license": "CC0-1.0",
-      "collection_method": "Pillow procedural fiber lines and fungal hyphae colony noise generation",
+      "collection_method": "Procedural Pillow generation (geometric fiber lines and stippled fungal hyphae dots)",
       "not_for_field_validation": true,
-      "known_limitations": [
-        "Procedurally drawn geometric noise does not capture true outdoor solar glare, moisture sheen, or unchopped stalk debris",
-        "Model trained solely on this dataset will fail under real field conditions without domain adaptation or genuine farm imagery"
-      ]
+      "limitations": "Does not capture outdoor agricultural conditions (glare, dust, shadow, chop length variation). Real field performance is not yet established."
     },
     {
-      "id": "DS-RESEARCH-HARVARD-03",
-      "name": "Silage Meta-Analysis & Fermentation Quality Reference",
-      "category": "reference_research",
-      "purpose": "Ground truth baseline establishing agronomic safety thresholds for tropical and temperate forage silage",
-      "real_or_synthetic": "real_research_reference",
-      "citation": "Kung, L., Shaver, R. D., Grant, R. J., & Schmidt, R. J. (2018). Silage review: Interpretation of chemical, microbial, and organoleptic components of silages. Journal of Dairy Science, 101(5), 4020-4033.",
-      "doi": "10.3168/jds.2017-13909",
-      "license": "Open Access / Academic Reference",
-      "features": [
-        "pH",
-        "Dry Matter %",
-        "Lactic Acid % DM",
-        "Acetic Acid % DM",
-        "Butyric Acid % DM",
-        "Ammonia-N % total N"
+      "id": "DS-RESEARCH-LIT-03",
+      "name": "Agronomic Literature Reference Benchmarks",
+      "category": "reference_literature",
+      "purpose": "Provides agronomic boundary intervals and peer-reviewed safety thresholds",
+      "real_or_synthetic": "peer_reviewed_literature",
+      "metadata_path": "datasets/metadata/literature_provenance.json",
+      "citations": [
+        "Kung et al. (2018), Journal of Dairy Science, 101(5), 4020-4033 (doi:10.3168/jds.2017-13909)",
+        "Borreani et al. (2018), Journal of Dairy Science, 101(5), 3952-3979 (doi:10.3168/jds.2017-13837)"
       ],
-      "known_limitations": [
-        "Focuses on laboratory wet-chemistry and proximate analysis; does not contain physical real-time telemetry from handheld probes"
-      ]
+      "license": "Open Access Academic Literature",
+      "note": "These are meta-analysis papers providing reference values, not raw probe telemetry CSVs."
     },
     {
       "id": "DS-FIELD-PILOT-04",
       "name": "Vidarbha Dairy Belt Silage Pilot Observations",
       "category": "field_pilot",
-      "purpose": "Protocol and ground-truth schema for genuine on-farm pilot trials across Nagpur and Amravati dairy clusters",
-      "real_or_synthetic": "field_schema_and_initial_benchmarks",
+      "purpose": "Standardized schema and preliminary on-farm pilot observations for field validation",
+      "real_or_synthetic": "field_observations",
       "file_path": "datasets/field/field_pilot_observations.csv",
       "metadata_path": "datasets/metadata/field_pilot_metadata.json",
-      "sample_count": 4,
+      "sample_count": 5,
       "features": [
         "sample_id",
         "farm_id",
@@ -93,18 +81,16 @@
         "temperature",
         "ambient_temperature",
         "image_path",
-        "timestamp",
-        "operator",
         "expert_label",
+        "lab_result",
         "label_source",
-        "laboratory_notes"
+        "timestamp",
+        "notes"
       ],
       "labels": ["Safe", "Caution", "Unsafe"],
-      "label_source": "EXPERT_AND_PROBE",
-      "license": "CC-BY-4.0",
-      "known_limitations": [
-        "Pilot phase dataset intended for qualitative benchmark validation; full multi-season statistical sampling is ongoing"
-      ]
+      "allowed_label_sources": ["EXPERT", "LAB", "RESEARCH", "RULE", "SYNTHETIC", "UNKNOWN"],
+      "missing_value_policy": "Unmeasured parameters are recorded as null. Never fabricated.",
+      "small_dataset_support": "Supports validation with cohorts of 20+, 50+, or 100+ real samples."
     }
   ]
 }

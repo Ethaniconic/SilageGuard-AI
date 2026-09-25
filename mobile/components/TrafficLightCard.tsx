@@ -23,12 +23,12 @@ export const TrafficLightCard: React.FC<Props> = ({ decision, confidence, mssiSc
   const bgColor = isSafe ? THEME_COLORS.safeBg : isCaution ? THEME_COLORS.cautionBg : THEME_COLORS.unsafeBg;
   const borderColor = isSafe ? THEME_COLORS.safeBorder : isCaution ? THEME_COLORS.cautionBorder : THEME_COLORS.unsafeBorder;
 
-  const decisionLabel = isSafe ? "SAFE TO FEED" : isCaution ? "FEED WITH CAUTION" : "UNSAFE / SPOILED";
+  const decisionLabel = isSafe ? "LOW SCREENING RISK" : isCaution ? "FEED WITH CAUTION" : "UNSAFE / SPOILED";
   const decisionSubtext = isSafe
-    ? "Optimal Fermentation • High Palatability"
+    ? "Safe to feed • Based on available screening evidence"
     : isCaution
-    ? "Aerobic Heating • Feed Within 6 Hours"
-    : "Toxic Spoilage • Discard Spoiled Silage";
+    ? "Aerobic Heating Signal • Feed within 6 hours"
+    : "Elevated Spoilage Signal • Do not feed suspect forage";
 
   return (
     <View style={[styles.container, { backgroundColor: bgColor, borderColor }]}>

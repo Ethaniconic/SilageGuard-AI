@@ -1,101 +1,79 @@
-# 📋 MODEL CARD — SILAGEGUARD SENSOR AI (V2.0)
+# 📋 MODEL CARD — SILAGE SENSOR AI (RANDOM FOREST)
 
-**Model Name**: SilageGuard Sensor Random Forest Classifier  
-**Model Version**: `sensor_rf_v2.0`  
-**Model Release Date**: September 25, 2026  
-**License**: MIT / Open Academic  
-**Maintainers**: The Bro-grammers (SIH 2026)
-
----
-
-## 1. Model Overview & Purpose
-
-### 1.1 Intended Use
-The **SilageGuard Sensor AI Model** is an on-device machine learning classifier engineered to provide rapid, edge-based silage fermentation screening for dairy farmers. It evaluates multi-sensor telemetry collected from an inserted probe (acidity, core temperature, moisture) to classify fermentation condition into:
-* **Safe** (Optimal anaerobic lactic preservation)
-* **Caution** (Early aerobic exposure or moisture deviation; feed within 6 hours)
-* **Unsafe** (Elevated pH or severe heat rise; high spoilage risk)
-
-### 1.2 Out-of-Scope & Prohibited Use
-* **Not a Laboratory Replacement**: Does not quantify individual volatile fatty acids (lactic, acetic, propionic, butyric) or ammonia-N fractions in g/kg.
-* **No Direct Urea Detection**: Cannot quantify urea concentration in feedstuffs without enzymatic reagents.
+## Model Overview
+* **Model Name**: SilageGuard On-Device Sensor Random Forest
+* **Version**: `sensor_rf_v2.1`
+* **Purpose**: Rapid on-farm classification of silage fermentation quality into triage categories (`Safe`, `Caution`, `Unsafe`) based on physical probe telemetry.
+* **Architecture**: Random Forest Classifier (25 estimators, max depth 8, min samples split 6, min samples leaf 3, balanced class weighting).
 
 ---
 
-## 2. Input Features & Preprocessing
+## Technical Specifications
 
-The model operates on an 8-dimensional feature vector engineered from raw probe telemetry:
+### Inputs
+* `ph`: Acidity reading from analog electrode (float, valid range 2.0–12.0 pH).
+* `moisture`: Estimated moisture percentage from capacitive probe (float, range 0–100%).
+* `temperature`: Core pit probe temperature in °C from digital DS18B20 (float, -10 to 75°C).
+* `ambient`: Ambient air temperature in °C from probe handle sensor (float, -10 to 60°C).
+* `temp_rise` (engineered): Calculated as `temperature - ambient` (thermal differential $\Delta T$).
 
-| Feature Index | Name | Unit | Type | Definition |
-|---|---|---|---|---|
-| `0` | `ph` | pH (0–14) | Float | Measured physical silage acidity |
-| `1` | `moisture` | % | Float | Measured moisture percentage |
-| `2` | `temperature` | °C | Float | Measured core silage temperature |
-| `3` | `ambient` | °C | Float | Measured environmental air temperature |
-| `4` | `delta_temp` | °C | Float | $\text{temperature} - \text{ambient}$ |
-| `5` | `ph_deviation` | pH | Float | $|\text{ph} - 4.00|$ |
-| `6` | `moisture_deviation` | % | Float | $|\text{moisture} - 64.00|$ |
-| `7` | `temp_rise` | °C | Float | $\max(0, \text{delta_temp})$ |
-
----
-
-## 3. Training & Validation Methodology
-
-### 3.1 Dataset Provenance & Grouping
-* **Dataset**: `datasets/processed/silage_sensor_v2.csv` ($N = 2,400$ records across 60 bunker pits and 10 farms).
-* **Grouping Column**: `pit_id` (Ensures all samples from any specific pit reside exclusively in either the training set or test set).
-* **Split Strategy**:
-  * 5-Fold Cross Validation: `StratifiedGroupKFold(n_splits=5, shuffle=True)`
-  * Independent Pit Test Split: 48 training pits ($n = 1,920$) vs. 12 untouched test pits ($n = 480$).
-
-### 3.2 Benchmark Comparison Across Candidates
-
-| Model Architecture | 5-Fold Stratified Group Macro F1 | Test Accuracy | Test Macro F1 | Inference Latency | Model Size |
-|---|---|---|---|---|---|
-| **Random Forest (Selected)** | **0.9792** ($\pm 0.0084$) | **94.38%** | **94.61%** | **< 1.0 ms** (Pure TS) | **7.2 KB** |
-| HistGradientBoosting | 0.9858 ($\pm 0.0081$) | 95.21% | 95.34% | ~8.0 ms (WASM) | 85 KB |
-| Logistic Regression | 0.9407 ($\pm 0.0198$) | 90.83% | 91.12% | < 0.5 ms | 1.2 KB |
-
-*Selection Rationale*: Random Forest was selected for deployment because its decision tree graph can be serialized into a zero-dependency portable JSON structure that executes directly in TypeScript on mobile devices in $< 1\text{ ms}$ without needing heavy WASM or Python runtimes.
+### Outputs
+* **Primary Label**: One of `Safe`, `Caution`, `Unsafe`.
+* **Class Probabilities**: Softmax-normalized probability vector $[P(\text{Safe}), P(\text{Caution}), P(\text{Unsafe})]$.
+* **Confidence Metric**: $\max(P)$ expressed as a percentage.
 
 ---
 
-## 4. Quantitative Evaluation & Honest Metrics
+## Training Data & Provenance
 
-*Evaluated on the independent 12-pit test holdout set ($n = 480$ observations):*
+* **Training Data**: `datasets/processed/silage_sensor_v2.csv` (1,920 train samples across 48 simulated pits).
+* **Real / Synthetic Composition**: **100% Synthetic Benchmark Data**. 0% physical field probe samples.
+* **Data Sources**: Parametric distributions constrained by agronomic boundaries published in Kung et al. (2018) and Borreani et al. (2018).
+* **Split Strategy**: `StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)` grouped by `pit_id` to prevent intra-pit sample leakage. Independent 20% pit holdout test set (12 pits, 480 samples).
+* **Data Circularity Disclosure**:
+  * Ground truth labels were computed by multi-factor threshold rules on `ph`, `moisture`, and $\Delta T$.
+  * The Random Forest learns to approximate this synthetic rule boundary.
+  * **High model accuracy on this benchmark represents algorithmic consistency, NOT real-world field efficacy.**
 
-### 4.1 Overall Metrics
-* **Accuracy**: **94.38%**
-* **Macro Precision**: **94.51%**
-* **Macro Recall**: **94.81%**
+---
+
+## Evaluation & Metrics
+
+* **Evaluation Dataset**: 480 holdout samples from 12 unseen simulated pits.
+* **Synthetic Benchmark Accuracy**: **94.38%**
+* **Macro Precision**: **94.43%**
+* **Macro Recall**: **94.82%**
 * **Macro F1 Score**: **94.61%**
-* **Average Brier Calibration Score**: **0.0290** (High probabilistic calibration; $0.0$ is perfect)
-
-### 4.2 Per-Class Breakdown
-
-| Class | Support ($N$) | Precision | Recall | F1-Score |
-|---|---|---|---|---|
-| **Safe** | 125 | 0.95 | 0.98 | **0.97** |
-| **Caution** | 172 | 0.90 | 0.95 | **0.92** |
-| **Unsafe** | 183 | 0.98 | 0.91 | **0.95** |
-
-### 4.3 Feature Importance Ranking (Gini Impurity Reduction)
-1. `ph_deviation`: **0.3014**
-2. `temp_rise`: **0.2523**
-3. `delta_temp`: **0.1691**
-4. `ph`: **0.1384**
-5. `moisture`: **0.0821**
-6. `moisture_deviation`: **0.0412**
-7. `temperature`: **0.0155**
-8. `ambient`: **0.0000** (Used solely as reference subtraction)
+* **Per-Class Metrics**:
+  * *Safe*: F1 = 95.72%, Recall = 96.20%, Precision = 95.24%
+  * *Caution*: F1 = 93.28%, Recall = 92.50%, Precision = 94.08%
+  * *Unsafe*: F1 = 94.84%, Recall = 95.77%, Precision = 93.97%
+* **Calibration Metric**: Average Brier Score Loss = **0.0526** (reflects well-calibrated class probabilities).
+* **Field Validation Status**: **PENDING** (On-farm pilot validation in progress).
 
 ---
 
-## 5. Known Limitations & Edge Cases
+## Feature Importances
+1. `ph`: 38.42% (Primary chemical stabilization driver).
+2. `temp_rise` ($\Delta T$): 28.15% (Aerobic yeast/mold respiration indicator).
+3. `moisture`: 21.84% (Packing compaction and clostridial effluent driver).
+4. `temperature`: 7.12% (Absolute core temperature).
+5. `ambient`: 4.47% (Ambient baseline).
 
-1. **Borderline Transitions**:
-   Between pH 4.25 and 4.35, when temperature rise is marginal ($+3.2^\circ\text{C}$), the model outputs moderate confidence (~60–75%). The mobile UI must explicitly present this as "Moderate Confidence" rather than absolute certainty.
-2. **Sensor Hardware Glitches**:
-   Floating ADC pins or broken pH bulbs can supply non-physical values ($>14.0\text{ pH}$). The mobile layer must filter readings through physical bounds prior to inference.
-3. **Screening Boundary**:
-   The model flags elevated risk; farmers should always follow conservative feeding advice and seek veterinary verification for suspect forage.
+---
+
+## Known Failure Modes & Limitations
+1. **Uncalibrated Sensor Drift**: If the pH electrode drifts without 2-point buffer calibration, acidic silage may be classified as Caution/Unsafe.
+2. **Soil / Ash Contamination**: Silage scooped from dirt floors may have alkaline ash that distorts the pH reading without representing microbial proteolysis.
+3. **Moisture Permittivity Variations**: Capacitive sensors measure dielectric permittivity, which is affected by salt and mineral content; without oven-dry calibration, moisture is an estimate.
+4. **No Direct Urea Quantification**: The sensor does not chemically identify urea molecules; it only detects hydronium ion activity.
+5. **No Laboratory Replacement**: The model is an edge screening triage tool. Suspect silage must be sent for official wet-chemistry testing.
+
+---
+
+## Deployment & Edge Runtime
+* **Deployment Format**: Serialized JSON Decision Tree ensemble (`sensor_rf_model.json`).
+* **Runtime Engine**: Native TypeScript traversal engine (`mobile/ai/sensorInference.ts`) running on Hermes without Python or C++ dependencies.
+* **Model Size**: ~18 KB (JSON file).
+* **Inference Latency**: **< 2 milliseconds** per inference on mobile device.
+* **Network Requirement**: **Zero (100% Offline)**.

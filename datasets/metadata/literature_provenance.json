@@ -1,0 +1,57 @@
+{
+  "provenance_registry": "SILAGEGUARD AI V2.1 Research Literature Registry",
+  "purpose": "Documents external peer-reviewed literature used to define agronomic boundaries and safety rules.",
+  "external_sources": [
+    {
+      "source_id": "LIT-KUNG-2018",
+      "citation": "Kung, L., Shaver, R. D., Grant, R. J., & Schmidt, R. J. (2018). Silage review: Interpretation of chemical, microbial, and organoleptic components of silages. Journal of Dairy Science, 101(5), 4020-4033.",
+      "doi": "10.3168/jds.2017-13909",
+      "document_type": "Peer-reviewed review paper & meta-analysis",
+      "original_variables": [
+        "pH",
+        "Dry Matter %",
+        "Lactic Acid % DM",
+        "Acetic Acid % DM",
+        "Propionic Acid % DM",
+        "Butyric Acid % DM",
+        "Ammonia-N % total N",
+        "Ethanol % DM"
+      ],
+      "probe_telemetry_included": false,
+      "temperature_series_included": false,
+      "silage_pit_ids_included": false,
+      "how_utilized_in_project": "Supplied reference threshold intervals for optimal lactic preservation (pH 3.8-4.2), clostridial warning boundaries (pH > 5.0), and severe spoilage overrides (pH > 6.0)."
+    },
+    {
+      "source_id": "LIT-BORREANI-2018",
+      "citation": "Borreani, G., Tabacco, E., Schmidt, R. J., Holmes, B. J., & Muck, R. E. (2018). Silage review: Factors affecting dry matter and quality losses in silages. Journal of Dairy Science, 101(5), 3952-3979.",
+      "doi": "10.3168/jds.2017-13837",
+      "document_type": "Peer-reviewed review paper",
+      "original_variables": [
+        "Dry matter loss %",
+        "Aerobic stability hours",
+        "Face density kg DM/m3",
+        "Temperature elevation relative to ambient",
+        "Yeast and mold colony counts"
+      ],
+      "probe_telemetry_included": false,
+      "temperature_series_included": false,
+      "silage_pit_ids_included": false,
+      "how_utilized_in_project": "Supplied scientific basis for aerobic runaway heat thresholds (delta_T > 3.0°C caution, delta_T > 10.0°C critical override)."
+    },
+    {
+      "source_id": "LIT-MUCK-2018",
+      "citation": "Muck, R. E., Nadeau, E. M., McAllister, T. A., Contreras-Govea, F. E., Santos, M. C., & Kung, L. (2018). Silage review: Recent advances and future uses of silage additives. Journal of Dairy Science, 101(5), 3980-4000.",
+      "doi": "10.3168/jds.2017-13839",
+      "document_type": "Peer-reviewed review paper",
+      "original_variables": [
+        "Inoculant bacterial strains",
+        "Lactic:acetic ratio",
+        "Aerobic stability index"
+      ],
+      "probe_telemetry_included": false,
+      "how_utilized_in_project": "Informed advisory logic regarding homolactic vs heterolactic fermentation."
+    }
+  ],
+  "clarification_statement": "The project does NOT possess raw physical telemetry CSVs from external public universities. The literature references represent agronomic meta-analysis benchmarks from which our synthetic ranges and safety rule thresholds were derived."
+}

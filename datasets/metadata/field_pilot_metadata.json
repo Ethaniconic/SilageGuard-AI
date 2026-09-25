@@ -1,12 +1,37 @@
 {
   "dataset_id": "DS-FIELD-PILOT-04",
   "name": "Vidarbha Dairy Belt Silage Pilot Observations",
-  "real_or_synthetic": "field_pilot",
-  "target_farms": 4,
-  "districts": ["Nagpur", "Amravati"],
-  "crops_observed": ["Corn Silage", "Hybrid Napier Grass", "Sorghum (Jowar)"],
-  "label_sources_included": ["EXPERT", "LAB"],
-  "collection_instrument": "ESP32-S3 Prototyping Probe with DS18B20 & E-201-C pH electrode",
-  "policy_on_missing_values": "Recorded as null; never filled with synthetic numbers",
-  "provenance_notes": "Ground-truth benchmark observations from field pilot."
+  "file_path": "datasets/field/field_pilot_observations.csv",
+  "category": "field_pilot",
+  "real_or_synthetic": "REAL_PHYSICAL_PILOT_SCHEMA_AND_OBSERVATIONS",
+  "purpose": "Ground truth repository for genuine on-farm pilot trials across dairy clusters",
+  "geographic_region": "Nagpur, Amravati, Wardha districts, Maharashtra, India",
+  "schema": {
+    "sample_id": "Unique sample identifier",
+    "farm_id": "Farm identifier",
+    "pit_id": "Bunker/trench/bag identifier",
+    "crop_type": "Silage crop type",
+    "silage_age_days": "Days post-ensiling",
+    "sampling_depth_cm": "Depth of probe insertion in cm",
+    "ph": "Measured pH value or null if uncalibrated",
+    "moisture": "Estimated or measured moisture % or null",
+    "temperature": "Silage core temperature in Celsius",
+    "ambient_temperature": "Ambient air temperature in Celsius",
+    "image_path": "Path to smartphone silage photo",
+    "expert_label": "Sensory triage label: Safe | Caution | Unsafe",
+    "lab_result": "Laboratory wet-chemistry result or null if pending",
+    "label_source": "Source classification: EXPERT | LAB | RESEARCH | RULE | SYNTHETIC | UNKNOWN",
+    "timestamp": "ISO 8601 observation timestamp",
+    "notes": "Qualitative agronomic and sensory notes"
+  },
+  "allowed_label_sources": [
+    "EXPERT",
+    "LAB",
+    "RESEARCH",
+    "RULE",
+    "SYNTHETIC",
+    "UNKNOWN"
+  ],
+  "missing_value_policy": "Missing measurements must remain null and must never be filled with fabricated numbers.",
+  "scaling_strategy": "The evaluation pipeline supports small cohorts (20+, 50+, 100+ samples) without requiring thousands of observations."
 }

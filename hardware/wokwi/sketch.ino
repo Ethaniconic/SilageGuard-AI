@@ -203,8 +203,8 @@ void loop() {
   // Battery simulation
   simulatedBattery = max(12.0f, simulatedBattery - 0.005f);
 
-  // Prepare standard V2 JSON telemetry payload (Section 31 specification)
-  StaticJsonDocument<256> doc;
+  // Prepare standard V2.1 JSON telemetry payload with honest mode separation
+  StaticJsonDocument<384> doc;
   doc["ph"] = round(phVal * 100.0f) / 100.0f;
   doc["moisture"] = round(moistVal * 10.0f) / 10.0f;
   doc["temp"] = round(tempVal * 10.0f) / 10.0f;
@@ -212,8 +212,9 @@ void loop() {
   doc["battery"] = (int)round(simulatedBattery);
   doc["probe_id"] = PROBE_ID;
   doc["seq"] = sampleCounter;
+  doc["mode"] = (rawTemp > -10.0f && rawTemp < 85.0f && rawTemp != DEVICE_DISCONNECTED_C) ? "REAL_SENSOR" : "WOKWI_SIMULATION";
 
-  char jsonBuffer[256];
+  char jsonBuffer[384];
   serializeJson(doc, jsonBuffer);
 
   // Print to Serial Monitor for Wokwi visualization

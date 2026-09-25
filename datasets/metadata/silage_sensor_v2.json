@@ -1,0 +1,89 @@
+{
+  "dataset_id": "DS-SYNTH-SENSOR-V2",
+  "dataset_name": "SilageGuard Research-Informed Synthetic Sensor Benchmark",
+  "file_path": "datasets/processed/silage_sensor_v2.csv",
+  "provenance_type": "SYNTHETIC_RESEARCH_INFORMED",
+  "total_records": 2400,
+  "cluster_grouping": {
+    "group_key": "pit_id",
+    "total_pits": 60,
+    "samples_per_pit": 40,
+    "farm_count": 10
+  },
+  "is_physically_measured": false,
+  "is_field_validation": false,
+  "generator_script": "datasets/generate_realistic_silage_data.py",
+  "generation_method": "Parametric synthesis using normal/uniform distributions constrained by published agronomic boundaries (Kung et al., 2018; Borreani et al., 2018)",
+  "features": [
+    {
+      "name": "sample_id",
+      "type": "string",
+      "origin": "synthetic_identifier"
+    },
+    {
+      "name": "pit_id",
+      "type": "string",
+      "origin": "synthetic_cluster_group"
+    },
+    {
+      "name": "farm_id",
+      "type": "string",
+      "origin": "synthetic_farm_cluster"
+    },
+    {
+      "name": "crop_type",
+      "type": "string",
+      "origin": "simulated_crop_types",
+      "values": ["Corn Silage", "Hybrid Napier Grass", "Sorghum (Jowar)", "Lucerne Mix"]
+    },
+    {
+      "name": "depth_cm",
+      "type": "integer",
+      "origin": "simulated_probe_insertion_depth",
+      "values": [20, 40, 60, 80]
+    },
+    {
+      "name": "ph",
+      "type": "float",
+      "origin": "synthetic_gaussian_variate",
+      "agronomic_reference": "Kung et al. (2018) target range: 3.8-4.2"
+    },
+    {
+      "name": "moisture",
+      "type": "float",
+      "origin": "synthetic_gaussian_variate",
+      "agronomic_reference": "Kung et al. (2018) target range: 60.0-68.0%"
+    },
+    {
+      "name": "temperature",
+      "type": "float",
+      "origin": "synthetic_gaussian_variate_plus_ambient",
+      "note": "Temperature rise delta_T is algorithmically simulated"
+    },
+    {
+      "name": "ambient",
+      "type": "float",
+      "origin": "synthetic_ambient_air_temperature"
+    },
+    {
+      "name": "dry_matter",
+      "type": "float",
+      "origin": "derived_100_minus_moisture"
+    },
+    {
+      "name": "label",
+      "type": "string",
+      "origin": "rule_based_synthetic_assignment",
+      "values": ["Safe", "Caution", "Unsafe"]
+    },
+    {
+      "name": "label_source",
+      "type": "string",
+      "origin": "metadata_tag",
+      "value": "AGRONOMIC_MULTIFACTOR_REFERENCE"
+    }
+  ],
+  "data_circularity_notice": "Labels were assigned via deterministic rule logic on ph, moisture, and delta_t. A machine learning model trained on these samples is learning to approximate that synthetic rule set. Benchmark performance does not guarantee field efficacy.",
+  "appropriate_use": "Edge ML pipeline prototyping, GroupKFold validation benchmarking, mobile JSON tree parsing verification, and UI integration testing.",
+  "prohibited_use": "Must not be cited as real-world field accuracy or veterinary clinical evidence."
+}
