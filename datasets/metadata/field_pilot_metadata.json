@@ -1,0 +1,12 @@
+{
+  "dataset_id": "DS-FIELD-PILOT-04",
+  "name": "Vidarbha Dairy Belt Silage Pilot Observations",
+  "real_or_synthetic": "field_pilot",
+  "target_farms": 4,
+  "districts": ["Nagpur", "Amravati"],
+  "crops_observed": ["Corn Silage", "Hybrid Napier Grass", "Sorghum (Jowar)"],
+  "label_sources_included": ["EXPERT", "LAB"],
+  "collection_instrument": "ESP32-S3 Prototyping Probe with DS18B20 & E-201-C pH electrode",
+  "policy_on_missing_values": "Recorded as null; never filled with synthetic numbers",
+  "provenance_notes": "Ground-truth benchmark observations from field pilot."
+}

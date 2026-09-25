@@ -1,0 +1,23 @@
+{
+  "dataset_id": "DS-SYNTH-SENSOR-01",
+  "name": "SilageGuard Synthetic Fermentation Benchmark",
+  "real_or_synthetic": "synthetic",
+  "not_for_field_validation": true,
+  "purpose": "Algorithm verification and mobile runtime testing",
+  "schema": {
+    "ph": "float, acidity range 3.6 to 8.2",
+    "moisture": "float, percentage 38.0 to 85.0",
+    "temperature": "float, probe core temperature in Celsius",
+    "ambient": "float, ambient air temperature in Celsius",
+    "dry_matter": "float, percentage (100 - moisture)",
+    "label": "string, ['Safe', 'Caution', 'Unsafe']"
+  },
+  "row_count": 3200,
+  "class_distribution": {
+    "Safe": 1440,
+    "Caution": 960,
+    "Unsafe": 800
+  },
+  "creation_date": "2026-09-25",
+  "provenance_notes": "Generated mathematically via parametric distributions. DO NOT cite as field measurement data."
+}

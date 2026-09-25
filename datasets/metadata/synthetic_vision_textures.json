@@ -1,0 +1,15 @@
+{
+  "dataset_id": "DS-SYNTH-VISION-02",
+  "name": "Silage Surface Texture Synthetic Prototype",
+  "real_or_synthetic": "synthetic",
+  "not_for_field_validation": true,
+  "purpose": "MobileNetV3 transfer learning and TFLite quantization testing",
+  "format": "JPEG, 224x224 RGB",
+  "sample_count": 160,
+  "classes": {
+    "safe": 60,
+    "caution": 50,
+    "unsafe": 50
+  },
+  "provenance_notes": "Generated procedurally via Pillow drawing routines. Lacks real field environmental variability."
+}
