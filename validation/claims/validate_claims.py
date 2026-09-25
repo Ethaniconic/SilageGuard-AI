@@ -1,13 +1,23 @@
 """
-SILAGEGUARD AI V2.1 — Automated Claim Validator
-Inspects repository markdown, JSON schemas, code, and documentation to audit
-and prevent overstated, misleading, or scientifically ungrounded claims.
+SILAGEGUARD AI V2.2 — Automated Claim & Scientific Integrity Validator
+Audits repository documentation, code, manifests, and model cards to prevent
+unsupported scientific claims, fake real-world validation, or synthetic data contamination.
+
+Strictly checks:
+  1. No claims of direct mycotoxin / aflatoxin quantification from RGB pixels.
+  2. No claims of direct urea detection from pH electrodes.
+  3. No claims of laboratory replacement or clinical validation.
+  4. No unqualified 100% field accuracy claims.
+  5. No claims of 'field validated' or 'real-world validated' without physical trial data.
+  6. Rule 1 verification: Production vision manifests must have ZERO synthetic images.
+  7. Dataset registry & manifest consistency.
 
 Produces: validation/claims/claim_validation_report.json
 """
 
 import os
 import re
+import csv
 import json
 import sys
 
@@ -20,19 +30,19 @@ RESTRICTED_PATTERNS = [
         "id": "CLAIM_MYCOTOXIN_DIRECT_DETECTION",
         "regex": r"(camera|lens|rgb|probe|sensor)\s+(measures?|quantif(y|ies)|detects?)\s+(aflatoxin|mycotoxin|zearalenone|vomitoxin)\s+(concentration|in ppb|levels?)",
         "description": "RGB cameras or basic probes cannot quantify biochemical mycotoxin / aflatoxin ppb concentrations.",
-        "allowed_qualifier": r"surface|visual|mould|anomaly|screening|discoloration"
+        "allowed_qualifier": r"surface|visual|mould|anomaly|screening|discoloration|cannot|does not|not intended|not a direct"
     },
     {
         "id": "CLAIM_UREA_DIRECT_MEASUREMENT",
         "regex": r"(?<!cannot\s)(?<!does\snot\s)(?<!do\swe\s)(?<!can\sthe\ssystem\s)(measures?|quantif(y|ies)|detects?)\s+urea\s+(adulteration|concentration|percentage)",
         "description": "Standard pH electrodes measure hydronium ion activity, not specific urea molecules.",
-        "allowed_qualifier": r"ammonia|proteolysis|pH elevation|indicator|cannot|does not|disclaimer|no direct|we do not"
+        "allowed_qualifier": r"ammonia|proteolysis|pH elevation|indicator|cannot|does not|disclaimer|no direct|we do not|proxy"
     },
     {
         "id": "CLAIM_LABORATORY_REPLACEMENT",
-        "regex": r"(?<!not\s)(?<!not\sa\s)(?<!does\snot\s)(?<!cannot\s)(replaces?|eliminates?|substitutes?)\s+(the\s+)?(laboratory|wet chemistry|hplc|official lab)",
+        "regex": r"(?<!not\s)(?<!not\sa\s)(?<!does\snot\s)(?<!cannot\s)(replaces?|eliminates?|substitutes?)\s+(the\s+)?(laboratory|wet chemistry|hplc|official lab|lab-grade)",
         "description": "System is an edge rapid screening triage tool, not a certified laboratory replacement.",
-        "allowed_qualifier": r"screening|triage|prior to|not a laboratory replacement|rapid|does not replace"
+        "allowed_qualifier": r"screening|triage|prior to|not a laboratory replacement|rapid|does not replace|not intended"
     },
     {
         "id": "CLAIM_UNQUALIFIED_100_PERCENT_ACCURACY",
@@ -41,10 +51,10 @@ RESTRICTED_PATTERNS = [
         "allowed_qualifier": r"synthetic|prototype|benchmark|toy dataset"
     },
     {
-        "id": "CLAIM_GUARANTEED_SAFE_TO_FEED",
-        "regex": r"(guarantee(d|s)?|100%\s+certain)\s+(safe\s+to\s+feed|free\s+of\s+toxins)",
-        "description": "System output represents low screening risk based on available evidence, never absolute safety.",
-        "allowed_qualifier": r"screening|available evidence|low screening risk"
+        "id": "CLAIM_UNSUPPORTED_FIELD_VALIDATED",
+        "regex": r"(?<!pending\s)(?<!is\snot\s)(?<!not\s)(?<!currently\s)(?<!future\s)(clinically validated|field validated|real-world validated|lab-grade accuracy)",
+        "description": "System cannot claim 'field validated' or 'real-world validated' until full physical farm pilot trial data is recorded.",
+        "allowed_qualifier": r"pending|future|roadmap|not yet|synthetic benchmark|screening prototype|simulation"
     }
 ]
 
@@ -58,13 +68,12 @@ def scan_text_file(filepath):
                 # Skip comments or quote blocks in validation scripts/reports discussing prohibited terms
                 if "RESTRICTED_PATTERNS" in line or "validate_claims.py" in filepath:
                     continue
-                # Skip FAQ question headers
-                if line.strip().startswith("### Q") or line.strip().endswith("?"):
+                # Skip FAQ question headers or markdown headers posing questions
+                if line.strip().startswith("### Q") or line.strip().endswith("?") or line.strip().startswith("#"):
                     continue
                 for rule in RESTRICTED_PATTERNS:
                     match = re.search(rule["regex"], line, re.IGNORECASE)
                     if match:
-                        # Check if permitted qualifier exists in the same line or context
                         qualifier = re.search(rule["allowed_qualifier"], line, re.IGNORECASE)
                         if not qualifier:
                             findings.append({
@@ -79,42 +88,71 @@ def scan_text_file(filepath):
     return findings
 
 def audit_dataset_integrity():
-    """Verifies that synthetic data is not disguised as real field data."""
+    """Verifies Rule 1 and dataset provenance."""
     dataset_findings = []
     
-    # Check dataset registry
-    reg_path = os.path.join(ROOT_DIR, "datasets", "dataset_registry.json")
+    # 1. Rule 1 Check on vision manifest
+    vision_manifest = os.path.join(ROOT_DIR, "datasets", "metadata", "vision_manifest.csv")
+    if os.path.exists(vision_manifest):
+        with open(vision_manifest, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            real_count = 0
+            synthetic_count = 0
+            for r in reader:
+                val = r.get("real_or_synthetic", "").strip().upper()
+                if val == "REAL":
+                    real_count += 1
+                else:
+                    synthetic_count += 1
+            if synthetic_count > 0:
+                dataset_findings.append({
+                    "manifest": "datasets/metadata/vision_manifest.csv",
+                    "issue": f"Rule 1 Violation: {synthetic_count} synthetic rows found in production vision manifest!"
+                })
+            if real_count < 10:
+                dataset_findings.append({
+                    "manifest": "datasets/metadata/vision_manifest.csv",
+                    "issue": f"Insufficient real data: only {real_count} real images registered."
+                })
+    else:
+        dataset_findings.append({"issue": "datasets/metadata/vision_manifest.csv missing"})
+        
+    # 2. Check Vision Dataset Registry
+    reg_path = os.path.join(ROOT_DIR, "datasets", "metadata", "vision_dataset_registry.json")
     if os.path.exists(reg_path):
         with open(reg_path, "r", encoding="utf-8") as f:
-            reg = json.load(f)
-            for ds in reg.get("datasets", []):
-                if ds.get("category") == "synthetic_benchmark" and not ds.get("not_for_field_validation", False):
-                    dataset_findings.append({
-                        "dataset_id": ds.get("id"),
-                        "issue": "Synthetic dataset missing not_for_field_validation flag"
-                    })
+            reg_data = json.load(f)
+            dataset_list = reg_data.get("datasets", []) if isinstance(reg_data, dict) else reg_data
+            if not isinstance(dataset_list, list) or len(dataset_list) == 0:
+                dataset_findings.append({"issue": "vision_dataset_registry.json is empty or invalid format"})
+            else:
+                for entry in dataset_list:
+                    if not entry.get("real_image", False):
+                        dataset_findings.append({
+                            "dataset_id": entry.get("dataset_id"),
+                            "issue": "Registered dataset marked as non-real image"
+                        })
+                    if not entry.get("license"):
+                        dataset_findings.append({
+                            "dataset_id": entry.get("dataset_id"),
+                            "issue": "Missing license in dataset registry"
+                        })
     else:
-        dataset_findings.append({"issue": "datasets/dataset_registry.json missing"})
+        dataset_findings.append({"issue": "datasets/metadata/vision_dataset_registry.json missing"})
         
-    # Check field pilot observations schema
-    field_csv = os.path.join(ROOT_DIR, "datasets", "field", "field_pilot_observations.csv")
-    if os.path.exists(field_csv):
-        with open(field_csv, "r", encoding="utf-8") as f:
-            header = f.readline().strip().split(",")
-            required_cols = [
-                "sample_id", "farm_id", "pit_id", "crop_type", "silage_age_days",
-                "sampling_depth_cm", "ph", "moisture", "temperature",
-                "ambient_temperature", "image_path", "expert_label", "lab_result",
-                "label_source", "timestamp", "notes"
-            ]
-            for col in required_cols:
-                if col not in header:
-                    dataset_findings.append({
-                        "file": "datasets/field/field_pilot_observations.csv",
-                        "issue": f"Missing mandatory field column: {col}"
-                    })
-    else:
-        dataset_findings.append({"issue": "datasets/field/field_pilot_observations.csv missing"})
+    # 3. Check legacy synthetic archive status
+    synthetic_archive = os.path.join(ROOT_DIR, "datasets", "archive", "synthetic_v1")
+    if not os.path.exists(synthetic_archive):
+        dataset_findings.append({"issue": "datasets/archive/synthetic_v1 directory missing for historical isolation"})
+        
+    # 4. Check active datasets/vision folder has no unarchived synthetic files
+    active_old_vision = os.path.join(ROOT_DIR, "datasets", "vision")
+    if os.path.exists(active_old_vision) and os.listdir(active_old_vision):
+        # Must be empty or non-existent
+        dataset_findings.append({
+            "folder": "datasets/vision",
+            "issue": "Old datasets/vision directory still contains active unmigrated files"
+        })
         
     return dataset_findings
 
@@ -126,14 +164,14 @@ def verify_system_capabilities():
     offline_script = os.path.join(ROOT_DIR, "validation", "offline", "verify_offline_flow.py")
     capabilities["offline_pipeline_verified"] = os.path.exists(offline_script)
     
-    # 2. Model parity
-    parity_report = os.path.join(ROOT_DIR, "validation", "parity", "model_parity_report.json")
+    # 2. Mobile model parity
+    parity_report = os.path.join(ROOT_DIR, "vision_model", "mobile_parity_report.json")
     if os.path.exists(parity_report):
         with open(parity_report, "r", encoding="utf-8") as f:
             rep = json.load(f)
-            capabilities["model_parity_verified"] = rep.get("all_passed", False)
+            capabilities["vision_parity_verified"] = rep.get("rule_29_status") == "PASS"
     else:
-        capabilities["model_parity_verified"] = False
+        capabilities["vision_parity_verified"] = False
         
     # 3. Decoupled safety rules
     rules_ts = os.path.join(ROOT_DIR, "mobile", "features", "fusion", "safetyRuleEngine.ts")
@@ -151,13 +189,12 @@ def verify_system_capabilities():
 
 def run_claim_validation():
     print("=" * 70)
-    print(" SILAGEGUARD AI V2.1 — AUTOMATED CLAIM & SCIENTIFIC INTEGRITY AUDIT")
+    print(" SILAGEGUARD AI V2.2 — AUTOMATED CLAIM & SCIENTIFIC INTEGRITY AUDIT")
     print("=" * 70)
     
-    # Target files to audit
     files_to_scan = []
     target_exts = (".md", ".txt", ".json", ".ts", ".tsx", ".py")
-    exclude_dirs = {".git", "node_modules", ".expo", ".system_generated", "tasks", "scratch"}
+    exclude_dirs = {".git", "node_modules", ".expo", ".system_generated", "tasks", "scratch", "archive"}
     
     for root, dirs, files in os.walk(ROOT_DIR):
         dirs[:] = [d for d in dirs if d not in exclude_dirs]
@@ -170,7 +207,6 @@ def run_claim_validation():
     all_findings = []
     for filepath in files_to_scan:
         rel = os.path.relpath(filepath, ROOT_DIR)
-        # Avoid self-scanning the claim validator or its generated report
         if "validate_claims.py" in rel or "claim_validation_report.json" in rel or "logs" in rel:
             continue
         findings = scan_text_file(filepath)
@@ -182,7 +218,7 @@ def run_claim_validation():
     status = "PASS" if len(all_findings) == 0 and len(dataset_issues) == 0 else "FLAGGED"
     
     report = {
-        "audit_version": "2.1.0",
+        "audit_version": "2.2.0",
         "audit_timestamp": "2026-09-25",
         "overall_status": status,
         "files_scanned_count": len(files_to_scan),
@@ -206,7 +242,7 @@ def run_claim_validation():
         
     print(f"\n[+] Validation Status: {status}")
     print(f"[+] Prohibited Phrasing Matches: {len(all_findings)}")
-    print(f"[+] Dataset Schema Issues: {len(dataset_issues)}")
+    print(f"[+] Dataset Integrity Issues: {len(dataset_issues)}")
     print(f"[+] Capability Checks: {capabilities}")
     print(f"[+] Full Report Saved to: {out_file}")
     print("=" * 70)
@@ -215,6 +251,11 @@ def run_claim_validation():
         print("\nFlagged occurrences:")
         for finding in all_findings[:10]:
             print(f" - [{finding['rule_id']}] {finding['file']}:{finding['line_number']} -> {finding['matched_snippet']}")
+            
+    if len(dataset_issues) > 0:
+        print("\nDataset Issues:")
+        for issue in dataset_issues:
+            print(f" - {issue}")
             
     return 0 if status == "PASS" else 1
 

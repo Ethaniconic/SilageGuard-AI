@@ -1,41 +1,32 @@
 [
   {
-    "sample_type": "Correct High-Confidence Safe",
-    "image_description": "Uniform yellowish-green olive chopped forage fibers with zero mycelial hyphae",
-    "predicted_class": "Safe",
-    "confidence": 0.945,
-    "ground_truth": "Safe",
-    "status": "CORRECT"
+    "sample_type": "Correct High-Confidence NO_MOLD",
+    "image_description": "Clean compacted chopped whole-plant maize silage bunker clamp face",
+    "true_label": "NO_MOLD",
+    "predicted_label": "NO_MOLD",
+    "confidence": 1.0,
+    "mould_probability": 0.0,
+    "status": "CORRECT",
+    "why_this_result": "Visual screening detected uniform chop structure and characteristic olive/amber silage coloration with absence of fungal hyphae."
   },
   {
-    "sample_type": "Correct High-Confidence Unsafe",
-    "image_description": "Prominent greyish-white filamentous fungal colonies and dark discoloration",
-    "predicted_class": "Unsafe",
-    "confidence": 0.988,
-    "ground_truth": "Unsafe",
-    "status": "CORRECT"
+    "sample_type": "Correct High-Confidence VISIBLE_MOLD",
+    "image_description": "Silage bale surface showing overt white/grey filamentous mold colonies",
+    "true_label": "VISIBLE_MOLD",
+    "predicted_label": "VISIBLE_MOLD",
+    "confidence": 1.0,
+    "mould_probability": 1.0,
+    "status": "CORRECT",
+    "why_this_result": "Visual model detected surface texture patterns characteristic of aerobic mycelial expansion and fungal sporulation."
   },
   {
-    "sample_type": "Visually Ambiguous Sample",
-    "image_description": "Surface caramelization with mixed moisture sheen and slight dark speckling",
-    "predicted_class": "Caution",
-    "confidence": 0.612,
-    "probabilities": {
-      "Safe": 0.184,
-      "Caution": 0.612,
-      "Unsafe": 0.204
-    },
-    "ground_truth": "Caution",
-    "status": "AMBIGUOUS / MODERATE CONFIDENCE",
-    "screening_guidance": "Recommended to re-examine bunker face depth or probe with physical sensor."
-  },
-  {
-    "sample_type": "Potential Low-Confidence Failure Case",
-    "image_description": "Harsh outdoor sunlight glare occluding upper 40% of silage frame",
-    "predicted_class": "Safe",
-    "confidence": 0.528,
-    "ground_truth": "Caution",
-    "status": "REJECTED_BY_IQA",
-    "screening_guidance": "Image Quality Checker should reject this frame before inference due to glare."
+    "sample_type": "Representative Ambiguous / Low-Confidence Case",
+    "image_description": "Peripheral bunker edge with darkened silage and surface chaff variation",
+    "true_label": "VISIBLE_MOLD",
+    "predicted_label": "VISIBLE_MOLD",
+    "confidence": 0.526,
+    "mould_probability": 0.526,
+    "status": "BORDERLINE / SCREENING UNCERTAINTY",
+    "why_this_result": "Visual texture features are ambiguous between non-harmful Maillard caramelization and early fungal growth. Sensor verification recommended."
   }
 ]

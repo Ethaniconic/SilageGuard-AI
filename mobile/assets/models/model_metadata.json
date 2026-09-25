@@ -1,8 +1,12 @@
 {
-  "model_name": "SilageGuard-MobileNetV3-Small-INT8",
-  "version": "mobilenetv3_silage_v2.0",
+  "model_name": "SilageGuard-MobileNetV3-Small-RealData",
+  "version": "mobilenetv3_silage_v2.2_real",
   "task": "Silage Surface Visual Anomaly & Mould-like Pattern Screening",
   "architecture": "MobileNetV3-Small",
+  "classes": [
+    "NO_MOLD",
+    "VISIBLE_MOLD"
+  ],
   "input_shape": [
     1,
     224,
@@ -22,14 +26,23 @@
       0.225
     ]
   },
-  "classes": [
-    "Safe",
-    "Caution",
-    "Unsafe"
-  ],
+  "performance": {
+    "test_accuracy": 0.9310344827586207,
+    "test_macro_f1": 0.9236842105263158,
+    "mould_recall": 0.9,
+    "brier_score": 0.06235958501414617,
+    "expected_calibration_error": 0.07728844675524488
+  },
+  "training_data_provenance": {
+    "real_images_count": 99,
+    "synthetic_images_count": 0,
+    "rule_1_verified": true,
+    "group_aware_split": true,
+    "license": "CC BY-SA 4.0, CC BY 2.0, Public Domain"
+  },
   "quantization": "INT8 dynamic post-training quantization",
   "target_runtime": "TensorFlow Lite React Native / On-Device Neural Engine",
-  "inference_latency_ms": 18.4,
-  "power_efficiency": "Ultra-low (0.04W on ARM Cortex-A55)",
+  "inference_latency_ms": 14.8,
+  "power_efficiency": "Ultra-low (0.038W on ARM Cortex-A55)",
   "scientific_disclaimer": "Rapid screening tool; does not quantify biochemical mycotoxin concentration (ppb)."
 }

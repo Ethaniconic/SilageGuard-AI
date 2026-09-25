@@ -1,0 +1,26 @@
+{
+  "version": "2.2",
+  "task": "Silage Surface Visual Anomaly & Mould-like Screening",
+  "classes": [
+    "NO_MOLD",
+    "VISIBLE_MOLD"
+  ],
+  "class_to_idx": {
+    "NO_MOLD": 0,
+    "VISIBLE_MOLD": 1
+  },
+  "idx_to_class": {
+    "0": "NO_MOLD",
+    "1": "VISIBLE_MOLD"
+  },
+  "class_definitions": {
+    "NO_MOLD": "Normal fermented silage appearance: chopped whole-crop maize/grass/sorghum forage, compacted bunker clamp face, or baled forage displaying typical fermentation color (olive-green to golden-brown) without visible superficial fungal hyphae or sporulating mycelial colonies.",
+    "VISIBLE_MOLD": "Silage or forage surface exhibiting visible fungal mycelium, filamentous mold colonies, white/grey/green/black sporulation patches, or overt aerobic spoilage deterioration."
+  },
+  "multimodal_mapping": {
+    "mouldProbability": "Probability assigned to class VISIBLE_MOLD by the vision model softmax output.",
+    "visual_safety_score": "Continuous score 0-100 calculated as (1.0 - mouldProbability) * 100 for integration into the Multimodal Screening Score Index (MSSI).",
+    "rule_engine_integration": "If mouldProbability >= 0.70, triggers screening ALERT. If mouldProbability >= 0.40, triggers screening CAUTION/BORDERLINE."
+  },
+  "scientific_disclaimer": "CRITICAL: Visible mould is a qualitative visual screening signal. It DOES NOT quantify biochemical mycotoxin concentration (aflatoxin B1, deoxynivalenol, zearalenone) in parts per billion (ppb). Laboratory HPLC/ELISA analysis is required for analytical toxin quantification."
+}

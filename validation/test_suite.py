@@ -213,15 +213,69 @@ def run_versioning_and_demo_tests():
     check("is_demo: boolean" in ble_content, "Telemetry interface includes explicit is_demo isolation flag")
     check("mode" in ble_content, "Telemetry interface includes explicit mode flag (REAL_SENSOR vs WOKWI_SIMULATION)")
 
+def run_v2_2_real_vision_tests():
+    print("\n--- 5. V2.2 REAL-DATA VISION & SCREENING HARDENING TESTS ---")
+    
+    # 5.1 Rule 1 Assertion: Manifest contains 100% real images, 0 synthetic
+    manifest_csv = os.path.join(ROOT_DIR, "datasets", "metadata", "vision_manifest.csv")
+    check(os.path.exists(manifest_csv), "Real vision manifest exists (vision_manifest.csv)")
+    with open(manifest_csv, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        real_count = sum(1 for r in reader if r.get("real_or_synthetic", "").strip().upper() == "REAL")
+    with open(manifest_csv, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        synth_count = sum(1 for r in reader if r.get("real_or_synthetic", "").strip().upper() != "REAL")
+    check(synth_count == 0, f"Rule 1 Check: Production manifest contains ZERO synthetic images (found {synth_count})")
+    check(real_count >= 50, f"Rule 1 Check: Production manifest contains verified real photographs (found {real_count})")
+
+    # 5.2 Split manifests check
+    for s in ["train", "val", "test"]:
+        s_csv = os.path.join(ROOT_DIR, "datasets", "splits", "vision", f"{s}_manifest.csv")
+        check(os.path.exists(s_csv), f"Split manifest exists for {s}")
+        with open(s_csv, "r", encoding="utf-8") as f:
+            rdr = csv.DictReader(f)
+            bad = sum(1 for r in rdr if r.get("real_or_synthetic", "").strip().upper() != "REAL")
+        check(bad == 0, f"Split manifest for {s} contains 0 synthetic rows")
+
+    # 5.3 Legacy synthetic isolation check
+    archive_dir = os.path.join(ROOT_DIR, "datasets", "archive", "synthetic_v1")
+    check(os.path.exists(archive_dir), "Historical synthetic prototype data cleanly archived to datasets/archive/synthetic_v1")
+
+    # 5.4 Vision Model Empirical Metrics Check
+    metrics_path = os.path.join(ROOT_DIR, "vision_model", "vision_model_metrics.json")
+    check(os.path.exists(metrics_path), "Vision model metrics file exists")
+    with open(metrics_path, "r", encoding="utf-8") as f:
+        v_metrics = json.load(f)
+    test_acc = v_metrics.get("held_out_test_metrics", {}).get("accuracy", 0.0)
+    mould_rec = v_metrics.get("held_out_test_metrics", {}).get("mould_recall", 0.0)
+    brier = v_metrics.get("held_out_test_metrics", {}).get("calibration", {}).get("brier_score", 1.0)
+    check(test_acc >= 0.85, f"Held-out test accuracy >= 85% on real imagery (measured: {test_acc*100:.2f}%)")
+    check(mould_rec >= 0.85, f"Mould recall safety metric >= 85% (measured: {mould_rec*100:.2f}%)")
+    check(brier <= 0.15, f"Brier probability calibration score <= 0.15 (measured: {brier:.4f})")
+
+    # 5.5 Rule 29 Mobile Model Parity Check
+    parity_path = os.path.join(ROOT_DIR, "vision_model", "mobile_parity_report.json")
+    check(os.path.exists(parity_path), "Mobile parity report exists")
+    with open(parity_path, "r", encoding="utf-8") as f:
+        parity_data = json.load(f)
+    check(parity_data.get("rule_29_status") == "PASS", "Rule 29: PyTorch vs Mobile Runtime parity status == PASS")
+    check(parity_data.get("prediction_agreement_percent", 0.0) >= 99.0, "Rule 29: Prediction agreement >= 99%")
+
+    # 5.6 Grad-CAM Explainability Artifacts Check
+    gradcam_mold = os.path.join(ROOT_DIR, "vision_model", "gradcam_outputs", "gradcam_mold_sample.jpg")
+    gradcam_clean = os.path.join(ROOT_DIR, "vision_model", "gradcam_outputs", "gradcam_clean_sample.jpg")
+    check(os.path.exists(gradcam_mold) and os.path.exists(gradcam_clean), "Grad-CAM visual overlays generated and saved")
+
 def main():
     print("=" * 70)
-    print(" SILAGEGUARD AI V2.1 — COMPREHENSIVE AUTOMATED TEST SUITE")
+    print(" SILAGEGUARD AI V2.2 — COMPREHENSIVE AUTOMATED TEST SUITE")
     print("=" * 70)
     
     run_data_tests()
     run_sensor_telemetry_tests()
     run_fusion_missing_modality_tests()
     run_versioning_and_demo_tests()
+    run_v2_2_real_vision_tests()
     
     print("\n" + "=" * 70)
     print(f" TEST SUITE SUMMARY: {passed_tests} PASSED, {failed_tests} FAILED")

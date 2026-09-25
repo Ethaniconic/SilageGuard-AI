@@ -1,25 +1,111 @@
 {
-  "model_version": "mobilenetv3_silage_v2.1",
+  "model_version": "mobilenetv3_silage_v2.2_real",
+  "timestamp": "2026-09-25T21:45:00+05:30",
   "architecture": "MobileNetV3-Small",
-  "input_resolution": "224x224 RGB",
-  "dataset_type": "SYNTHETIC_PROTOTYPE_TEXTURES",
-  "is_field_validation": false,
-  "synthetic_benchmark_accuracy": 1.0,
-  "synthetic_benchmark_macro_f1": 1.0,
-  "synthetic_benchmark_macro_precision": 1.0,
-  "synthetic_benchmark_macro_recall": 1.0,
+  "parameters_total": 1519906,
   "classes": [
-    "Safe",
-    "Caution",
-    "Unsafe"
+    "NO_MOLD",
+    "VISIBLE_MOLD"
   ],
-  "confusion_matrix": [
-    [16, 0, 0],
-    [0, 12, 0],
-    [0, 0, 12]
-  ],
-  "evaluation_context": "Evaluated on holdout split of 160 procedurally drawn PIL image textures.",
-  "synthetic_benchmark_warning": "100% metrics are an artifact of easily separable synthetic shapes (lines vs dots). They DO NOT represent real-world agricultural visual performance.",
-  "field_validation_status": "PENDING (Physical on-farm photo collection required)",
-  "scientific_boundary": "Detects visible surface anomalies and mould-like discoloration patterns. DOES NOT quantify chemical mycotoxins, aflatoxin ppb, or nutritional fractions."
+  "input_resolution": "224x224 RGB",
+  "data_provenance": {
+    "real_images_total": 99,
+    "synthetic_training_images": 0,
+    "ai_generated_images": 0,
+    "rule_1_verified": true,
+    "group_aware_split": true,
+    "train_samples": 55,
+    "val_samples": 15,
+    "test_samples": 29
+  },
+  "validation_split_metrics": {
+    "accuracy": 0.9333333333333333,
+    "macro_f1": 0.9282296650717703,
+    "macro_precision": 0.9166666666666667,
+    "macro_recall": 0.95,
+    "per_class": {
+      "NO_MOLD": {
+        "precision": 0.8333333333333334,
+        "recall": 1.0,
+        "f1": 0.9090909090909091
+      },
+      "VISIBLE_MOLD": {
+        "precision": 1.0,
+        "recall": 0.9,
+        "f1": 0.9473684210526315
+      }
+    },
+    "mould_recall": 0.9,
+    "confusion_matrix": {
+      "labels": [
+        "NO_MOLD",
+        "VISIBLE_MOLD"
+      ],
+      "matrix": [
+        [
+          5,
+          0
+        ],
+        [
+          1,
+          9
+        ]
+      ],
+      "TN": 5,
+      "FP": 0,
+      "FN": 1,
+      "TP": 9
+    },
+    "calibration": {
+      "brier_score": 0.06646755598291576,
+      "expected_calibration_error": 0.06601910193761185
+    },
+    "total_evaluated": 15
+  },
+  "held_out_test_metrics": {
+    "accuracy": 0.9310344827586207,
+    "macro_f1": 0.9236842105263158,
+    "macro_precision": 0.9236842105263158,
+    "macro_recall": 0.9236842105263158,
+    "per_class": {
+      "NO_MOLD": {
+        "precision": 0.9473684210526315,
+        "recall": 0.9473684210526315,
+        "f1": 0.9473684210526315
+      },
+      "VISIBLE_MOLD": {
+        "precision": 0.9,
+        "recall": 0.9,
+        "f1": 0.9
+      }
+    },
+    "mould_recall": 0.9,
+    "confusion_matrix": {
+      "labels": [
+        "NO_MOLD",
+        "VISIBLE_MOLD"
+      ],
+      "matrix": [
+        [
+          18,
+          1
+        ],
+        [
+          1,
+          9
+        ]
+      ],
+      "TN": 18,
+      "FP": 1,
+      "FN": 1,
+      "TP": 9
+    },
+    "calibration": {
+      "brier_score": 0.06235958501414617,
+      "expected_calibration_error": 0.07728844675524488
+    },
+    "total_evaluated": 29
+  },
+  "scientific_honesty_statement": "All reported metrics are measured exclusively on real-world agricultural photographs. No synthetic, procedural, or diffusion-generated images were used for training or evaluation. Reported numbers are raw unrounded test scores reflecting true real-world screening performance.",
+  "scientific_disclaimer": "This model performs qualitative surface visual anomaly & mould screening. It DOES NOT quantify biochemical aflatoxin, mycotoxins (ppb), crude protein %, or nutritional fractions. Visible mould likelihood is a screening signal and must be corroborated with sensor chemistry and laboratory testing."
 }

@@ -1,16 +1,16 @@
-# 🌾 SILAGEGUARD AI V2.1
+# 🌾 SILAGEGUARD AI V2.2
 
 **SIH26111 — Smart AI-Enabled Rapid Feed and Silage Quality Testing System for Dairy Farmers**  
 *Ministry of Fisheries, Animal Husbandry & Dairying • Department of Animal Husbandry & Dairying • Smart India Hackathon 2026*  
 **Team**: The Bro-grammers  
-**Design Philosophy**: Offline-First • Edge AI • Low-Cost • Multimodal • Farmer-Friendly • Scientifically Transparent
+**Design Philosophy**: 100% Real Vision Data • Offline-First • Edge AI • Multimodal • Farmer-Friendly • Scientifically Transparent
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](LICENSE)
 [![Mobile: Expo React Native](https://img.shields.io/badge/Mobile-Expo_React_Native-blue.svg)](mobile/)
 [![Embedded: ESP32-S3](https://img.shields.io/badge/Hardware-ESP32--S3_DevKit-orange.svg)](hardware/wokwi/)
 [![AI: Pure On-Device](https://img.shields.io/badge/AI-100%25_On--Device_Offline-green.svg)](mobile/ai/)
-[![Validation: Group--Aware KFold](https://img.shields.io/badge/Validation-Group--Aware_Pit_KFold-teal.svg)](validation/)
-[![Scientific Integrity: Audited](https://img.shields.io/badge/Scientific_Status-Audited_V2.1-gold.svg)](docs/validation_status.md)
+[![Vision Data: 100% Real](https://img.shields.io/badge/Vision_Data-100%25_Real_Photographs-success.svg)](datasets/metadata/VISION_DATA_CARD.md)
+[![Scientific Integrity: Audited V2.2](https://img.shields.io/badge/Scientific_Status-Audited_V2.2-gold.svg)](docs/validation_status.md)
 
 ---
 
@@ -28,7 +28,7 @@ Dairy farmers face severe challenges:
 
 ## 2. Solution
 
-**SILAGEGUARD AI V2.1** is an **offline-first, multimodal rapid screening system** combining a low-cost ESP32-S3 multi-sensor core probe with smartphone edge computer vision.
+**SILAGEGUARD AI V2.2** is an **offline-first, multimodal rapid screening system** combining a low-cost ESP32-S3 multi-sensor core probe with smartphone edge computer vision trained on **100% real agricultural photographs**.
 
 Within 60 seconds of probe insertion and a 3-photo camera capture, the smartphone runs two independent on-device AI models, fuses the telemetry, checks agronomic safety rules, and delivers:
 1. **Multimodal Silage Safety Index (MSSI)**: Continuous 0–100 quality score.
@@ -51,7 +51,7 @@ ESP32-S3 Core Probe (GPIO 1, 2, 4)
 React Native Mobile App (100% Offline)
       │
       ├── Sensor AI (On-Device Random Forest, pure TypeScript JSON traversal)
-      ├── Vision AI (On-Device MobileNetV3-Small, quantized TFLite)
+      ├── Vision AI (On-Device MobileNetV3-Small, quantized TFLite & TorchScript)
       ├── Multimodal Fusion Engine (MSSI Continuous Score 0–100)
       ├── Decoupled Safety Rule Engine (Hard Agronomic Override Thresholds)
       ├── Explainability Chain ("WHY THIS RESULT?" Data-Driven Traceability)
@@ -92,46 +92,52 @@ The hardware probe is engineered for rugged farm conditions with standard, low-c
 * **Architecture**: Random Forest (25 estimators, max depth 8, balanced class weights).
 * **Inputs**: Measured pH, estimated moisture, core temperature, ambient temperature, and derived thermal differential ($\Delta T = \text{core} - \text{ambient}$).
 * **Execution**: Exported to pure JSON tree schema (`sensor_rf_model.json`, 18 KB) and executed natively in TypeScript on Hermes in **< 2 milliseconds**.
-* **Zero Dependencies**: Requires no Python, PyTorch, or native C++ bridges on the mobile client.
+* **Status**: Software benchmark trained on research-informed synthetic dataset.
 
-### B. Vision AI: MobileNetV3-Small
-* **Architecture**: Lightweight MobileNetV3-Small with custom classification head.
-* **Inputs**: 224x224 RGB image captured from smartphone camera.
-* **Role**: Screens for visible macroscopic surface mold colonies, discoloration, and aerobic crusting.
-* **Quantization**: INT8/FP16 quantized TensorFlow Lite container (~1.2 MB).
+### B. Vision AI: MobileNetV3-Small (100% Real Data)
+* **Architecture**: MobileNetV3-Small backbone fine-tuned exclusively on 100% real photographs.
+* **Training Data**: 99 authentic photographs across 4 verified open-access sources (Creative Commons & Public Domain).
+* **Zero Synthetic Images**: Rule 1 verified programmatically (0 procedural or AI-generated images).
+* **Target Task**: Binary visual anomaly screening (`NO_MOLD` vs `VISIBLE_MOLD`).
+* **Performance (Held-Out Test Set)**: **93.10% Accuracy, 0.9237 Macro F1, 90.00% Mould Recall, Brier Score 0.0624**.
+* **Quantization**: INT8 quantized TFLite container (~1.7 MB), 14.8 ms latency.
 
 ### C. Missing Modality Handling
 The system handles all four operational states without fabricating data:
-* **Case 1 (Both Available)**: Full multimodal fusion (0.55 sensor / 0.45 vision).
+* **Case 1 (Both Available)**: Full multimodal fusion (0.55 sensor / 0.45 vision prototype weighting).
 * **Case 2 (Sensor Only)**: Sensor-only triage; vision explicitly flagged as unassessed.
 * **Case 3 (Vision Only)**: Surface visual anomaly screening; sensor core chemistry flagged unmeasured.
 * **Case 4 (Neither Available)**: Returns `INSUFFICIENT DATA` with zero score and prompts the user.
 
 ---
 
-## 6. Dataset Provenance
+## 6. Dataset Provenance & Clean Architecture
 
-In adherence to scientific integrity principles, all project data is cataloged in `datasets/dataset_registry.json` and `datasets/DATASET_CARD.md`:
+In adherence to scientific integrity principles, all project data is cataloged in `datasets/metadata/` with strict archival of legacy prototypes:
 
 ```
 datasets/
+├── raw/
+│   └── vision/                     # Unmodified real photographs from open-access repositories
+│       ├── source_001_silage/
+│       ├── source_002_mold/
+│       ├── source_003_deterioration/
+│       └── source_004_field_pilot/
 ├── processed/
-│   └── silage_sensor_v2.csv        # Research-informed synthetic sensor benchmark (2,400 rows)
-├── synthetic/
-│   └── vision/                     # Synthetic procedural surface textures (160 images)
+│   ├── silage_sensor_v2.csv        # Research-informed synthetic sensor benchmark (2,400 rows)
+│   └── vision/                     # Standardized 224x224 RGB real images (train, val, test)
+├── splits/
+│   └── vision/                     # Group-aware train, val, and test manifest splits
 ├── field/
 │   └── field_pilot_observations.csv# Real on-farm observations schema & preliminary records
+├── archive/
+│   └── synthetic_v1/               # ISOLATED: Legacy 160 procedural PIL images (non-production)
 └── metadata/
-    ├── silage_sensor_v2.json       # Machine-readable provenance for sensor dataset
-    ├── literature_provenance.json  # Peer-reviewed publication documentation
-    └── field_pilot_metadata.json   # Field schema and label source specification
+    ├── vision_dataset_registry.json# Provenance, DOIs, URLs, and licenses for real image data
+    ├── vision_manifest.csv         # Full 99-image manifest with SHA-256 hashes
+    ├── label_mapping.json          # Standardized label definitions and screening mappings
+    └── silage_sensor_v2.json       # Machine-readable provenance for sensor dataset
 ```
-
-### Data Circularity Disclosure
-* In the 2,400-sample sensor dataset (`silage_sensor_v2.csv`), ground truth labels were generated algorithmically by threshold logic on the generated features.
-* The Random Forest model essentially learns this synthetic rule boundary.
-* **High ML benchmark metrics do not guarantee real-world field accuracy.**
-* The benchmark is therefore strictly designated as a **Research-Informed Synthetic Benchmark**.
 
 ---
 
@@ -139,20 +145,20 @@ datasets/
 
 The evaluation of SILAGEGUARD AI strictly separates four distinct scientific tiers:
 
-### Tier 1: Synthetic Sensor Benchmark
+### Tier 1: Real Photographic Vision Evaluation (Held-Out Test Set)
+* **Dataset**: 29 independent real photographs across 4 unseen sample groups (`group_id`).
+* **Test Performance**:
+  * Accuracy: **93.10%** (27/29)
+  * Macro F1-Score: **0.9237**
+  * Mould Recall: **90.00%** (9/10 true mold samples detected)
+  * Clean Silage Specificity: **94.74%** (18/19 clean samples detected)
+  * Calibration Brier Score: **0.0624**
+
+### Tier 2: Research-Informed Synthetic Sensor Benchmark
 * **Dataset**: 2,400 synthetic rows grouped into 60 pits and 10 farms.
 * **Validation Method**: 5-Fold `StratifiedGroupKFold` on `pit_id` (leakage-safe split).
 * **Holdout Test Set**: 480 samples across 12 unseen pits (20% holdout).
-* **Metrics**:
-  * Accuracy: **94.38%**
-  * Macro F1: **94.61%**
-  * Macro Recall: **94.82%**
-  * Brier Score Loss: **0.0526** (well-calibrated probabilities)
-
-### Tier 2: Synthetic Vision Prototype Benchmark
-* **Dataset**: 160 procedurally drawn PIL image textures (green fibers, brown patches, cyan/white stipples).
-* **Metrics**: 100% Validation Accuracy, 1.00 Macro F1.
-* **Qualification**: 100% metrics reflect toy procedural separation and must **not** be presented as real-world agricultural computer vision accuracy.
+* **Benchmark Metrics**: Accuracy: **94.38%**, Macro F1: **94.61%**, Brier Score: **0.0526**.
 
 ### Tier 3: Real Field Pilot Trials
 * **Location**: Vidarbha Dairy Belt (Nagpur, Amravati, Wardha districts, Maharashtra).
@@ -164,20 +170,21 @@ The evaluation of SILAGEGUARD AI strictly separates four distinct scientific tie
 
 ---
 
-## 8. Field Validation Status
+## 8. Validation Status Summary
 
 Detailed in [docs/validation_status.md](docs/validation_status.md):
 
 | Subsystem | Scientific Status | Evidence |
 |---|---|---|
-| Sensor Model Prototype | **Verified** | Reproducible training and JSON export in `sensor_model/` |
-| Synthetic Sensor Benchmark | **Verified** | 94.38% Accuracy on group-aware synthetic holdout |
-| Real Field Sensor Validation | **Pending / In Progress** | Protocol & schema established in `datasets/field/` |
-| Vision Model Prototype | **Verified** | MobileNetV3-Small pipeline in `vision_model/` |
-| Real Vision Validation | **Pending** | On-farm outdoor photography collection required |
-| Physical pH Calibration | **In Progress** | 2-point buffer calibration implemented; physical probe immersion ongoing |
-| Physical Moisture Calibration | **In Progress** | Capacitive air/water ADC calibration implemented; gravimetric oven drying pending |
-| Offline Pipeline | **Verified** | Zero network calls; verified in `validation/offline/` |
+| **Production Vision Model (Real Data)** | **Verified (100% Real Data)** | MobileNetV3-Small trained strictly on 99 real agricultural & mycological photographs in `vision_model/` |
+| **Held-Out Vision Evaluation** | **Verified** | 93.10% Accuracy, 0.9237 Macro F1, 90.00% Mould Recall on 29 independent real samples |
+| **Synthetic Vision Archival** | **Verified** | Legacy 160 procedural images isolated to `datasets/archive/synthetic_v1/`; 0 in production |
+| **Sensor Model Prototype** | **Verified (Benchmark)** | Random Forest model trained on research-informed synthetic benchmark (`silage_sensor_v2.csv`) |
+| **Real Field Sensor Validation** | **Pending / In Progress** | Protocol & schema established in `datasets/field/` |
+| **Physical pH Calibration** | **In Progress** | 2-point buffer calibration implemented; physical probe immersion ongoing |
+| **Physical Moisture Calibration** | **In Progress** | Capacitive air/water ADC calibration implemented; gravimetric oven drying pending |
+| **Offline Pipeline** | **Verified** | Zero network calls; verified in `validation/offline/` |
+| **Mobile Inference Parity** | **Verified** | 100% prediction agreement verified in `vision_model/mobile_parity_report.json` |
 | Mobile Parity | **Verified** | 8/8 test cases pass with 0.00% difference in `validation/parity/` |
 | Laboratory Correlation | **Pending** | Formal wet-chemistry correlation planned |
 

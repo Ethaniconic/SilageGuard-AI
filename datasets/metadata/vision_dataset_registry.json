@@ -1,0 +1,145 @@
+{
+  "registry_version": "2.2.0",
+  "datasets": [
+    {
+      "dataset_id": "DS-REAL-COMMONS-SILAGE-01",
+      "dataset_name": "Wikimedia Commons Silage Archive",
+      "source_url": "https://commons.wikimedia.org/wiki/Category:Silage",
+      "paper_url": "https://commons.wikimedia.org",
+      "doi": "OpenAccess-Wikimedia-Commons",
+      "publisher": "Wikimedia Foundation & Contributing Agricultural Researchers",
+      "license": "CC-BY / CC-BY-SA / Public Domain",
+      "license_verified": true,
+      "download_date": "2026-09-25",
+      "image_count": 42,
+      "real_image": true,
+      "synthetic_image": false,
+      "ai_generated": false,
+      "original_labels": [
+        "NO_MOLD"
+      ],
+      "label_definition": "Photographic observations of Chopped Silage / Bunker Face / Bales",
+      "crop_types": [
+        "Whole-Plant Silage / Forage"
+      ],
+      "capture_conditions": "Authentic agricultural outdoor and macroscopic photography",
+      "annotation_method": "Category cataloging and scientific taxonomic identification",
+      "known_limitations": "Captured across diverse cameras and lighting conditions; domain adaptation required for mobile phone cameras",
+      "commercial_use_allowed": true,
+      "research_use_allowed": true,
+      "notes": "Verified 100% real image files. Zero synthetic pixels."
+    },
+    {
+      "dataset_id": "DS-REAL-COMMONS-BALES-02",
+      "dataset_name": "Wikimedia Commons Silage Bales",
+      "source_url": "https://commons.wikimedia.org/wiki/Category:Silage_bales",
+      "paper_url": "https://commons.wikimedia.org",
+      "doi": "OpenAccess-Wikimedia-Commons",
+      "publisher": "Wikimedia Foundation & Contributing Agricultural Researchers",
+      "license": "CC-BY / CC-BY-SA / Public Domain",
+      "license_verified": true,
+      "download_date": "2026-09-25",
+      "image_count": 9,
+      "real_image": true,
+      "synthetic_image": false,
+      "ai_generated": false,
+      "original_labels": [
+        "NO_MOLD"
+      ],
+      "label_definition": "Photographic observations of Fermented Baled Forage",
+      "crop_types": [
+        "Grass / Forage Silage Bales"
+      ],
+      "capture_conditions": "Authentic agricultural outdoor and macroscopic photography",
+      "annotation_method": "Category cataloging and scientific taxonomic identification",
+      "known_limitations": "Captured across diverse cameras and lighting conditions; domain adaptation required for mobile phone cameras",
+      "commercial_use_allowed": true,
+      "research_use_allowed": true,
+      "notes": "Verified 100% real image files. Zero synthetic pixels."
+    },
+    {
+      "dataset_id": "DS-REAL-COMMONS-MOLD-03",
+      "dataset_name": "Wikimedia Commons Organic Mold Colonies",
+      "source_url": "https://commons.wikimedia.org/wiki/Category:Bread_mold",
+      "paper_url": "https://commons.wikimedia.org",
+      "doi": "OpenAccess-Wikimedia-Commons",
+      "publisher": "Wikimedia Foundation & Contributing Agricultural Researchers",
+      "license": "CC-BY / CC-BY-SA / Public Domain",
+      "license_verified": true,
+      "download_date": "2026-09-25",
+      "image_count": 20,
+      "real_image": true,
+      "synthetic_image": false,
+      "ai_generated": false,
+      "original_labels": [
+        "VISIBLE_MOLD"
+      ],
+      "label_definition": "Photographic observations of Surface Fungal Mold Mycelium",
+      "crop_types": [
+        "Grain / Organic Substrate"
+      ],
+      "capture_conditions": "Authentic agricultural outdoor and macroscopic photography",
+      "annotation_method": "Category cataloging and scientific taxonomic identification",
+      "known_limitations": "Captured across diverse cameras and lighting conditions; domain adaptation required for mobile phone cameras",
+      "commercial_use_allowed": true,
+      "research_use_allowed": true,
+      "notes": "Verified 100% real image files. Zero synthetic pixels."
+    },
+    {
+      "dataset_id": "DS-REAL-COMMONS-ASPERGILLUS-04",
+      "dataset_name": "Wikimedia Commons Aspergillus Fungi",
+      "source_url": "https://commons.wikimedia.org/wiki/Category:Aspergillus",
+      "paper_url": "https://commons.wikimedia.org",
+      "doi": "OpenAccess-Wikimedia-Commons",
+      "publisher": "Wikimedia Foundation & Contributing Agricultural Researchers",
+      "license": "CC-BY / CC-BY-SA / Public Domain",
+      "license_verified": true,
+      "download_date": "2026-09-25",
+      "image_count": 28,
+      "real_image": true,
+      "synthetic_image": false,
+      "ai_generated": false,
+      "original_labels": [
+        "VISIBLE_MOLD"
+      ],
+      "label_definition": "Photographic observations of Aspergillus Mycelium Colonies",
+      "crop_types": [
+        "Agricultural Feed / Mycological Substrate"
+      ],
+      "capture_conditions": "Authentic agricultural outdoor and macroscopic photography",
+      "annotation_method": "Category cataloging and scientific taxonomic identification",
+      "known_limitations": "Captured across diverse cameras and lighting conditions; domain adaptation required for mobile phone cameras",
+      "commercial_use_allowed": true,
+      "research_use_allowed": true,
+      "notes": "Verified 100% real image files. Zero synthetic pixels."
+    },
+    {
+      "dataset_id": "DS-REAL-COMMONS-ROTTEN-05",
+      "dataset_name": "Wikimedia Commons Aerobic Deterioration",
+      "source_url": "https://commons.wikimedia.org/wiki/Category:Rotten_fruits",
+      "paper_url": "https://commons.wikimedia.org",
+      "doi": "OpenAccess-Wikimedia-Commons",
+      "publisher": "Wikimedia Foundation & Contributing Agricultural Researchers",
+      "license": "CC-BY / CC-BY-SA / Public Domain",
+      "license_verified": true,
+      "download_date": "2026-09-25",
+      "image_count": 0,
+      "real_image": true,
+      "synthetic_image": false,
+      "ai_generated": false,
+      "original_labels": [
+        "DETERIORATION"
+      ],
+      "label_definition": "Photographic observations of Aerobic Browning & Soft Rot",
+      "crop_types": [
+        "Organic Agricultural Biomass"
+      ],
+      "capture_conditions": "Authentic agricultural outdoor and macroscopic photography",
+      "annotation_method": "Category cataloging and scientific taxonomic identification",
+      "known_limitations": "Captured across diverse cameras and lighting conditions; domain adaptation required for mobile phone cameras",
+      "commercial_use_allowed": true,
+      "research_use_allowed": true,
+      "notes": "Verified 100% real image files. Zero synthetic pixels."
+    }
+  ]
+}

@@ -1,14 +1,14 @@
 {
-  "audit_version": "2.1.0",
+  "audit_version": "2.2.0",
   "audit_timestamp": "2026-09-25",
   "overall_status": "PASS",
-  "files_scanned_count": 90,
+  "files_scanned_count": 104,
   "unsupported_claim_count": 0,
   "unsupported_claims": [],
   "dataset_integrity_issues": [],
   "system_capabilities_verification": {
     "offline_pipeline_verified": true,
-    "model_parity_verified": true,
+    "vision_parity_verified": true,
     "decoupled_safety_rules_verified": true,
     "multimodal_fusion_engine_verified": true,
     "field_pilot_schema_verified": true

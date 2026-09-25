@@ -1,3 +1,2 @@
-Safe
-Caution
-Unsafe
+NO_MOLD
+VISIBLE_MOLD

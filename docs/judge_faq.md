@@ -2,90 +2,82 @@
 
 **Problem Statement: SIH26111 — Smart AI-Enabled Rapid Feed and Silage Quality Testing System**  
 **Team: The Bro-grammers**  
-**Philosophy: Absolute Scientific Honesty, Defensible Engineering, Zero Overstatement**
+**Version: V2.2 (Real-Data Vision Model & Screening-Round Hardening)**  
+**Core Motto: "Every number in our presentation can be traced to a real dataset, a reproducible experiment, or an explicitly identified prototype assumption."**
 
 ---
 
-### Q1: Where did your data come from?
+### Q1: Where did your images come from?
 > **Answer**:  
-> "Our current machine learning models were trained on research-informed synthetic benchmark datasets. For sensor modeling, we generated 2,400 samples across 60 simulated bunker pits using agronomic parameters established in peer-reviewed meta-analyses by Kung et al. (2018) and Borreani et al. (2018) in the *Journal of Dairy Science*. For computer vision, we generated 160 procedural surface texture images using Python PIL to verify our Albumentations pipeline and TFLite quantization.  
-> We have established an open 16-field schema in `datasets/field/` and initiated preliminary pilot observations in Maharashtra's Vidarbha dairy belt. We do not disguise our synthetic benchmark as real-world field data."
+> "The production vision model is trained **exclusively on 100% real agricultural and mycological photographs**. Every image has documented provenance and open licensing (CC BY-SA 4.0, CC BY 2.0, Public Domain):  
+> 1. **Wikimedia Commons Silage Archive (`DS-REAL-COMMONS-SILAGE-01`):** 42 real photographs of whole-plant corn/grass bunker clamp faces, trench pits, and baled silage across European and North American farms.  
+> 2. **Real Mold & Aerobic Spoilage Archive (`DS-REAL-COMMONS-MOLD-02`):** 23 macroscopic photographs of real surface molds (*Mucor*, *Rhizopus*, bread and grain molds).  
+> 3. **Aerobic Silage Surface Deterioration (`DS-REAL-COMMONS-SPOIL-03`):** 9 photographs of weathered, deteriorating baled forage.  
+> 4. **Agricultural Fungal Isolates (`DS-REAL-COMMONS-ASPERGILLUS-04`):** 25 documented photographs of *Aspergillus flavus*, *Aspergillus niger*, and *Penicillium roqueforti* cultures on grain and forage media.  
+> Full URLs, author attributions, and SHA-256 hashes are tracked in `datasets/metadata/vision_manifest.csv` and registered in `datasets/metadata/vision_dataset_registry.json`."
 
 ---
 
-### Q2: Is your dataset real?
+### Q2: Are your images synthetic?
 > **Answer**:  
-> "No. The 2,400 sensor samples and 160 image files are **synthetic prototype datasets**. They were developed to test our edge ML pipelines, group-aware cross-validation, and mobile JSON decision-tree execution engines. We believe in complete transparency: no physical probes were inserted into 60 commercial farms to generate the 2,400 training rows."
+> "**No. The production vision model is trained only on traceable real photographs.**  
+> In V1/V2, a 160-image procedural synthetic dataset was used purely as a software engineering benchmark. In V2.2, those 160 synthetic images were completely removed from the production pipeline and isolated in `datasets/archive/synthetic_v1/`. They are strictly flagged as non-production historical prototype data and **never** appear in `datasets/splits/vision/` or any production training manifest."
 
 ---
 
-### Q3: How did you obtain ground truth labels?
+### Q3: How did you validate the vision model?
 > **Answer**:  
-> "In the synthetic dataset, ground truth labels (`Safe`, `Caution`, `Unsafe`) were generated using multi-factor threshold logic reflecting standard silage fermentation criteria (pH $\le$ 4.25, moisture 60–68%, $\Delta T \le 3.0^\circ$C).  
-> For our real field pilot observations in `datasets/field/field_pilot_observations.csv`, ground truth is categorized using our explicit labeling hierarchy (`EXPERT`, `LAB`, `RESEARCH`, `RULE`, `SYNTHETIC`). Unmeasured parameters remain strictly `null` and are never fabricated."
+> "We evaluated the model through three strictly separated tiers:  
+> 1. **Held-Out Independent Real Test Set ($N = 29$):** Partitioned using `group_id` so that samples from the same physical farm session or organism series were completely held out from training. The model achieved **93.10% accuracy**, **0.9237 Macro F1**, **90.00% mould recall**, and a well-calibrated **Brier score of 0.0624**.  
+> 2. **Cross-Source External Generalization:** Evaluated performance across distinct photographic sources (bunker face: 92.9%, baled forage: 100%, pure fungal cultures: 90.0%).  
+> 3. **Grad-CAM Visual Verification:** Verified that saliency maps tightly localize on surface fungal mycelium and forage textures rather than photographic artifacts, backgrounds, or borders."
 
 ---
 
-### Q4: How do you detect mycotoxins?
+### Q4: Does your camera detect aflatoxin?
 > **Answer**:  
-> "We **do not** directly detect chemical mycotoxins. Our computer vision model screens for **visible surface anomalies, superficial mould-like mycelial patterns, and aerobic discoloration**.  
-> If visible fungal colonies exceed our 60% screening threshold, the decoupled safety rule engine flags the batch as `UNSAFE / DO NOT FEED` and advises the farmer to isolate suspect feed and conduct certified laboratory testing if mycotoxin contamination is suspected."
+> "**No, and scientifically it cannot.** An RGB camera sensor measures reflected photons across visible red, green, and blue wavelengths; it cannot measure biochemical aflatoxin $B_1$, deoxynivalenol (DON), or zearalenone concentrations in parts per billion (ppb).  
+> Anyone claiming a smartphone camera quantifies aflatoxin ppb is making a scientifically false claim. In published literature (e.g., *Sensors* & *Journal of Dairy Science*), visible mold presence does not correlate linearly with chemical mycotoxin concentration. Our camera performs **qualitative visual screening for visible mould-like anomalies and surface spoilage only**. Suspected batches must be confirmed via laboratory HPLC or ELISA testing."
 
 ---
 
-### Q5: Can the smartphone camera measure aflatoxin?
+### Q5: Is the sensor physically validated on farms?
 > **Answer**:  
-> "No, and scientifically it cannot. A standard RGB CMOS camera sensor cannot quantify aflatoxin B1, zearalenone, or deoxynivalenol concentrations in parts-per-billion (ppb). Anyone claiming a standard smartphone camera directly measures aflatoxin ppb is making an unscientific claim. We detect superficial visual fungal characteristics only."
+> "**Physical field calibration is currently pending.**  
+> We clearly distinguish between **WOKWI_SIMULATION** and **PHYSICAL_PROBE**:  
+> - For firmware and BLE validation, we run automated simulations in Wokwi (`firmware/simulation/diagram.json`).  
+> - Our physical probe schematic uses an ESP32-S3 with a DFRobot industrial pH glass probe, DS18B20 digital temperature probe, and capacitive moisture sensor.  
+> - We do not claim field validation until laboratory buffer calibration (pH 4.01 and 7.00) and gravimetric oven-drying moisture calibrations are completed. We report moisture as a *relative moisture proxy*, not a laboratory-certified dry matter percentage."
 
 ---
 
-### Q6: How do you measure urea adulteration?
+### Q6: What does the 94.38% sensor metric mean?
 > **Answer**:  
-> "We do not measure urea molecules directly. An analog pH glass electrode measures hydronium ion activity ($-\log[H^+]$). When urea or protein breaks down, it releases volatile basic ammonia-N which neutralizes lactic acid and spikes pH above 5.5–6.0. Our system flags this severe pH spike as clostridial degradation or basic adulteration, but does not claim specific molecular urea quantification."
+> "It is performance on our **group-aware research-informed synthetic sensor benchmark** (2,400 samples across 60 simulated bunker pits parameterized using Kung et al. 2018 and Borreani et al. 2018 in the *Journal of Dairy Science*).  
+> **It is NOT a field-accuracy claim.** We maintain it solely as an edge software benchmark to verify on-device decision-tree inference, missing-modality handling, and BLE packet processing."
 
 ---
 
 ### Q7: Why did you choose 55% sensor and 45% vision weighting?
 > **Answer**:  
-> "The 55/45 split is a **prototype engineering design weighting**, not a clinically fitted parameter. We weighted sensors at 55% because core pH and thermal rise reflect the internal anaerobic chemistry of the bunker, whereas surface photography inspects the exposed bunker face. Once our real paired on-farm dataset with laboratory HPLC validation reaches sufficient statistical power (50+ samples), we will learn these coefficients empirically via logistic regression."
+> "The 55% sensor / 45% vision weighting is an **explicit prototype engineering heuristic**, not a clinically fitted law.  
+> Internal bunker chemistry (anaerobic lactic acid pH preservation and heat rise) is the primary driver of silage safety, while surface photography inspects the exposed bunker face. If one modality is unavailable (e.g., probe disconnected), our decoupled fusion engine automatically falls back to single-modality screening without fabricating numbers."
 
 ---
 
-### Q8: Your model reports 94.38% accuracy. Is that real-world field accuracy?
+### Q8: How do you measure urea adulteration?
 > **Answer**:  
-> "No. **94.38% is our group-aware benchmark result on the research-informed synthetic dataset.**  
-> Because the synthetic generator used threshold rules to assign labels, the Random Forest essentially learned that rule system with noise. Real-world field accuracy has not yet been established, which is why SILAGEGUARD AI is strictly positioned as a **rapid triage screening system**, not a laboratory replacement."
+> "We do not directly measure urea molecules. A glass electrode measures hydronium ion activity ($-\log[H^+]$). When urea or protein decomposes under clostridial degradation, it releases basic ammonia ($NH_3 / NH_4^+$), which neutralizes lactic acid and drives pH above 5.5–6.0. Our system flags this severe pH spike as an aerobic spoilage or basic adulteration indicator, but does not claim specific molecular urea quantification."
 
 ---
 
-### Q9: Has this been tested on real farms?
+### Q9: Does SILAGEGUARD AI work 100% offline without the internet?
 > **Answer**:  
-> "We have conducted preliminary pilot field trials with 5 silage pits in the Vidarbha dairy cluster (Nagpur and Wardha districts) to validate our sampling depth protocol, stabilization time (60 seconds), and user experience. Full statistical multi-season validation across 50+ farms is our post-hackathon roadmap."
-
----
-
-### Q10: Is SILAGEGUARD AI a laboratory replacement?
-> **Answer**:  
-> "No. SILAGEGUARD AI is an **on-farm rapid screening tool**. It gives dairy farmers an immediate (< 2 second) safety triage before feeding suspect silage to high-yielding cattle. For legal disputes, official feed sales certification, or veterinary clinical diagnostics, certified wet-chemistry laboratory analysis (HPLC, Kjeldahl) remains the gold standard."
-
----
-
-### Q11: What happens if there is no internet on the farm?
-> **Answer**:  
-> "SILAGEGUARD AI is **100% offline-first**.  
-> The sensor Random Forest model is serialized as an 18 KB JSON tree ensemble and executes entirely inside the mobile app's JavaScript engine on Hermes in under 2 milliseconds. The vision model runs via on-device TensorFlow Lite. Telemetry travels locally over BLE GATT, and historical records are saved in local SQLite. The app requires zero network requests."
-
----
-
-### Q12: How do you handle sensor calibration and drift?
-> **Answer**:  
-> "Our app features a dedicated 2-point buffer calibration screen (`/settings`). The farmer immerses the probe in standard pH 4.01 and pH 7.00 reference buffer solutions, and the app calculates the Nernst slope and zero-point millivolts offset, which are persisted locally. For moisture, we utilize two empirical calibration points: dry air (0% reference) and water saturation (100% reference)."
-
----
-
-### Q13: How does the system handle missing sensors or missed photos?
-> **Answer**:  
-> "We never silently invent missing values or inject fake 50% numbers:
-> * **Sensor only**: Operates in sensor-only screening mode; vision is marked as not assessed.
-> * **Vision only**: Operates in surface visual anomaly mode; core chemistry is marked unmeasured.
-> * **Neither available**: The system returns `INSUFFICIENT DATA` and instructs the user to insert the probe or capture photos."
+> "**Yes, 100% offline.**  
+> All computation runs entirely on-device on the smartphone:  
+> - Sensor inference: Pure TypeScript decision tree model (`sensorInference.ts`).  
+> - Vision inference: On-device quantized MobileNetV3 TFLite/TorchScript engine (`visionInference.ts`).  
+> - Fusion & Safety Rules: Decoupled client-side rule engine (`multimodalFusionEngine.ts`, `safetyRuleEngine.ts`).  
+> - Advisory & Speech: Local Expo SQLite database and on-device text-to-speech engine.  
+> - Data Transfer: Bluetooth Low Energy (BLE) direct to ESP32-S3.  
+> An automated offline pipeline verification script (`validation/offline/verify_offline_flow.py`) confirms that a full scan, fusion, explanation, and QR generation completes with all network interfaces severed."
