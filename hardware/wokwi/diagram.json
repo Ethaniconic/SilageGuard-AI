@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "author": "SILAGEGUARD AI (SIH26111)",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-s3-devkitc-1",
+      "id": "esp32",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-ds18b20",
+      "id": "temp_probe",
+      "top": -120,
+      "left": 180,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_pullup",
+      "top": -70,
+      "left": 130,
+      "attrs": { "resistance": "4700" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "status_led",
+      "top": 150,
+      "left": -80,
+      "attrs": { "color": "green", "label": "BLE_ACTIVE" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_led",
+      "top": 190,
+      "left": -80,
+      "attrs": { "resistance": "330" }
+    }
+  ],
+  "connections": [
+    [ "esp32:GND.1", "temp_probe:GND", "black", [ "h0" ] ],
+    [ "esp32:3V3", "temp_probe:VCC", "red", [ "h0" ] ],
+    [ "esp32:GPIO4", "temp_probe:DQ", "blue", [ "h0" ] ],
+    [ "esp32:3V3", "r_pullup:1", "red", [ "h0" ] ],
+    [ "esp32:GPIO4", "r_pullup:2", "blue", [ "h0" ] ],
+    [ "esp32:GPIO10", "r_led:1", "green", [ "h0" ] ],
+    [ "r_led:2", "status_led:A", "green", [ "h0" ] ],
+    [ "status_led:C", "esp32:GND.2", "black", [ "h0" ] ]
+  ],
+  "dependencies": {}
+}

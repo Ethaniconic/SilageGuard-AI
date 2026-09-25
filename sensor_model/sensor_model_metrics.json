@@ -1,0 +1,38 @@
+{
+  "model_name": "SilageGuard-Sensor-RF",
+  "version": "1.0.0",
+  "accuracy": 1.0,
+  "f1_macro": 1.0,
+  "feature_importances": {
+    "ph_deviation": 0.2658,
+    "temp_rise": 0.2495,
+    "ph": 0.1813,
+    "delta_temp": 0.1403,
+    "moisture": 0.1006,
+    "moisture_deviation": 0.0515,
+    "temperature": 0.0111,
+    "ambient": 0.0
+  },
+  "classes": [
+    "Safe",
+    "Caution",
+    "Unsafe"
+  ],
+  "confusion_matrix": [
+    [
+      288,
+      0,
+      0
+    ],
+    [
+      0,
+      192,
+      0
+    ],
+    [
+      0,
+      0,
+      160
+    ]
+  ]
+}

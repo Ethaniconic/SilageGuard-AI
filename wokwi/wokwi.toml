@@ -1,6 +1,0 @@
-[wokwi]
-version = 1
-# Paths are relative to THIS file's location (wokwi/ subfolder).
-# Build the Wokwi target first:  pio run -e wokwi
-firmware = '../.pio/build/wokwi/firmware.bin'
-elf      = '../.pio/build/wokwi/firmware.elf'

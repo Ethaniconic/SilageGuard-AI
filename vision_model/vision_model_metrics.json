@@ -1,0 +1,30 @@
+{
+  "architecture": "MobileNetV3-Small",
+  "input_resolution": "224x224x3",
+  "accuracy": 1.0,
+  "f1_macro": 1.0,
+  "precision_macro": 1.0,
+  "recall_unsafe": 1.0,
+  "classes": [
+    "Safe",
+    "Caution",
+    "Unsafe"
+  ],
+  "confusion_matrix": [
+    [
+      11,
+      0,
+      0
+    ],
+    [
+      0,
+      11,
+      0
+    ],
+    [
+      0,
+      0,
+      10
+    ]
+  ]
+}

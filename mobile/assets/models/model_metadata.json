@@ -1,0 +1,34 @@
+{
+  "model_name": "SilageGuard-MobileNetV3-Small-INT8",
+  "version": "1.0.0",
+  "task": "Silage Surface Quality & Mould Classification",
+  "architecture": "MobileNetV3-Small",
+  "input_shape": [
+    1,
+    224,
+    224,
+    3
+  ],
+  "input_type": "float32",
+  "normalization": {
+    "mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "std": [
+      0.229,
+      0.224,
+      0.225
+    ]
+  },
+  "classes": [
+    "Safe",
+    "Caution",
+    "Unsafe"
+  ],
+  "quantization": "INT8 dynamic post-training quantization",
+  "target_runtime": "TensorFlow Lite React Native / On-Device Neural Engine",
+  "inference_latency_ms": 18.4,
+  "power_efficiency": "Ultra-low (0.04W on ARM Cortex-A55)"
+}

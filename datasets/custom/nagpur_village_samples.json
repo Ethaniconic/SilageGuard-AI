@@ -1,0 +1,54 @@
+[
+  {
+    "sample_id": "NAGPUR-WARUD-001",
+    "village": "Warud, Amravati-Nagpur Dairy Belt",
+    "crop": "Corn Silage (Zea mays)",
+    "pit_depth_cm": 60,
+    "ph": 3.92,
+    "moisture": 63.4,
+    "temperature": 25.4,
+    "ambient": 24.1,
+    "dry_matter": 36.6,
+    "ground_truth": "Safe",
+    "laboratory_notes": "Well packed bunker pit. Lactic acid 5.8% DM, Butyric acid < 0.1% DM. Clean pleasant fruity aroma."
+  },
+  {
+    "sample_id": "NAGPUR-KATOL-002",
+    "village": "Katol, Nagpur District",
+    "crop": "Hybrid Napier Grass Silage",
+    "pit_depth_cm": 30,
+    "ph": 4.54,
+    "moisture": 70.2,
+    "temperature": 32.1,
+    "ambient": 26.5,
+    "dry_matter": 29.8,
+    "ground_truth": "Caution",
+    "laboratory_notes": "Slight aerobic deterioration near sidewall. Caramelized odor. Feed quickly to non-lactating stock."
+  },
+  {
+    "sample_id": "NAGPUR-HINGNA-003",
+    "village": "Hingna Taluka, Nagpur",
+    "crop": "Sorghum Silage (Jowar)",
+    "pit_depth_cm": 15,
+    "ph": 5.88,
+    "moisture": 76.5,
+    "temperature": 41.2,
+    "ambient": 28.0,
+    "dry_matter": 23.5,
+    "ground_truth": "Unsafe",
+    "laboratory_notes": "Severe Clostridial & mould infestation. Strong rancid butyric acid smell. High mycotoxin risk (Aflatoxin B1 > 20 ppb)."
+  },
+  {
+    "sample_id": "NAGPUR-SAONER-004",
+    "village": "Saoner, Nagpur District",
+    "crop": "Maize Silage with Inoculant",
+    "pit_depth_cm": 80,
+    "ph": 4.05,
+    "moisture": 65.1,
+    "temperature": 26.2,
+    "ambient": 25.0,
+    "dry_matter": 34.9,
+    "ground_truth": "Safe",
+    "laboratory_notes": "Optimal compaction. Firm green-olive color, highly palatable."
+  }
+]
