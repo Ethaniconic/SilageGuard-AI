@@ -1,0 +1,15 @@
+torch
+torchvision
+tensorflow
+datasets
+huggingface_hub
+scikit-learn
+pandas
+numpy
+albumentations
+opencv-python
+tqdm
+pyyaml
+joblib
+fastapi
+uvicorn

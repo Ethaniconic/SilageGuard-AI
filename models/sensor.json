@@ -1,0 +1,3437 @@
+{
+  "model_type": "random_forest",
+  "n_classes": 3,
+  "feature_names": [
+    "ph",
+    "moisture_pct",
+    "temperature_c",
+    "ambient_temp_c",
+    "ph_dev",
+    "moist_dev",
+    "delta_t",
+    "ph_x_moist",
+    "dt_x_moist"
+  ],
+  "label_map": {
+    "0": "safe",
+    "1": "caution",
+    "2": "unsafe"
+  },
+  "trees": [
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "dt_x_moist",
+        "threshold": 190.6999969482422,
+        "left": {
+          "feature": "delta_t",
+          "threshold": 3.350000023841858,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        },
+        "right": {
+          "feature": "ph_dev",
+          "threshold": 0.39000000059604645,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 358.1630096435547,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.394999980926514,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "moisture_pct",
+          "threshold": 62.75,
+          "left": {
+            "class": 1
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 342.21099853515625,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.950000047683716,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph_dev",
+          "threshold": 0.32999999821186066,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "moisture_pct",
+      "threshold": 68.1500015258789,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.394999980926514,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "delta_t",
+          "threshold": 9.349999904632568,
+          "left": {
+            "feature": "ph_dev",
+            "threshold": 0.4150000065565109,
+            "left": {
+              "feature": "delta_t",
+              "threshold": 3.399999976158142,
+              "left": {
+                "class": 0
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "class": 2
+          }
+        }
+      },
+      "right": {
+        "feature": "ph_x_moist",
+        "threshold": 402.2770080566406,
+        "left": {
+          "class": 2
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "dt_x_moist",
+      "threshold": 549.8999938964844,
+      "left": {
+        "feature": "dt_x_moist",
+        "threshold": 188.9949951171875,
+        "left": {
+          "feature": "moist_dev",
+          "threshold": 7.900000095367432,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        },
+        "right": {
+          "feature": "moisture_pct",
+          "threshold": 61.10000038146973,
+          "left": {
+            "feature": "moist_dev",
+            "threshold": 0.9000000059604645,
+            "left": {
+              "feature": "temperature_c",
+              "threshold": 33.64999961853027,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "feature": "ph",
+            "threshold": 4.3500001430511475,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_dev",
+      "threshold": 1.449999988079071,
+      "left": {
+        "feature": "ph_dev",
+        "threshold": 0.39499999582767487,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "temperature_c",
+          "threshold": 26.350000381469727,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "feature": "moisture_pct",
+            "threshold": 61.94999885559082,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "feature": "ph_dev",
+              "threshold": 0.4350000023841858,
+              "left": {
+                "class": 0
+              },
+              "right": {
+                "class": 1
+              }
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 358.1630096435547,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.394999980926514,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "dt_x_moist",
+          "threshold": 175.4000015258789,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "dt_x_moist",
+        "threshold": 198.76000213623047,
+        "left": {
+          "feature": "delta_t",
+          "threshold": 3.700000047683716,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        },
+        "right": {
+          "feature": "moisture_pct",
+          "threshold": 60.85000038146973,
+          "left": {
+            "feature": "ambient_temp_c",
+            "threshold": 23.800000190734863,
+            "left": {
+              "feature": "ph",
+              "threshold": 4.4750001430511475,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "feature": "ph_dev",
+            "threshold": 0.42499999701976776,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 355.83399963378906,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.394999980926514,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "dt_x_moist",
+          "threshold": 172.18500518798828,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "delta_t",
+      "threshold": 3.950000047683716,
+      "left": {
+        "class": 0
+      },
+      "right": {
+        "feature": "moisture_pct",
+        "threshold": 64.79999923706055,
+        "left": {
+          "feature": "ph_x_moist",
+          "threshold": 317.1839904785156,
+          "left": {
+            "feature": "moisture_pct",
+            "threshold": 60.29999923706055,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "feature": "ph_dev",
+              "threshold": 0.32999999821186066,
+              "left": {
+                "class": 0
+              },
+              "right": {
+                "class": 1
+              }
+            }
+          },
+          "right": {
+            "class": 2
+          }
+        },
+        "right": {
+          "feature": "ph_dev",
+          "threshold": 1.5049999952316284,
+          "left": {
+            "feature": "dt_x_moist",
+            "threshold": 680.8800048828125,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "class": 2
+            }
+          },
+          "right": {
+            "class": 2
+          }
+        }
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.394999980926514,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph",
+          "threshold": 4.4049999713897705,
+          "left": {
+            "feature": "temperature_c",
+            "threshold": 31.050000190734863,
+            "left": {
+              "feature": "dt_x_moist",
+              "threshold": 238.97000122070312,
+              "left": {
+                "class": 0
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_dev",
+      "threshold": 1.449999988079071,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.390000104904175,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "temperature_c",
+          "threshold": 26.449999809265137,
+          "left": {
+            "class": 1
+          },
+          "right": {
+            "feature": "dt_x_moist",
+            "threshold": 175.4000015258789,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "dt_x_moist",
+      "threshold": 544.5,
+      "left": {
+        "feature": "ph_dev",
+        "threshold": 0.39499999582767487,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph",
+          "threshold": 4.4049999713897705,
+          "left": {
+            "feature": "delta_t",
+            "threshold": 3.399999976158142,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "delta_t",
+      "threshold": 3.950000047683716,
+      "left": {
+        "class": 0
+      },
+      "right": {
+        "feature": "ph_x_moist",
+        "threshold": 358.1630096435547,
+        "left": {
+          "feature": "ph",
+          "threshold": 4.330000162124634,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 358.1630096435547,
+      "left": {
+        "feature": "dt_x_moist",
+        "threshold": 216.5999984741211,
+        "left": {
+          "feature": "moist_dev",
+          "threshold": 8.5,
+          "left": {
+            "feature": "delta_t",
+            "threshold": 3.450000047683716,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 0
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        },
+        "right": {
+          "feature": "temperature_c",
+          "threshold": 27.75,
+          "left": {
+            "feature": "moisture_pct",
+            "threshold": 60.64999961853027,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "class": 0
+            }
+          },
+          "right": {
+            "feature": "ph",
+            "threshold": 4.3450000286102295,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "dt_x_moist",
+      "threshold": 547.8999938964844,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.394999980926514,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "dt_x_moist",
+          "threshold": 175.63999938964844,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "moisture_pct",
+      "threshold": 68.1500015258789,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.950000047683716,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "moisture_pct",
+          "threshold": 65.04999923706055,
+          "left": {
+            "feature": "ph_x_moist",
+            "threshold": 323.60699462890625,
+            "left": {
+              "feature": "temperature_c",
+              "threshold": 26.300000190734863,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "feature": "moisture_pct",
+                "threshold": 62.95000076293945,
+                "left": {
+                  "class": 1
+                },
+                "right": {
+                  "class": 1
+                }
+              }
+            },
+            "right": {
+              "class": 2
+            }
+          },
+          "right": {
+            "feature": "temperature_c",
+            "threshold": 37.45000076293945,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "class": 2
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "dt_x_moist",
+        "threshold": 188.9949951171875,
+        "left": {
+          "feature": "moist_dev",
+          "threshold": 10.599999904632568,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        },
+        "right": {
+          "feature": "ph",
+          "threshold": 4.3500001430511475,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 348.1699981689453,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.394999980926514,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "delta_t",
+          "threshold": 3.399999976158142,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "dt_x_moist",
+      "threshold": 547.8999938964844,
+      "left": {
+        "feature": "dt_x_moist",
+        "threshold": 212.52000427246094,
+        "left": {
+          "feature": "moisture_pct",
+          "threshold": 52.79999923706055,
+          "left": {
+            "class": 1
+          },
+          "right": {
+            "class": 0
+          }
+        },
+        "right": {
+          "feature": "moisture_pct",
+          "threshold": 59.39999961853027,
+          "left": {
+            "class": 1
+          },
+          "right": {
+            "feature": "ph_x_moist",
+            "threshold": 272.01800537109375,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "feature": "delta_t",
+              "threshold": 4.75,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_dev",
+      "threshold": 1.449999988079071,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.950000047683716,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph_dev",
+          "threshold": 0.32999999821186066,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "moisture_pct",
+        "threshold": 58.14999961853027,
+        "left": {
+          "feature": "ph",
+          "threshold": 4.390000104904175,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "feature": "ph_dev",
+            "threshold": 0.4050000011920929,
+            "left": {
+              "feature": "delta_t",
+              "threshold": 4.6499998569488525,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        },
+        "right": {
+          "feature": "ph_dev",
+          "threshold": 0.4350000023841858,
+          "left": {
+            "feature": "dt_x_moist",
+            "threshold": 247.87999725341797,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 0
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 358.1630096435547,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.390000104904175,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "moisture_pct",
+          "threshold": 62.54999923706055,
+          "left": {
+            "feature": "ph_dev",
+            "threshold": 0.4050000011920929,
+            "left": {
+              "feature": "dt_x_moist",
+              "threshold": 221.7300033569336,
+              "left": {
+                "class": 0
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "feature": "ph_dev",
+            "threshold": 0.6949999928474426,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "dt_x_moist",
+      "threshold": 542.5,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.950000047683716,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph",
+          "threshold": 4.4049999713897705,
+          "left": {
+            "feature": "moisture_pct",
+            "threshold": 58.89999961853027,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 358.1630096435547,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.950000047683716,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph_dev",
+          "threshold": 0.26500000059604645,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "delta_t",
+      "threshold": 3.950000047683716,
+      "left": {
+        "class": 0
+      },
+      "right": {
+        "feature": "ph_dev",
+        "threshold": 1.449999988079071,
+        "left": {
+          "feature": "delta_t",
+          "threshold": 4.549999952316284,
+          "left": {
+            "feature": "moist_dev",
+            "threshold": 5.049999952316284,
+            "left": {
+              "feature": "dt_x_moist",
+              "threshold": 249.0,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 0
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "feature": "ph",
+            "threshold": 4.4049999713897705,
+            "left": {
+              "feature": "ambient_temp_c",
+              "threshold": 30.199999809265137,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 358.1630096435547,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.380000114440918,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "delta_t",
+          "threshold": 3.399999976158142,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 4.394999980926514,
+      "left": {
+        "class": 0
+      },
+      "right": {
+        "feature": "ph_dev",
+        "threshold": 1.449999988079071,
+        "left": {
+          "feature": "temperature_c",
+          "threshold": 26.40000057220459,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "feature": "ph",
+            "threshold": 4.4049999713897705,
+            "left": {
+              "feature": "moisture_pct",
+              "threshold": 57.29999923706055,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 360.1490020751953,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.394999980926514,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "delta_t",
+          "threshold": 3.399999976158142,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 355.83399963378906,
+      "left": {
+        "feature": "ph_dev",
+        "threshold": 0.39499999582767487,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph",
+          "threshold": 4.4049999713897705,
+          "left": {
+            "feature": "delta_t",
+            "threshold": 3.399999976158142,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 358.1630096435547,
+      "left": {
+        "feature": "ph_dev",
+        "threshold": 0.39499999582767487,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "delta_t",
+          "threshold": 3.399999976158142,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "dt_x_moist",
+      "threshold": 547.0,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.394999980926514,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "dt_x_moist",
+          "threshold": 170.1300048828125,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 4.394999980926514,
+      "left": {
+        "class": 0
+      },
+      "right": {
+        "feature": "dt_x_moist",
+        "threshold": 549.7000122070312,
+        "left": {
+          "feature": "ph_dev",
+          "threshold": 0.4099999964237213,
+          "left": {
+            "feature": "delta_t",
+            "threshold": 4.299999952316284,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "moist_dev",
+        "threshold": 8.099999904632568,
+        "left": {
+          "feature": "ph_dev",
+          "threshold": 0.39000000059604645,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "feature": "delta_t",
+            "threshold": 3.25,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        },
+        "right": {
+          "class": 1
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "dt_x_moist",
+      "threshold": 547.8999938964844,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.394999980926514,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "temperature_c",
+          "threshold": 25.25,
+          "left": {
+            "class": 1
+          },
+          "right": {
+            "feature": "ph_dev",
+            "threshold": 0.4050000011920929,
+            "left": {
+              "feature": "dt_x_moist",
+              "threshold": 255.36500549316406,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.390000104904175,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph",
+          "threshold": 4.4049999713897705,
+          "left": {
+            "feature": "moisture_pct",
+            "threshold": 59.849998474121094,
+            "left": {
+              "feature": "delta_t",
+              "threshold": 4.6499998569488525,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 0
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_dev",
+      "threshold": 1.449999988079071,
+      "left": {
+        "feature": "ph_dev",
+        "threshold": 0.39499999582767487,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "delta_t",
+          "threshold": 3.399999976158142,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_dev",
+      "threshold": 1.449999988079071,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.394999980926514,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "dt_x_moist",
+          "threshold": 172.18500518798828,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "feature": "dt_x_moist",
+            "threshold": 185.9000015258789,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_dev",
+      "threshold": 1.449999988079071,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.899999976158142,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph_dev",
+          "threshold": 0.4050000011920929,
+          "left": {
+            "feature": "moist_dev",
+            "threshold": 5.299999952316284,
+            "left": {
+              "feature": "ph_x_moist",
+              "threshold": 248.781494140625,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_dev",
+      "threshold": 1.449999988079071,
+      "left": {
+        "feature": "ph_dev",
+        "threshold": 0.39499999582767487,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "moisture_pct",
+          "threshold": 60.55000114440918,
+          "left": {
+            "feature": "ambient_temp_c",
+            "threshold": 19.899999618530273,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "feature": "temperature_c",
+              "threshold": 26.600000381469727,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            }
+          },
+          "right": {
+            "feature": "dt_x_moist",
+            "threshold": 225.61000061035156,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "ph_dev",
+        "threshold": 0.39499999582767487,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "delta_t",
+          "threshold": 3.299999952316284,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 358.1630096435547,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.950000047683716,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph",
+          "threshold": 4.4049999713897705,
+          "left": {
+            "feature": "moisture_pct",
+            "threshold": 59.25,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "class": 0
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "delta_t",
+      "threshold": 3.950000047683716,
+      "left": {
+        "class": 0
+      },
+      "right": {
+        "feature": "ph_x_moist",
+        "threshold": 358.1630096435547,
+        "left": {
+          "feature": "ph",
+          "threshold": 4.315000057220459,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.390000104904175,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "dt_x_moist",
+          "threshold": 165.0,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "feature": "dt_x_moist",
+            "threshold": 182.3000030517578,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "moist_dev",
+      "threshold": 8.25,
+      "left": {
+        "feature": "ph_dev",
+        "threshold": 0.39000000059604645,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "dt_x_moist",
+          "threshold": 587.125,
+          "left": {
+            "feature": "ph_x_moist",
+            "threshold": 234.34649658203125,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "feature": "dt_x_moist",
+              "threshold": 213.0,
+              "left": {
+                "class": 0
+              },
+              "right": {
+                "class": 1
+              }
+            }
+          },
+          "right": {
+            "class": 2
+          }
+        }
+      },
+      "right": {
+        "feature": "dt_x_moist",
+        "threshold": 515.3799896240234,
+        "left": {
+          "class": 1
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "ph_dev",
+      "threshold": 1.449999988079071,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.390000104904175,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "moisture_pct",
+          "threshold": 62.54999923706055,
+          "left": {
+            "class": 1
+          },
+          "right": {
+            "feature": "delta_t",
+            "threshold": 4.349999904632568,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 355.83399963378906,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.899999976158142,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph_dev",
+          "threshold": 0.32999999821186066,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 4.394999980926514,
+      "left": {
+        "class": 0
+      },
+      "right": {
+        "feature": "dt_x_moist",
+        "threshold": 547.8999938964844,
+        "left": {
+          "feature": "dt_x_moist",
+          "threshold": 178.3000030517578,
+          "left": {
+            "class": 1
+          },
+          "right": {
+            "class": 1
+          }
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.950000047683716,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph_dev",
+          "threshold": 0.32999999821186066,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 4.390000104904175,
+      "left": {
+        "class": 0
+      },
+      "right": {
+        "feature": "ph",
+        "threshold": 5.450000047683716,
+        "left": {
+          "feature": "moisture_pct",
+          "threshold": 62.25,
+          "left": {
+            "feature": "ph_dev",
+            "threshold": 0.4050000011920929,
+            "left": {
+              "feature": "temperature_c",
+              "threshold": 31.499999046325684,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "feature": "dt_x_moist",
+            "threshold": 215.04000091552734,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "ph_dev",
+      "threshold": 1.449999988079071,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.384999990463257,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "delta_t",
+          "threshold": 3.350000023841858,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 355.83399963378906,
+      "left": {
+        "feature": "dt_x_moist",
+        "threshold": 191.06999969482422,
+        "left": {
+          "feature": "moist_dev",
+          "threshold": 10.349999904632568,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        },
+        "right": {
+          "feature": "ph_dev",
+          "threshold": 0.39000000059604645,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "delta_t",
+      "threshold": 3.899999976158142,
+      "left": {
+        "class": 0
+      },
+      "right": {
+        "feature": "ph_x_moist",
+        "threshold": 358.1630096435547,
+        "left": {
+          "feature": "temperature_c",
+          "threshold": 26.59999942779541,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "feature": "ph_dev",
+            "threshold": 0.4050000011920929,
+            "left": {
+              "feature": "ph_x_moist",
+              "threshold": 250.51200103759766,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "dt_x_moist",
+      "threshold": 547.0,
+      "left": {
+        "feature": "dt_x_moist",
+        "threshold": 198.76000213623047,
+        "left": {
+          "feature": "moist_dev",
+          "threshold": 10.599999904632568,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        },
+        "right": {
+          "feature": "ph_dev",
+          "threshold": 0.39000000059604645,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "moist_dev",
+        "threshold": 8.050000190734863,
+        "left": {
+          "feature": "ph_dev",
+          "threshold": 0.39499999582767487,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "feature": "delta_t",
+            "threshold": 3.399999976158142,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        },
+        "right": {
+          "class": 1
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_dev",
+      "threshold": 1.449999988079071,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.384999990463257,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "dt_x_moist",
+          "threshold": 174.1300048828125,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.950000047683716,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "delta_t",
+          "threshold": 4.6499998569488525,
+          "left": {
+            "feature": "dt_x_moist",
+            "threshold": 248.54999542236328,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "feature": "ph",
+              "threshold": 4.195000171661377,
+              "left": {
+                "class": 0
+              },
+              "right": {
+                "class": 1
+              }
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_dev",
+      "threshold": 1.449999988079071,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.950000047683716,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph",
+          "threshold": 4.315000057220459,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.390000104904175,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "delta_t",
+          "threshold": 3.200000047683716,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "dt_x_moist",
+        "threshold": 190.6999969482422,
+        "left": {
+          "feature": "ph",
+          "threshold": 4.394999980926514,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "feature": "temperature_c",
+            "threshold": 30.800000190734863,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        },
+        "right": {
+          "feature": "ph",
+          "threshold": 4.3500001430511475,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "dt_x_moist",
+      "threshold": 547.8999938964844,
+      "left": {
+        "feature": "ph_dev",
+        "threshold": 0.39499999582767487,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph_dev",
+          "threshold": 0.4050000011920929,
+          "left": {
+            "feature": "ph_x_moist",
+            "threshold": 264.87998962402344,
+            "left": {
+              "feature": "temperature_c",
+              "threshold": 32.04999923706055,
+              "left": {
+                "feature": "delta_t",
+                "threshold": 3.549999952316284,
+                "left": {
+                  "class": 0
+                },
+                "right": {
+                  "class": 1
+                }
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 0
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "dt_x_moist",
+        "threshold": 187.1199951171875,
+        "left": {
+          "feature": "dt_x_moist",
+          "threshold": 173.44000244140625,
+          "left": {
+            "feature": "ph",
+            "threshold": 4.394999980926514,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 0
+            }
+          },
+          "right": {
+            "feature": "moisture_pct",
+            "threshold": 57.35000038146973,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "class": 0
+            }
+          }
+        },
+        "right": {
+          "feature": "moisture_pct",
+          "threshold": 59.25,
+          "left": {
+            "class": 1
+          },
+          "right": {
+            "feature": "ph_dev",
+            "threshold": 0.3500000089406967,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "dt_x_moist",
+      "threshold": 547.8999938964844,
+      "left": {
+        "feature": "ph_dev",
+        "threshold": 0.39499999582767487,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph_dev",
+          "threshold": 0.4050000011920929,
+          "left": {
+            "feature": "moisture_pct",
+            "threshold": 59.79999923706055,
+            "left": {
+              "feature": "dt_x_moist",
+              "threshold": 255.36500549316406,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "feature": "dt_x_moist",
+              "threshold": 147.875,
+              "left": {
+                "class": 0
+              },
+              "right": {
+                "class": 0
+              }
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "dt_x_moist",
+      "threshold": 547.8999938964844,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.950000047683716,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "moisture_pct",
+          "threshold": 62.60000038146973,
+          "left": {
+            "class": 1
+          },
+          "right": {
+            "feature": "ph_x_moist",
+            "threshold": 298.21649169921875,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 4.390000104904175,
+      "left": {
+        "class": 0
+      },
+      "right": {
+        "feature": "ph_dev",
+        "threshold": 1.449999988079071,
+        "left": {
+          "feature": "moisture_pct",
+          "threshold": 60.60000038146973,
+          "left": {
+            "feature": "ph",
+            "threshold": 4.4049999713897705,
+            "left": {
+              "feature": "dt_x_moist",
+              "threshold": 238.97000122070312,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "feature": "dt_x_moist",
+            "threshold": 209.05500030517578,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 358.1630096435547,
+      "left": {
+        "feature": "dt_x_moist",
+        "threshold": 191.0999984741211,
+        "left": {
+          "feature": "ph",
+          "threshold": 4.515000104904175,
+          "left": {
+            "feature": "ph_x_moist",
+            "threshold": 215.7405014038086,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 0
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        },
+        "right": {
+          "feature": "ph",
+          "threshold": 4.3450000286102295,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_dev",
+      "threshold": 1.449999988079071,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.390000104904175,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "dt_x_moist",
+          "threshold": 159.72999572753906,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "feature": "ph_dev",
+            "threshold": 0.4050000011920929,
+            "left": {
+              "feature": "moisture_pct",
+              "threshold": 58.29999923706055,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "delta_t",
+      "threshold": 3.899999976158142,
+      "left": {
+        "class": 0
+      },
+      "right": {
+        "feature": "delta_t",
+        "threshold": 9.099999904632568,
+        "left": {
+          "feature": "ph",
+          "threshold": 5.450000047683716,
+          "left": {
+            "feature": "ph_dev",
+            "threshold": 0.32999999821186066,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "class": 2
+          }
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 345.68499755859375,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.950000047683716,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "dt_x_moist",
+          "threshold": 280.4449920654297,
+          "left": {
+            "feature": "moisture_pct",
+            "threshold": 59.45000076293945,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "feature": "ph",
+              "threshold": 4.125,
+              "left": {
+                "class": 0
+              },
+              "right": {
+                "class": 0
+              }
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 355.83399963378906,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.950000047683716,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "delta_t",
+          "threshold": 4.6499998569488525,
+          "left": {
+            "feature": "moisture_pct",
+            "threshold": 59.89999961853027,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "delta_t",
+      "threshold": 3.950000047683716,
+      "left": {
+        "class": 0
+      },
+      "right": {
+        "feature": "ph_dev",
+        "threshold": 1.449999988079071,
+        "left": {
+          "feature": "ph",
+          "threshold": 4.4049999713897705,
+          "left": {
+            "feature": "ambient_temp_c",
+            "threshold": 29.5,
+            "left": {
+              "feature": "moist_dev",
+              "threshold": 3.8500001430511475,
+              "left": {
+                "class": 0
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.394999980926514,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "moisture_pct",
+          "threshold": 59.849998474121094,
+          "left": {
+            "class": 1
+          },
+          "right": {
+            "feature": "dt_x_moist",
+            "threshold": 225.61000061035156,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_dev",
+      "threshold": 1.449999988079071,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.390000104904175,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "delta_t",
+          "threshold": 3.399999976158142,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "delta_t",
+      "threshold": 3.950000047683716,
+      "left": {
+        "class": 0
+      },
+      "right": {
+        "feature": "ph_x_moist",
+        "threshold": 357.8199920654297,
+        "left": {
+          "feature": "dt_x_moist",
+          "threshold": 278.19000244140625,
+          "left": {
+            "feature": "ph_x_moist",
+            "threshold": 267.05999755859375,
+            "left": {
+              "feature": "moisture_pct",
+              "threshold": 57.35000038146973,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 0
+              }
+            },
+            "right": {
+              "feature": "ph_x_moist",
+              "threshold": 273.3320007324219,
+              "left": {
+                "class": 0
+              },
+              "right": {
+                "class": 1
+              }
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "moisture_pct",
+      "threshold": 68.1500015258789,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.384999990463257,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "dt_x_moist",
+          "threshold": 583.7300109863281,
+          "left": {
+            "feature": "delta_t",
+            "threshold": 3.350000023841858,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "class": 2
+          }
+        }
+      },
+      "right": {
+        "feature": "dt_x_moist",
+        "threshold": 592.5749816894531,
+        "left": {
+          "class": 2
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "ph_dev",
+      "threshold": 1.449999988079071,
+      "left": {
+        "feature": "temperature_c",
+        "threshold": 32.35000038146973,
+        "left": {
+          "feature": "delta_t",
+          "threshold": 3.950000047683716,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "feature": "delta_t",
+            "threshold": 4.25,
+            "left": {
+              "feature": "ph",
+              "threshold": 4.565000057220459,
+              "left": {
+                "class": 0
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        },
+        "right": {
+          "feature": "ph",
+          "threshold": 4.394999980926514,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "feature": "moisture_pct",
+            "threshold": 62.25,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "delta_t",
+      "threshold": 3.899999976158142,
+      "left": {
+        "class": 0
+      },
+      "right": {
+        "feature": "ph_dev",
+        "threshold": 1.449999988079071,
+        "left": {
+          "feature": "moisture_pct",
+          "threshold": 62.25,
+          "left": {
+            "class": 1
+          },
+          "right": {
+            "feature": "delta_t",
+            "threshold": 5.200000047683716,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "dt_x_moist",
+      "threshold": 549.8999938964844,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.950000047683716,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "delta_t",
+          "threshold": 4.950000047683716,
+          "left": {
+            "feature": "ph_dev",
+            "threshold": 0.32999999821186066,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_dev",
+      "threshold": 1.449999988079071,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.950000047683716,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph_dev",
+          "threshold": 0.32999999821186066,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 355.83399963378906,
+      "left": {
+        "feature": "ph_dev",
+        "threshold": 0.39499999582767487,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "delta_t",
+          "threshold": 3.399999976158142,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.950000047683716,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph",
+          "threshold": 4.259999990463257,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "dt_x_moist",
+      "threshold": 547.8999938964844,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.950000047683716,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph",
+          "threshold": 4.330000162124634,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 357.8199920654297,
+      "left": {
+        "feature": "ph_dev",
+        "threshold": 0.39499999582767487,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "dt_x_moist",
+          "threshold": 153.4749984741211,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "feature": "delta_t",
+            "threshold": 4.099999904632568,
+            "left": {
+              "feature": "ph_dev",
+              "threshold": 0.7050000131130219,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.950000047683716,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "temperature_c",
+          "threshold": 26.25,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "feature": "ph",
+            "threshold": 4.4100000858306885,
+            "left": {
+              "feature": "delta_t",
+              "threshold": 4.299999952316284,
+              "left": {
+                "class": 0
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 358.1630096435547,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.394999980926514,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "dt_x_moist",
+          "threshold": 159.72999572753906,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "feature": "ph",
+            "threshold": 4.4049999713897705,
+            "left": {
+              "feature": "delta_t",
+              "threshold": 4.450000047683716,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "moisture_pct",
+      "threshold": 67.75,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.394999980926514,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "dt_x_moist",
+          "threshold": 579.2300109863281,
+          "left": {
+            "feature": "ph",
+            "threshold": 4.4049999713897705,
+            "left": {
+              "feature": "temperature_c",
+              "threshold": 31.050000190734863,
+              "left": {
+                "feature": "ph_x_moist",
+                "threshold": 262.02000427246094,
+                "left": {
+                  "class": 1
+                },
+                "right": {
+                  "class": 0
+                }
+              },
+              "right": {
+                "feature": "dt_x_moist",
+                "threshold": 255.11500549316406,
+                "left": {
+                  "class": 1
+                },
+                "right": {
+                  "class": 1
+                }
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "class": 2
+          }
+        }
+      },
+      "right": {
+        "feature": "ph_x_moist",
+        "threshold": 393.81700134277344,
+        "left": {
+          "class": 2
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "ph_dev",
+      "threshold": 1.449999988079071,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.384999990463257,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "dt_x_moist",
+          "threshold": 177.94000244140625,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "delta_t",
+        "threshold": 3.950000047683716,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph",
+          "threshold": 4.4049999713897705,
+          "left": {
+            "feature": "moisture_pct",
+            "threshold": 59.79999923706055,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "class": 0
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "dt_x_moist",
+      "threshold": 547.8999938964844,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.394999980926514,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "dt_x_moist",
+          "threshold": 175.63999938964844,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "dt_x_moist",
+        "threshold": 198.5999984741211,
+        "left": {
+          "feature": "moist_dev",
+          "threshold": 9.400000095367432,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        },
+        "right": {
+          "feature": "ph_dev",
+          "threshold": 0.3500000089406967,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 358.1630096435547,
+      "left": {
+        "feature": "dt_x_moist",
+        "threshold": 188.9949951171875,
+        "left": {
+          "feature": "ph",
+          "threshold": 4.384999990463257,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "feature": "moisture_pct",
+            "threshold": 57.64999961853027,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "class": 0
+            }
+          }
+        },
+        "right": {
+          "feature": "delta_t",
+          "threshold": 3.899999976158142,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "feature": "moisture_pct",
+            "threshold": 61.35000038146973,
+            "left": {
+              "feature": "moist_dev",
+              "threshold": 0.6500000059604645,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "feature": "dt_x_moist",
+              "threshold": 292.27500915527344,
+              "left": {
+                "class": 0
+              },
+              "right": {
+                "class": 1
+              }
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "delta_t",
+      "threshold": 3.950000047683716,
+      "left": {
+        "class": 0
+      },
+      "right": {
+        "feature": "dt_x_moist",
+        "threshold": 547.8999938964844,
+        "left": {
+          "feature": "ph_dev",
+          "threshold": 0.4050000011920929,
+          "left": {
+            "feature": "delta_t",
+            "threshold": 4.3500001430511475,
+            "left": {
+              "class": 1
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "ph_x_moist",
+      "threshold": 360.1490020751953,
+      "left": {
+        "feature": "dt_x_moist",
+        "threshold": 198.5999984741211,
+        "left": {
+          "feature": "ph",
+          "threshold": 4.5,
+          "left": {
+            "feature": "moisture_pct",
+            "threshold": 56.10000038146973,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 0
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        },
+        "right": {
+          "feature": "delta_t",
+          "threshold": 3.950000047683716,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "feature": "ph",
+            "threshold": 4.315000057220459,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.394999980926514,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "dt_x_moist",
+          "threshold": 175.63999938964844,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "moisture_pct",
+      "threshold": 68.1500015258789,
+      "left": {
+        "feature": "ph_dev",
+        "threshold": 0.39499999582767487,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph_x_moist",
+          "threshold": 355.83399963378906,
+          "left": {
+            "feature": "delta_t",
+            "threshold": 3.200000047683716,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "class": 2
+          }
+        }
+      },
+      "right": {
+        "feature": "ph_dev",
+        "threshold": 1.5049999952316284,
+        "left": {
+          "feature": "temperature_c",
+          "threshold": 39.69999885559082,
+          "left": {
+            "class": 2
+          },
+          "right": {
+            "class": 2
+          }
+        },
+        "right": {
+          "class": 2
+        }
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.394999980926514,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "dt_x_moist",
+          "threshold": 186.5999984741211,
+          "left": {
+            "class": 1
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "dt_x_moist",
+      "threshold": 547.8999938964844,
+      "left": {
+        "feature": "ph_dev",
+        "threshold": 0.39499999582767487,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "delta_t",
+          "threshold": 3.399999976158142,
+          "left": {
+            "class": 0
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "dt_x_moist",
+      "threshold": 547.8999938964844,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.390000104904175,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "moist_dev",
+          "threshold": 3.850000023841858,
+          "left": {
+            "feature": "dt_x_moist",
+            "threshold": 225.79999542236328,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.390000104904175,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "temperature_c",
+          "threshold": 31.050000190734863,
+          "left": {
+            "feature": "delta_t",
+            "threshold": 3.399999976158142,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "feature": "ph_dev",
+            "threshold": 0.4050000011920929,
+            "left": {
+              "feature": "moist_dev",
+              "threshold": 4.3500001430511475,
+              "left": {
+                "class": 1
+              },
+              "right": {
+                "class": 1
+              }
+            },
+            "right": {
+              "class": 1
+            }
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    },
+    {
+      "feature": "ph",
+      "threshold": 5.450000047683716,
+      "left": {
+        "feature": "ph",
+        "threshold": 4.394999980926514,
+        "left": {
+          "class": 0
+        },
+        "right": {
+          "feature": "ph",
+          "threshold": 4.4049999713897705,
+          "left": {
+            "feature": "delta_t",
+            "threshold": 4.049999952316284,
+            "left": {
+              "class": 0
+            },
+            "right": {
+              "class": 1
+            }
+          },
+          "right": {
+            "class": 1
+          }
+        }
+      },
+      "right": {
+        "class": 2
+      }
+    }
+  ]
+}
