@@ -56,10 +56,19 @@ export default function CameraScreen() {
     "Lucerne / Alfalfa"
   ];
 
+  const photoStages = [
+    "Surface crust (top 15 cm)",
+    "Working face (middle bunker)",
+    "Lower representative region"
+  ];
+
+  const currentStageText =
+    scanImages.length < 3 ? photoStages[scanImages.length] : "All 3 regions captured";
+
   // Capture or simulate camera snap
   const handleCapture = () => {
     if (scanImages.length >= 3) {
-      Alert.alert("Stack Complete", "You have already captured the maximum 3 photos.");
+      Alert.alert("Stack Complete", "You have already captured the recommended 3-photo multi-region stack.");
       return;
     }
 
@@ -68,7 +77,10 @@ export default function CameraScreen() {
     setCurrentQuality(report);
 
     if (!report.isAcceptable) {
-      Alert.alert("Image Quality Rejected", report.guidanceMessage);
+      Alert.alert(
+        "Image Quality Insufficient",
+        `${report.guidanceMessage}\n\nInstructions:\n• ${report.instructions.join("\n• ")}`
+      );
       return;
     }
 
@@ -105,6 +117,14 @@ export default function CameraScreen() {
       <Header title="GUIDED CAMERA" showBack={true} />
 
       <View style={styles.container}>
+        {/* 3-Photo Multi-Angle Capture Target Guidance */}
+        <View style={styles.regionHeaderBanner}>
+          <Text style={styles.regionStepBadge}>
+            📸 PHOTO {Math.min(3, scanImages.length + 1)} OF 3 TARGET:
+          </Text>
+          <Text style={styles.regionTargetText}>{currentStageText}</Text>
+        </View>
+
         {/* Camera Viewfinder View */}
         <View style={styles.viewfinder}>
           {/* Simulated Silage Texture Background */}
@@ -239,8 +259,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1
   },
+  regionHeaderBanner: {
+    backgroundColor: "rgba(15, 23, 42, 0.95)",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(56, 189, 248, 0.25)"
+  },
+  regionStepBadge: {
+    color: "#38BDF8",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 0.5
+  },
+  regionTargetText: {
+    color: "#F8FAFC",
+    fontSize: 12,
+    fontWeight: "700"
+  },
   viewfinder: {
-    height: 340,
+    height: 320,
     backgroundColor: "#020617",
     position: "relative",
     overflow: "hidden"

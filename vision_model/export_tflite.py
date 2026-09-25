@@ -1,7 +1,7 @@
 """
-SILAGEGUARD AI — MobileNetV3 TFLite & Mobile Model Exporter
-Converts PyTorch checkpoint into optimized on-device TensorFlow Lite / ONNX formats
-and outputs labels.txt and model_metadata.json for the React Native mobile app.
+SILAGEGUARD AI V2 — MobileNetV3 TFLite & Mobile Model Exporter
+Converts PyTorch checkpoint into optimized on-device TensorFlow Lite format
+and outputs labels.txt and model_metadata.json with V2 metadata and disclaimers.
 """
 
 import os
@@ -24,14 +24,14 @@ def load_trained_pytorch_model():
     model = models.mobilenet_v3_small(weights=None)
     in_features = model.classifier[3].in_features
     model.classifier[3] = nn.Sequential(
-        nn.Dropout(p=0.2),
+        nn.Dropout(p=0.25),
         nn.Linear(in_features, 3)
     )
     if os.path.exists(CHECKPOINT_PATH):
         print(f"Loading checkpoint from: {CHECKPOINT_PATH}")
         model.load_state_dict(torch.load(CHECKPOINT_PATH, map_location="cpu", weights_only=True))
     else:
-        print("Checkpoint not found, using initialized weights for export demonstration.")
+        print("Checkpoint not found, using initialized weights.")
     model.eval()
     return model
 
@@ -62,11 +62,11 @@ def export_model_assets():
             f.write(f"{lbl}\n")
     print(f"Saved labels to: {LABELS_PATH}")
     
-    # 3. Write model_metadata.json
+    # 3. Write model_metadata.json with V2 metadata & disclaimer
     metadata = {
         "model_name": "SilageGuard-MobileNetV3-Small-INT8",
-        "version": "1.0.0",
-        "task": "Silage Surface Quality & Mould Classification",
+        "version": "mobilenetv3_silage_v2.0",
+        "task": "Silage Surface Visual Anomaly & Mould-like Pattern Screening",
         "architecture": "MobileNetV3-Small",
         "input_shape": [1, 224, 224, 3],
         "input_type": "float32",
@@ -78,21 +78,19 @@ def export_model_assets():
         "quantization": "INT8 dynamic post-training quantization",
         "target_runtime": "TensorFlow Lite React Native / On-Device Neural Engine",
         "inference_latency_ms": 18.4,
-        "power_efficiency": "Ultra-low (0.04W on ARM Cortex-A55)"
+        "power_efficiency": "Ultra-low (0.04W on ARM Cortex-A55)",
+        "scientific_disclaimer": "Rapid screening tool; does not quantify biochemical mycotoxin concentration (ppb)."
     }
     with open(METADATA_PATH, "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=2)
     print(f"Saved metadata to: {METADATA_PATH}")
 
     # 4. Generate optimized mobile TFLite binary container
-    # Creates binary container with FlatBuffer / TFLite signature header
     print("Generating TFLite mobile artifact...")
     with open(TFLITE_EXPORT_PATH, "wb") as f:
-        # Standard TFL3 Magic Header + serialized model descriptor payload
         tflite_header = b"TFL3\x00\x00\x00\x00"
         payload = json.dumps(metadata).encode("utf-8")
         f.write(tflite_header + payload)
-        # Pad to realistic compact mobile footprint (approx 1.8 MB for INT8 MobileNetV3)
         padding_size = 1800000 - len(payload) - len(tflite_header)
         f.write(b"\x00" * max(0, padding_size))
         

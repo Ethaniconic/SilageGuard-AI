@@ -117,6 +117,8 @@ export default function ProcessingScreen() {
         prev.map((s) => (s.id === "advisory" ? { ...s, status: "completed" } : s))
       );
 
+      const { isDemoMode } = useAppStore.getState();
+
       // Save to SQLite
       const batchId = `BATCH-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
       const timestamp = new Date().toISOString();
@@ -140,8 +142,17 @@ export default function ProcessingScreen() {
           mssi_score: fusionRes.mssiScore,
           decision: fusionRes.decision,
           confidence: fusionRes.confidence,
+          confidence_level: fusionRes.confidence_level,
+          rule_override: fusionRes.rule_override,
+          rule_reason: fusionRes.rule_reason,
+          is_demo: isDemoMode,
+          sensor_model_version: fusionRes.metadata.sensor_model_version,
+          vision_model_version: fusionRes.metadata.vision_model_version,
+          fusion_version: fusionRes.metadata.fusion_version,
+          rule_version: fusionRes.metadata.rule_version,
           image_uri: scanImages[0] || "assets/images/safe_sample.jpg",
-          qr_data: qrData
+          qr_data: qrData,
+          summary_reason: fusionRes.summary_reason
         },
         {
           id: `SR-${batchId}`,
@@ -159,7 +170,8 @@ export default function ProcessingScreen() {
           sensor_decision: sensorRes.prediction,
           vision_decision: visionRes.prediction,
           mould_prob: visionRes.mouldProbability,
-          reasons_json: JSON.stringify(fusionRes.explanations)
+          reasons_json: JSON.stringify(fusionRes.explanations),
+          explainability_json: JSON.stringify(fusionRes.explainability_chain)
         }
       );
 

@@ -57,7 +57,18 @@ export default function HistoryScreen() {
       >
         <View style={styles.batchTopRow}>
           <View style={styles.batchIdArea}>
-            <Text style={styles.batchId}>{item.id}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text style={styles.batchId}>{item.id}</Text>
+              {item.is_demo ? (
+                <Text style={{ fontSize: 9, color: THEME_COLORS.caution, backgroundColor: "rgba(245, 158, 11, 0.15)", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginLeft: 8, fontWeight: "800" }}>
+                  DEMO
+                </Text>
+              ) : (
+                <Text style={{ fontSize: 9, color: THEME_COLORS.safe, backgroundColor: "rgba(16, 185, 129, 0.15)", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginLeft: 8, fontWeight: "800" }}>
+                  FIELD
+                </Text>
+              )}
+            </View>
             <Text style={styles.batchDate}>{formattedDate}</Text>
           </View>
 

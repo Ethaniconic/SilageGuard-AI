@@ -59,8 +59,16 @@ export const batchRepository = {
     return { batch, sensor, prediction };
   },
 
-  async filterBatches(searchQuery = "", filterDecision: "ALL" | "SAFE" | "CAUTION" | "UNSAFE" = "ALL"): Promise<BatchRecord[]> {
+  async filterBatches(
+    searchQuery = "",
+    filterDecision: "ALL" | "SAFE" | "CAUTION" | "UNSAFE" = "ALL",
+    excludeDemo = false
+  ): Promise<BatchRecord[]> {
     let list = [...dbInstance.batches];
+
+    if (excludeDemo) {
+      list = list.filter((b) => !b.is_demo);
+    }
 
     if (filterDecision !== "ALL") {
       list = list.filter((b) => b.decision.toUpperCase() === filterDecision);
@@ -79,8 +87,11 @@ export const batchRepository = {
     return list;
   },
 
-  async getSummaryStats() {
-    const batches = dbInstance.batches;
+  async getSummaryStats(excludeDemo = false) {
+    let batches = dbInstance.batches;
+    if (excludeDemo) {
+      batches = batches.filter((b) => !b.is_demo);
+    }
     const total = batches.length;
     const safeCount = batches.filter((b) => b.decision === "SAFE").length;
     const cautionCount = batches.filter((b) => b.decision === "CAUTION").length;
@@ -102,5 +113,19 @@ export const batchRepository = {
 
   async setSetting(key: string, value: string): Promise<void> {
     dbInstance.settings[key] = value;
+  },
+
+  async getPhCalibration(): Promise<{ slope: number; offset: number }> {
+    const slopeStr = await this.getSetting("ph_slope", "-5.70");
+    const offsetStr = await this.getSetting("ph_offset", "0.00");
+    return {
+      slope: parseFloat(slopeStr) || -5.70,
+      offset: parseFloat(offsetStr) || 0.00
+    };
+  },
+
+  async savePhCalibration(slope: number, offset: number): Promise<void> {
+    await this.setSetting("ph_slope", slope.toFixed(4));
+    await this.setSetting("ph_offset", offset.toFixed(4));
   }
 };

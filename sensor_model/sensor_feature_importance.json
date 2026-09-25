@@ -1,0 +1,10 @@
+{
+  "temp_rise": 0.246,
+  "ph_deviation": 0.2213,
+  "ph": 0.2107,
+  "delta_temp": 0.1572,
+  "moisture": 0.0773,
+  "moisture_deviation": 0.0446,
+  "temperature": 0.0354,
+  "ambient": 0.0075
+}

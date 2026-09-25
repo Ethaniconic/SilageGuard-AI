@@ -1,158 +1,285 @@
 /**
- * SILAGEGUARD AI — Multimodal Sensor-Vision Fusion Engine
- * Implements SIH26111 Edge Multimodal Fusion Architecture:
+ * SILAGEGUARD AI V2 — Multimodal Evidence Fusion Engine
  * 
- * Formula:
- *   MSSI (Multimodal Silage Safety Index) = 0.55 * SensorSafetyScore + 0.45 * VisionSafetyScore
+ * Design Architecture:
+ *   1. Calculate Sensor Evidence Score (0–100) & Model Confidence
+ *   2. Calculate Vision Evidence Score (0–100) & Model Confidence
+ *   3. Combine into continuous Multimodal Screening Score (MSSI) using prototype weights
+ *   4. Pass through decoupled Safety Rule Engine
+ *   5. Build transparent Explainability Chain ("WHY THIS RESULT?")
  * 
- * Strict Agronomic Rule Overrides:
- *   1. pH > 6.0 => UNSAFE (Severe Butyric Clostridial Spoilage Override)
- *   2. Temp rise > 10.0°C => UNSAFE (Aerobic Thermal Runaway Override)
- *   3. Visible mould probability > 0.60 => UNSAFE (Mycotoxin Contamination Override)
- *   4. Optimal fermentation (pH 3.8-4.2, Moisture 60-68%, Temp Rise < 3.0°C, Mould < 0.15) => SAFE
+ * ⚠️ SCIENTIFIC NOTE:
+ * The default weights (Sensor: 0.55, Vision: 0.45) are PROTOTYPE DESIGN PARAMETERS,
+ * not clinically or agronomically established coefficients.
  */
 
 import { SensorInferenceResult } from "../../ai/sensorInference";
 import { VisionInferenceResult } from "../../ai/visionInference";
-import { AGRONOMIC_THRESHOLDS } from "../../utils/constants";
+import { evaluateSafetyRules, RuleEvaluationResult } from "./safetyRuleEngine";
 
-export interface FusionInput {
+// Configurable prototype fusion weights
+export const FUSION_CONFIG = {
+  FUSION_SENSOR_WEIGHT: 0.55,
+  FUSION_VISION_WEIGHT: 0.45,
+  VERSION: "mssi_v2.0",
+  WEIGHT_DISCLAIMER: "Prototype heuristic weights for field triage screening."
+};
+
+export type SilageVerdict = "SAFE TO FEED" | "FEED WITH CAUTION" | "UNSAFE" | "DO NOT FEED";
+export type SilageDecision = "SAFE" | "CAUTION" | "UNSAFE";
+
+export interface ExplainabilityPoint {
+  parameter: string;
+  measuredValue: string;
+  status: "NORMAL" | "BORDERLINE" | "ALERT";
+  assessment: string;
+}
+
+export interface MultimodalFusionOutput {
+  sensor_score: number;             // 0 to 100
+  vision_score: number;             // 0 to 100
+  fusion_score: number;             // 0 to 100 (Continuous MSSI)
+  sensor_confidence: number;        // 0 to 100%
+  vision_confidence: number;        // 0 to 100%
+  final_confidence: number;         // 0 to 100%
+  confidence_level: "HIGH" | "MODERATE" | "LOW_UNCERTAIN";
+  rule_override: boolean;
+  rule_id: string | null;
+  rule_reason: string | null;
+  rule_designation: string | null;
+  final_verdict: SilageVerdict;
+  explainability_chain: ExplainabilityPoint[];
+  summary_reason: string;
+  metadata: {
+    sensor_model_version: string;
+    vision_model_version: string;
+    fusion_version: string;
+    rule_version: string;
+  };
+
+  // Backward-compatible properties for UI components
+  decision: SilageDecision;
+  mssiScore: number;
+  confidence: number;
+  explanations: string[];
+  breakdown: {
+    sensorSafetyScore: number;
+    visionSafetyScore: number;
+    mouldProbability: number;
+  };
+}
+
+export type FusionResult = MultimodalFusionOutput;
+
+export interface FusionInputV2 {
   sensorResult: SensorInferenceResult;
   visionResult: VisionInferenceResult;
 }
 
-export type SilageDecision = "SAFE" | "CAUTION" | "UNSAFE";
-
-export interface FusionResult {
-  mssiScore: number;                // 0 to 100
-  decision: SilageDecision;
-  confidence: number;              // 0 to 100%
-  ruleTriggered: string | null;
-  explanations: string[];
-  breakdown: {
-    sensorSafetyScore: number;      // 0 to 100
-    visionSafetyScore: number;      // 0 to 100
-    sensorWeight: number;           // 0.55
-    visionWeight: number;           // 0.45
-    mouldProbability: number;
-    ph: number;
-    moisture: number;
-    tempRise: number;
-  };
-}
-
-export function computeMultimodalFusion(input: FusionInput): FusionResult {
+export function computeMultimodalFusion(input: FusionInputV2): MultimodalFusionOutput {
   const { sensorResult, visionResult } = input;
-  const { ph, moisture, temp_rise } = sensorResult.features;
+  const { ph, moisture, temp_rise, temperature, ambient } = sensorResult.features;
   const mouldProb = visionResult.mouldProbability;
 
-  // 1. Calculate continuous safety scores (0 to 100):
-  // Safe probability counts for 100, Caution counts for 50, Unsafe counts for 0
-  const sensorSafetyScore = 
-    sensorResult.probabilities.Safe * 100 + 
-    sensorResult.probabilities.Caution * 50;
-
-  const visionSafetyScore = 
-    visionResult.probabilities.Safe * 100 + 
-    visionResult.probabilities.Caution * 50;
-
-  // 2. Base Multimodal Fusion Formula
-  const sensorWeight = 0.55;
-  const visionWeight = 0.45;
-  let rawMssi = sensorWeight * sensorSafetyScore + visionWeight * visionSafetyScore;
-  rawMssi = Math.min(100, Math.max(0, Math.round(rawMssi)));
-
-  // Base classification from continuous MSSI
-  let decision: SilageDecision = "SAFE";
-  if (rawMssi < 45) {
-    decision = "UNSAFE";
-  } else if (rawMssi < 75) {
-    decision = "CAUTION";
-  } else {
-    decision = "SAFE";
-  }
-
-  let confidence = Math.round(
-    (sensorResult.confidence * sensorWeight + visionResult.confidence * visionWeight) * 100
+  // 1. Calculate Continuous Evidence Scores (0–100)
+  // Safe probability = 100 points, Caution = 50 points, Unsafe = 0 points
+  const sensorScore = Math.round(
+    sensorResult.probabilities.Safe * 100 + sensorResult.probabilities.Caution * 50
+  );
+  const visionScore = Math.round(
+    visionResult.probabilities.Safe * 100 + visionResult.probabilities.Caution * 50
   );
 
-  const explanations: string[] = [];
-  let ruleTriggered: string | null = null;
+  // 2. Continuous Weighted Fusion
+  const sensorWeight = FUSION_CONFIG.FUSION_SENSOR_WEIGHT;
+  const visionWeight = FUSION_CONFIG.FUSION_VISION_WEIGHT;
+  const rawFusionScore = Math.round(sensorWeight * sensorScore + visionWeight * visionScore);
+  const fusionScore = Math.min(100, Math.max(0, rawFusionScore));
 
-  // 3. HARD RULE OVERRIDES (Biological & Agronomic Safety Invariants)
-  
-  // Rule 1: High pH (Alkalization caused by Clostridia & Proteolysis)
-  if (ph > AGRONOMIC_THRESHOLDS.UNSAFE.PH_OVERRIDE) {
-    decision = "UNSAFE";
-    rawMssi = Math.min(rawMssi, 20);
-    confidence = Math.max(confidence, 96);
-    ruleTriggered = "RULE_PH_CRITICAL";
-    explanations.push(`Critical pH spike (${ph.toFixed(2)} > 6.0) indicates severe Clostridial fermentation and ammonia release.`);
+  const sensorConfidence = Math.round(sensorResult.confidence * 100);
+  const visionConfidence = Math.round(visionResult.confidence * 100);
+  const finalConfidence = Math.round(sensorWeight * sensorConfidence + visionWeight * visionConfidence);
+
+  let confidenceLevel: "HIGH" | "MODERATE" | "LOW_UNCERTAIN" = "HIGH";
+  if (finalConfidence < 65) {
+    confidenceLevel = "LOW_UNCERTAIN";
+  } else if (finalConfidence < 85) {
+    confidenceLevel = "MODERATE";
   }
 
-  // Rule 2: Heat Rise (Active yeast/mold aerobic respiration)
-  if (temp_rise > AGRONOMIC_THRESHOLDS.UNSAFE.TEMP_RISE_OVERRIDE) {
-    decision = "UNSAFE";
-    rawMssi = Math.min(rawMssi, 25);
-    confidence = Math.max(confidence, 94);
-    ruleTriggered = "RULE_TEMP_RISE_CRITICAL";
-    explanations.push(`Intense aerobic heat rise (+${temp_rise.toFixed(1)}°C above ambient) detected. Bunker air intrusion is decomposing sugars.`);
+  // Base verdict from continuous fusion score
+  let baseVerdict: SilageVerdict = "SAFE TO FEED";
+  if (fusionScore < 40) {
+    baseVerdict = "UNSAFE";
+  } else if (fusionScore < 72) {
+    baseVerdict = "FEED WITH CAUTION";
+  } else {
+    baseVerdict = "SAFE TO FEED";
   }
 
-  // Rule 3: Visual Fungal Hyphae / Mould detection
-  if (mouldProb > AGRONOMIC_THRESHOLDS.UNSAFE.MOULD_PROB_OVERRIDE) {
-    decision = "UNSAFE";
-    rawMssi = Math.min(rawMssi, 15);
-    confidence = Math.max(confidence, 95);
-    ruleTriggered = "RULE_MOULD_DETECTED";
-    explanations.push(`High visual fungal spore density (${(mouldProb * 100).toFixed(0)}%). Severe danger of mycotoxin poisoning (Aflatoxin / DON).`);
+  // 3. Decoupled Safety Rule Engine Check
+  const ruleResult: RuleEvaluationResult = evaluateSafetyRules({
+    ph,
+    moisture,
+    tempRise: temp_rise,
+    mouldProbability: mouldProb
+  });
+
+  let finalVerdict = baseVerdict;
+  let ruleOverride = false;
+  let ruleId: string | null = null;
+  let ruleReason: string | null = null;
+  let ruleDesignation: string | null = null;
+
+  if (ruleResult.overrideTriggered && ruleResult.overrideVerdict) {
+    ruleOverride = true;
+    ruleId = ruleResult.triggeredRuleId;
+    ruleReason = ruleResult.ruleReason;
+    ruleDesignation = ruleResult.designation;
+    finalVerdict = ruleResult.overrideVerdict === "UNSAFE" ? "DO NOT FEED" : "SAFE TO FEED";
   }
 
-  // Rule 4: Ideal Fermentation Invariant
-  const isIdealFermentation = 
-    ph >= AGRONOMIC_THRESHOLDS.SAFE.PH_MIN &&
-    ph <= AGRONOMIC_THRESHOLDS.SAFE.PH_MAX &&
-    moisture >= AGRONOMIC_THRESHOLDS.SAFE.MOISTURE_MIN &&
-    moisture <= AGRONOMIC_THRESHOLDS.SAFE.MOISTURE_MAX &&
-    temp_rise < AGRONOMIC_THRESHOLDS.SAFE.TEMP_RISE_MAX &&
-    mouldProb < AGRONOMIC_THRESHOLDS.SAFE.MOULD_PROB_MAX;
+  // 4. Construct Explainability Chain ("WHY THIS RESULT?")
+  const explainabilityChain: ExplainabilityPoint[] = [];
 
-  if (isIdealFermentation) {
-    decision = "SAFE";
-    rawMssi = Math.max(rawMssi, 88);
-    confidence = Math.max(confidence, 92);
-    ruleTriggered = "RULE_IDEAL_FERMENTATION";
-    explanations.push("Perfect lactic acid fermentation profile: optimal pH, safe dry matter, stable ambient equilibrium, and zero visible mycelium.");
+  // (a) pH explanation
+  if (ph > 5.0) {
+    explainabilityChain.push({
+      parameter: "pH Acidity",
+      measuredValue: `${ph.toFixed(2)} pH`,
+      status: "ALERT",
+      assessment: "Significantly elevated above optimal threshold (3.8–4.2); signals clostridial degradation."
+    });
+  } else if (ph > 4.25) {
+    explainabilityChain.push({
+      parameter: "pH Acidity",
+      measuredValue: `${ph.toFixed(2)} pH`,
+      status: "BORDERLINE",
+      assessment: "Slightly elevated; indicates mild buffer neutralization or delayed fermentation."
+    });
+  } else {
+    explainabilityChain.push({
+      parameter: "pH Acidity",
+      measuredValue: `${ph.toFixed(2)} pH`,
+      status: "NORMAL",
+      assessment: "Within optimal lactic acid preservation target (3.8–4.2)."
+    });
   }
 
-  // Additional context explanations if no hard override triggered
-  if (explanations.length === 0) {
-    if (decision === "SAFE") {
-      explanations.push(`Optimal acidity (pH ${ph.toFixed(2)}) and stable temperature preserve high nutritional value.`);
-      explanations.push(`Safe moisture level (${moisture.toFixed(1)}%) ensures anaerobic stability without effluent leaching.`);
-    } else if (decision === "CAUTION") {
-      explanations.push(`Elevated pH (${ph.toFixed(2)}) or moderate moisture deviation (${moisture.toFixed(1)}%) suggests secondary fermentation.`);
-      explanations.push(`Mild heat rise (+${temp_rise.toFixed(1)}°C) indicates early air exposure on bunker face.`);
-    } else {
-      explanations.push(`Combined sensor-vision score indicates unsafe aerobic spoilage and feed degradation.`);
-    }
+  // (b) Temperature rise explanation
+  if (temp_rise > 7.0) {
+    explainabilityChain.push({
+      parameter: "Core Heat Rise (ΔT)",
+      measuredValue: `+${temp_rise.toFixed(1)}°C`,
+      status: "ALERT",
+      assessment: "Severe thermal spike indicates active aerobic yeast and mold respiration."
+    });
+  } else if (temp_rise > 3.0) {
+    explainabilityChain.push({
+      parameter: "Core Heat Rise (ΔT)",
+      measuredValue: `+${temp_rise.toFixed(1)}°C`,
+      status: "BORDERLINE",
+      assessment: "Moderate temperature rise; indicates early oxygen penetration on bunker face."
+    });
+  } else {
+    explainabilityChain.push({
+      parameter: "Core Heat Rise (ΔT)",
+      measuredValue: `+${temp_rise.toFixed(1)}°C`,
+      status: "NORMAL",
+      assessment: "Core temperature is in stable equilibrium with ambient air."
+    });
   }
+
+  // (c) Moisture explanation
+  if (moisture > 72.0) {
+    explainabilityChain.push({
+      parameter: "Estimated Moisture",
+      measuredValue: `${moisture.toFixed(1)}%`,
+      status: "ALERT",
+      assessment: "High moisture content increases effluent leaching and clostridial risk."
+    });
+  } else if (moisture < 55.0) {
+    explainabilityChain.push({
+      parameter: "Estimated Moisture",
+      measuredValue: `${moisture.toFixed(1)}%`,
+      status: "BORDERLINE",
+      assessment: "Low moisture forage is difficult to compact, trapping pockets of oxygen."
+    });
+  } else {
+    explainabilityChain.push({
+      parameter: "Estimated Moisture",
+      measuredValue: `${moisture.toFixed(1)}%`,
+      status: "NORMAL",
+      assessment: "Ideal moisture band for anaerobic pit packing (60–68%)."
+    });
+  }
+
+  // (d) Visual Mould Pattern explanation
+  if (mouldProb > 0.50) {
+    explainabilityChain.push({
+      parameter: "Visual Mould Pattern",
+      measuredValue: `${(mouldProb * 100).toFixed(0)}% signal`,
+      status: "ALERT",
+      assessment: "Visible mycelial patterns or discoloration detected; elevated spoilage risk."
+    });
+  } else if (mouldProb > 0.20) {
+    explainabilityChain.push({
+      parameter: "Visual Mould Pattern",
+      measuredValue: `${(mouldProb * 100).toFixed(0)}% signal`,
+      status: "BORDERLINE",
+      assessment: "Mild surface browning or patchy crust observed; monitor closely."
+    });
+  } else {
+    explainabilityChain.push({
+      parameter: "Visual Mould Pattern",
+      measuredValue: `${(mouldProb * 100).toFixed(0)}% signal`,
+      status: "NORMAL",
+      assessment: "No abnormal mycelium or fungal colonies observed on silage surface."
+    });
+  }
+
+  // Summary reason
+  let summaryReason = "All physical sensors and surface imagery reflect safe, well-compacted lactic preservation.";
+  if (ruleOverride) {
+    summaryReason = `SAFETY OVERRIDE: ${ruleReason}`;
+  } else if (finalVerdict === "FEED WITH CAUTION") {
+    summaryReason = "Secondary aerobic warming or moderate moisture deviation detected. Feed promptly within 6 hours.";
+  } else if (finalVerdict === "UNSAFE" || finalVerdict === "DO NOT FEED") {
+    summaryReason = "Multiple independent indicators suggest elevated spoilage risk. Do not feed suspect forage.";
+  }
+
+  const decisionAlias: SilageDecision =
+    finalVerdict === "SAFE TO FEED" ? "SAFE" : finalVerdict === "FEED WITH CAUTION" ? "CAUTION" : "UNSAFE";
 
   return {
-    mssiScore: rawMssi,
-    decision,
-    confidence,
-    ruleTriggered,
-    explanations,
+    sensor_score: sensorScore,
+    vision_score: visionScore,
+    fusion_score: fusionScore,
+    sensor_confidence: sensorConfidence,
+    vision_confidence: visionConfidence,
+    final_confidence: finalConfidence,
+    confidence_level: confidenceLevel,
+    rule_override: ruleOverride,
+    rule_id: ruleId,
+    rule_reason: ruleReason,
+    rule_designation: ruleDesignation,
+    final_verdict: finalVerdict,
+    explainability_chain: explainabilityChain,
+    summary_reason: summaryReason,
+    metadata: {
+      sensor_model_version: "sensor_rf_v2.0",
+      vision_model_version: "mobilenetv3_silage_v2.0",
+      fusion_version: FUSION_CONFIG.VERSION,
+      rule_version: "rules_v2.0"
+    },
+    decision: decisionAlias,
+    mssiScore: fusionScore,
+    confidence: finalConfidence,
+    explanations: explainabilityChain.map((p) => `${p.parameter}: ${p.assessment}`),
     breakdown: {
-      sensorSafetyScore: Math.round(sensorSafetyScore),
-      visionSafetyScore: Math.round(visionSafetyScore),
-      sensorWeight,
-      visionWeight,
-      mouldProbability: mouldProb,
-      ph,
-      moisture,
-      tempRise: temp_rise
+      sensorSafetyScore: sensorScore,
+      visionSafetyScore: visionScore,
+      mouldProbability: mouldProb
     }
   };
 }

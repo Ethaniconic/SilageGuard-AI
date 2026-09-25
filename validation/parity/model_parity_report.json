@@ -1,0 +1,153 @@
+{
+  "report_name": "Sensor Model Python-to-Mobile Parity Report",
+  "timestamp": "2026-09-25",
+  "model_version": "sensor_rf_v2.0",
+  "total_cases_tested": 8,
+  "all_passed": true,
+  "cases": [
+    {
+      "sample_id": "TEST-PARITY-01",
+      "inputs": {
+        "ph": 3.9,
+        "moisture": 63.5,
+        "temp": 24.2,
+        "ambient": 23.0
+      },
+      "python_output": "Safe",
+      "mobile_output": "Safe",
+      "probabilities": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "absolute_difference": 0.0,
+      "pass": true
+    },
+    {
+      "sample_id": "TEST-PARITY-02",
+      "inputs": {
+        "ph": 4.1,
+        "moisture": 66.0,
+        "temp": 25.5,
+        "ambient": 24.0
+      },
+      "python_output": "Safe",
+      "mobile_output": "Safe",
+      "probabilities": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "absolute_difference": 0.0,
+      "pass": true
+    },
+    {
+      "sample_id": "TEST-PARITY-03",
+      "inputs": {
+        "ph": 4.45,
+        "moisture": 69.2,
+        "temp": 30.5,
+        "ambient": 25.0
+      },
+      "python_output": "Caution",
+      "mobile_output": "Caution",
+      "probabilities": [
+        0.0003,
+        0.9972,
+        0.0025
+      ],
+      "absolute_difference": 0.0,
+      "pass": true
+    },
+    {
+      "sample_id": "TEST-PARITY-04",
+      "inputs": {
+        "ph": 4.65,
+        "moisture": 58.0,
+        "temp": 32.0,
+        "ambient": 26.0
+      },
+      "python_output": "Caution",
+      "mobile_output": "Caution",
+      "probabilities": [
+        0.0,
+        0.9888,
+        0.0112
+      ],
+      "absolute_difference": 0.0,
+      "pass": true
+    },
+    {
+      "sample_id": "TEST-PARITY-05",
+      "inputs": {
+        "ph": 5.4,
+        "moisture": 76.0,
+        "temp": 39.5,
+        "ambient": 27.0
+      },
+      "python_output": "Unsafe",
+      "mobile_output": "Unsafe",
+      "probabilities": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "absolute_difference": 0.0,
+      "pass": true
+    },
+    {
+      "sample_id": "TEST-PARITY-06",
+      "inputs": {
+        "ph": 6.8,
+        "moisture": 80.5,
+        "temp": 45.0,
+        "ambient": 28.0
+      },
+      "python_output": "Unsafe",
+      "mobile_output": "Unsafe",
+      "probabilities": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "absolute_difference": 0.0,
+      "pass": true
+    },
+    {
+      "sample_id": "TEST-PARITY-07",
+      "inputs": {
+        "ph": 4.28,
+        "moisture": 67.5,
+        "temp": 28.0,
+        "ambient": 25.0
+      },
+      "python_output": "Caution",
+      "mobile_output": "Caution",
+      "probabilities": [
+        0.4684,
+        0.5306,
+        0.0009
+      ],
+      "absolute_difference": 0.0,
+      "pass": true
+    },
+    {
+      "sample_id": "TEST-PARITY-08",
+      "inputs": {
+        "ph": 4.9,
+        "moisture": 72.0,
+        "temp": 35.0,
+        "ambient": 27.0
+      },
+      "python_output": "Unsafe",
+      "mobile_output": "Unsafe",
+      "probabilities": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "absolute_difference": 0.0,
+      "pass": true
+    }
+  ]
+}

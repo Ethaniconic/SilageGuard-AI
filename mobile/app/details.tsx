@@ -58,6 +58,8 @@ export default function BatchDetailsScreen() {
   const { batch, sensor, prediction } = details;
   const advisory = generateFarmerAdvisory(batch.decision, language);
   const reasons: string[] = JSON.parse(prediction.reasons_json || "[]");
+  const explainabilityPoints: Array<{ parameter: string; measuredValue: string; status: string; assessment: string }> =
+    JSON.parse(prediction.explainability_json || "[]");
 
   const handleVoicePlay = () => {
     try {
@@ -83,12 +85,49 @@ export default function BatchDetailsScreen() {
       <Header title={batch.id} showBack={true} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Safety Rule Override Notice if applicable */}
+        {batch.rule_override && (
+          <View style={styles.overrideAlert}>
+            <Text style={styles.overrideTitle}>⚡ SAFETY RULE OVERRIDE RECORDED</Text>
+            <Text style={styles.overrideReason}>
+              {batch.rule_reason || "Agronomic safety threshold exceeded."}
+            </Text>
+          </View>
+        )}
+
         {/* Result Traffic Light Banner */}
         <TrafficLightCard
           decision={batch.decision}
           confidence={batch.confidence}
           mssiScore={batch.mssi_score}
         />
+
+        {/* Model Versioning & Provenance Metadata Card (Section 36 & 37) */}
+        <View style={styles.versionCard}>
+          <Text style={styles.versionCardTitle}>REPRODUCIBILITY & MODEL PROVENANCE</Text>
+          <View style={styles.versionRow}>
+            <Text style={styles.versionLabel}>Sensor Model:</Text>
+            <Text style={styles.versionVal}>{batch.sensor_model_version || "sensor_rf_v2.0"}</Text>
+          </View>
+          <View style={styles.versionRow}>
+            <Text style={styles.versionLabel}>Vision Model:</Text>
+            <Text style={styles.versionVal}>{batch.vision_model_version || "mobilenetv3_silage_v2.0"}</Text>
+          </View>
+          <View style={styles.versionRow}>
+            <Text style={styles.versionLabel}>Fusion Weights:</Text>
+            <Text style={styles.versionVal}>{batch.fusion_version || "mssi_v2.0"} (0.55/0.45)</Text>
+          </View>
+          <View style={styles.versionRow}>
+            <Text style={styles.versionLabel}>Safety Rules:</Text>
+            <Text style={styles.versionVal}>{batch.rule_version || "rules_v2.0"}</Text>
+          </View>
+          <View style={styles.versionRow}>
+            <Text style={styles.versionLabel}>Data Origin:</Text>
+            <Text style={[styles.versionVal, { color: batch.is_demo ? THEME_COLORS.caution : THEME_COLORS.safe }]}>
+              {batch.is_demo ? "DEMO MODE (Simulated)" : "FIELD OBSERVED (Production)"}
+            </Text>
+          </View>
+        </View>
 
         {/* Silage Surface Visual Preview */}
         <View style={styles.imageCard}>
@@ -130,6 +169,24 @@ export default function BatchDetailsScreen() {
             </Text>
           </View>
         </View>
+
+        {/* Traceable Explainability Chain if present */}
+        {explainabilityPoints.length > 0 && (
+          <View style={styles.reasonsBox}>
+            <Text style={styles.cardHeaderTitle}>🔍 EXPLAINABILITY REASONING CHAIN</Text>
+            {explainabilityPoints.map((pt, i) => (
+              <View key={i} style={styles.explainItem}>
+                <View style={styles.explainHeader}>
+                  <Text style={styles.explainParam}>{pt.parameter}</Text>
+                  <Text style={[styles.explainStatus, { color: pt.status === "ALERT" ? THEME_COLORS.unsafe : pt.status === "BORDERLINE" ? THEME_COLORS.caution : THEME_COLORS.safe }]}>
+                    {pt.measuredValue} ({pt.status})
+                  </Text>
+                </View>
+                <Text style={styles.explainText}>{pt.assessment}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Sensor Readings Breakdown */}
         <View style={styles.sensorGridCard}>
@@ -424,5 +481,84 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "900",
     letterSpacing: 0.5
+  },
+  versionCard: {
+    backgroundColor: THEME_COLORS.card,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.cardBorder,
+    padding: 16,
+    marginVertical: 10
+  },
+  versionCardTitle: {
+    color: "#94A3B8",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+    marginBottom: 10
+  },
+  versionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 4
+  },
+  versionLabel: {
+    color: "#94A3B8",
+    fontSize: 12,
+    fontWeight: "600"
+  },
+  versionVal: {
+    color: "#F8FAFC",
+    fontSize: 12,
+    fontWeight: "800"
+  },
+  overrideAlert: {
+    backgroundColor: "rgba(239, 68, 68, 0.15)",
+    borderWidth: 1.5,
+    borderColor: "#EF4444",
+    padding: 12,
+    borderRadius: 14,
+    marginVertical: 8
+  },
+  overrideTitle: {
+    color: "#EF4444",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.5
+  },
+  overrideReason: {
+    color: "#FEE2E2",
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 2
+  },
+  explainItem: {
+    backgroundColor: "rgba(30, 41, 59, 0.5)",
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.04)"
+  },
+  explainHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4
+  },
+  explainParam: {
+    color: "#F8FAFC",
+    fontSize: 12,
+    fontWeight: "800"
+  },
+  explainStatus: {
+    fontSize: 11,
+    fontWeight: "800"
+  },
+  explainText: {
+    color: "#94A3B8",
+    fontSize: 11,
+    lineHeight: 16
   }
 });

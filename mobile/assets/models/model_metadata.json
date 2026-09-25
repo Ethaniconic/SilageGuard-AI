@@ -1,7 +1,7 @@
 {
   "model_name": "SilageGuard-MobileNetV3-Small-INT8",
-  "version": "1.0.0",
-  "task": "Silage Surface Quality & Mould Classification",
+  "version": "mobilenetv3_silage_v2.0",
+  "task": "Silage Surface Visual Anomaly & Mould-like Pattern Screening",
   "architecture": "MobileNetV3-Small",
   "input_shape": [
     1,
@@ -30,5 +30,6 @@
   "quantization": "INT8 dynamic post-training quantization",
   "target_runtime": "TensorFlow Lite React Native / On-Device Neural Engine",
   "inference_latency_ms": 18.4,
-  "power_efficiency": "Ultra-low (0.04W on ARM Cortex-A55)"
+  "power_efficiency": "Ultra-low (0.04W on ARM Cortex-A55)",
+  "scientific_disclaimer": "Rapid screening tool; does not quantify biochemical mycotoxin concentration (ppb)."
 }
