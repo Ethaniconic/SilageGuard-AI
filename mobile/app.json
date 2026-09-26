@@ -47,7 +47,8 @@
         {
           "cameraPermission": "Grant camera access to scan silage faces for fungal spoilage."
         }
-      ]
+      ],
+      "expo-asset"
     ]
   }
 }
