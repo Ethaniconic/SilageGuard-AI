@@ -8,46 +8,63 @@
       "id": "esp32",
       "top": 0,
       "left": 0,
-      "attrs": {}
+      "attrs": { "flashSize": "4" }
     },
     {
       "type": "wokwi-ds18b20",
       "id": "temp_probe",
-      "top": -120,
-      "left": 180,
-      "attrs": {}
+      "top": -140,
+      "left": 300,
+      "attrs": { "label": "DS18B20_SILAGE_TEMP" }
     },
     {
       "type": "wokwi-resistor",
-      "id": "r_pullup",
-      "top": -70,
-      "left": 130,
-      "attrs": { "resistance": "4700" }
+      "id": "r_ds18b20_pullup",
+      "top": -100,
+      "left": 220,
+      "attrs": { "resistance": "4700", "label": "4k7_PULLUP" }
     },
     {
-      "type": "wokwi-led",
-      "id": "status_led",
-      "top": 150,
-      "left": -80,
-      "attrs": { "color": "green", "label": "BLE_ACTIVE" }
+      "type": "wokwi-potentiometer",
+      "id": "ph_pot",
+      "top": -140,
+      "left": -160,
+      "attrs": { "label": "pH_ANALOG_SIM (0-3.3V)" }
     },
     {
-      "type": "wokwi-resistor",
-      "id": "r_led",
-      "top": 190,
-      "left": -80,
-      "attrs": { "resistance": "330" }
+      "type": "wokwi-potentiometer",
+      "id": "moisture_pot",
+      "top": -140,
+      "left": 80,
+      "attrs": { "label": "MOISTURE_ANALOG_SIM (0-3.3V)" }
+    },
+    {
+      "type": "wokwi-ssd1306",
+      "id": "oled",
+      "top": 200,
+      "left": -160,
+      "attrs": { "address": "0x3C" }
     }
   ],
   "connections": [
-    [ "esp32:GND.1", "temp_probe:GND", "black", [ "h0" ] ],
-    [ "esp32:3V3", "temp_probe:VCC", "red", [ "h0" ] ],
-    [ "esp32:GPIO4", "temp_probe:DQ", "blue", [ "h0" ] ],
-    [ "esp32:3V3", "r_pullup:1", "red", [ "h0" ] ],
-    [ "esp32:GPIO4", "r_pullup:2", "blue", [ "h0" ] ],
-    [ "esp32:GPIO10", "r_led:1", "green", [ "h0" ] ],
-    [ "r_led:2", "status_led:A", "green", [ "h0" ] ],
-    [ "status_led:C", "esp32:GND.2", "black", [ "h0" ] ]
+    ["esp32:GND.1", "temp_probe:GND", "black", ["h0"]],
+    ["esp32:3V3", "temp_probe:VCC", "red", ["h0"]],
+    ["esp32:GPIO4", "temp_probe:DQ", "blue", ["h0"]],
+    ["esp32:3V3", "r_ds18b20_pullup:1", "red", ["h0"]],
+    ["r_ds18b20_pullup:2", "temp_probe:DQ", "blue", ["h0"]],
+
+    ["esp32:GND.2", "ph_pot:GND", "black", ["h0"]],
+    ["esp32:3V3", "ph_pot:VCC", "red", ["h0"]],
+    ["esp32:GPIO1", "ph_pot:SIG", "orange", ["h0"]],
+
+    ["esp32:GND.3", "moisture_pot:GND", "black", ["h0"]],
+    ["esp32:3V3", "moisture_pot:VCC", "red", ["h0"]],
+    ["esp32:GPIO2", "moisture_pot:SIG", "green", ["h0"]],
+
+    ["esp32:GND.4", "oled:GND", "black", ["h0"]],
+    ["esp32:3V3", "oled:VCC", "red", ["h0"]],
+    ["esp32:GPIO8", "oled:SDA", "yellow", ["h0"]],
+    ["esp32:GPIO9", "oled:SCL", "purple", ["h0"]]
   ],
   "dependencies": {}
 }

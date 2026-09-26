@@ -64,4 +64,3 @@
 ---
 
 SilageGuard AI V3 — SIH26111 — Smart India Hackathon 2026 Screening Round
-
