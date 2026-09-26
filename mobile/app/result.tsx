@@ -1,11 +1,12 @@
 /**
- * SCREEN 6 — SCAN RESULT & MULTIMODAL VERDICT
+ * SCREEN 6 - SCAN RESULT & MULTIMODAL VERDICT
  * - Big traffic-light result (SAFE, CAUTION, UNSAFE)
  * - MSSI safety score & Confidence
  * - Sensor & Vision telemetry metrics breakdown (honestly displays "--" if probe was disconnected)
  * - Agronomic explanation reasons
  * - Multilingual actionable advisory card with voice playback
  * - Silage verification QR code
+ * - Vector AppIcons throughout
  * - Action buttons: New Scan, View SQLite History
  * - Full viewport width & Sharp industrial corners
  */
@@ -23,6 +24,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header } from "../components/Header";
 import { TrafficLightCard } from "../components/TrafficLightCard";
 import { AdvisoryCard } from "../components/AdvisoryCard";
+import { AppIcon } from "../components/AppIcon";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { generateSilageQRPayload } from "../utils/qrGenerator";
 
@@ -67,8 +69,8 @@ export default function ResultScreen() {
         : "Probe telemetry was unavailable during scan; relying on Vision AI."
     },
     {
-      parameter: "Core Heat Rise (?T)",
-      measuredValue: deltaTemp !== null ? `+${deltaTemp.toFixed(1)}°C` : "No Probe Connected",
+      parameter: "Core Heat Rise (dT)",
+      measuredValue: deltaTemp !== null ? `+${deltaTemp.toFixed(1)}C` : "No Probe Connected",
       status: deltaTemp !== null ? "NORMAL" : "UNAVAILABLE",
       assessment: deltaTemp !== null
         ? "Core temperature in thermal equilibrium."
@@ -95,81 +97,82 @@ export default function ResultScreen() {
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
         const utter = new SpeechSynthesisUtterance(text);
+        utter.rate = 0.9;
         window.speechSynthesis.speak(utter);
-      } else {
-        const Speech = require("expo-speech");
-        Speech.speak(text, { language: latestAdvisory?.language || "en" });
       }
     } catch (e) {
-      console.log("Voice TTS notice:", e);
+      console.log("Speech not supported on this platform", e);
     }
   };
 
   const handleScanAnother = () => {
     clearScanImages();
-    router.replace("/camera" as any);
+    router.push("/camera" as any);
   };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Header title="SCREENING REPORT" showBack={false} />
+      <Header title="SilageGuard AI" showBack={true} />
 
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: Math.max(insets.bottom, 20) + 40 }
+          { paddingBottom: Math.max(insets.bottom, 24) + 20 }
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* SCIENTIFIC SCREENING DISCLAIMER BANNER */}
+        {/* Scientific Disclaimer Banner */}
         <View
           style={[
             styles.disclaimerBanner,
             {
-              backgroundColor: theme.cautionBg,
-              borderColor: theme.cautionBorder,
+              backgroundColor: theme.accent + "1A",
+              borderColor: theme.accent,
               borderRadius: theme.radiusSm
             }
           ]}
         >
-          <Text style={styles.disclaimerIcon}>??</Text>
-          <Text style={[styles.disclaimerText, { color: theme.text }]}>
-            <Text style={[styles.disclaimerBold, { color: theme.caution }]}>
-              Rapid Screening Tool — Not a laboratory replacement.{" "}
-            </Text>
-            SILAGEGUARD AI detects fermentation indicators and visual anomalies. Confirmatory testing
-            is recommended if clinical toxicity or animal refusal occurs.
+          <AppIcon name="alert" size={14} color={theme.accent} />
+          <Text style={[styles.disclaimerText, { color: theme.text, marginLeft: 6 }]}>
+            <Text style={styles.disclaimerBold}>Field Screening Tool: </Text>
+            Rapid on-farm estimation. Not a substitute for wet-chemistry laboratory HPLC/NIR feed analysis.
           </Text>
         </View>
 
-        {/* SAFETY RULE OVERRIDE ALERT (IF TRIGGERED) */}
+        {/* Primary Verdict Card */}
+        <TrafficLightCard
+          decision={decision}
+          confidence={confidence}
+          mssiScore={mssiScore}
+          cropType={cropType}
+          pitDepthCm={pitDepthCm}
+        />
+
+        {/* Deterministic Override Callout (if active) */}
         {ruleOverride && (
           <View
             style={[
               styles.overrideAlert,
               {
                 backgroundColor: theme.unsafeBg,
-                borderColor: theme.unsafeBorder,
+                borderColor: theme.unsafe,
                 borderRadius: theme.radiusSm
               }
             ]}
           >
             <View style={styles.overrideHeader}>
-              <Text style={styles.overrideIcon}>??</Text>
-              <Text style={[styles.overrideTitle, { color: theme.unsafe }]}>
-                SAFETY RULE OVERRIDE TRIGGERED
+              <AppIcon name="alert" size={16} color={theme.unsafe} />
+              <Text style={[styles.overrideTitle, { color: theme.unsafe, marginLeft: 6 }]}>
+                DETERMINISTIC SAFETY OVERRIDE ACTIVE
               </Text>
             </View>
-            <Text style={[styles.overrideReason, { color: theme.text }]}>
-              {ruleReason || "Agronomic safety threshold exceeded."}
+            <Text style={[styles.overrideReason, { color: theme.unsafe }]}>
+              {ruleReason}
             </Text>
           </View>
         )}
 
-        {/* PRIMARY TRAFFIC LIGHT VERDICT CARD */}
-        <TrafficLightCard decision={decision} confidence={confidence} mssiScore={mssiScore} />
-
-        {/* EXPLAINABILITY REASON CHAIN */}
+        {/* Multimodal Explainability Chain */}
         <View
           style={[
             styles.sectionCard,
@@ -180,9 +183,11 @@ export default function ResultScreen() {
             }
           ]}
         >
-          <Text style={[styles.cardTitle, { color: theme.text }]}>WHY THIS EVALUATION?</Text>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>
+            DECISION EXPLAINABILITY & SENSOR EVIDENCE
+          </Text>
           <Text style={[styles.cardSubtitle, { color: theme.textMuted }]}>
-            Diagnostic observations evaluated across multimodal inputs
+            Breakdown of contributing inputs to the Multimodal Silage Safety Index (MSSI)
           </Text>
 
           {explainabilityChain.map((item, idx) => (
@@ -190,7 +195,8 @@ export default function ResultScreen() {
               key={idx}
               style={[
                 styles.chainItem,
-                { borderBottomColor: theme.cardBorder }
+                { borderBottomColor: theme.cardBorder },
+                idx === explainabilityChain.length - 1 && { borderBottomWidth: 0 }
               ]}
             >
               <View style={styles.chainTop}>
@@ -200,13 +206,11 @@ export default function ResultScreen() {
                     styles.chainValue,
                     {
                       color:
-                        item.status === "ALERT"
-                          ? theme.unsafe
-                          : item.status === "BORDERLINE"
-                          ? theme.caution
-                          : item.status === "NORMAL"
+                        item.status === "NORMAL"
                           ? theme.safe
-                          : theme.textMuted
+                          : item.status === "UNAVAILABLE"
+                          ? theme.textMuted
+                          : theme.unsafe
                     }
                   ]}
                 >
@@ -220,7 +224,7 @@ export default function ResultScreen() {
           ))}
         </View>
 
-        {/* FIELD PARAMETERS BREAKDOWN GRID */}
+        {/* Sensor & Vision Telemetry Metrics */}
         <View
           style={[
             styles.sectionCard,
@@ -231,14 +235,16 @@ export default function ResultScreen() {
             }
           ]}
         >
-          <Text style={[styles.cardTitle, { color: theme.text }]}>FIELD SENSOR & VISION DATA</Text>
-          <Text style={[styles.cardSubtitle, { color: theme.textMuted }]}>
-            Captured measurements for this silage batch
+          <Text style={[styles.cardTitle, { color: theme.text }]}>
+            INSPECTED SENSORY PARAMETERS
           </Text>
 
           <View style={styles.metricsGrid}>
             <View style={[styles.metricItem, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
-              <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Silage pH</Text>
+              <View style={styles.metricItemHeader}>
+                <AppIcon name="ph" size={13} color={theme.safe} />
+                <Text style={[styles.metricLabel, { color: theme.textMuted, marginLeft: 4 }]}>pH Acidity</Text>
+              </View>
               <Text
                 style={[
                   styles.metricVal,
@@ -246,10 +252,8 @@ export default function ResultScreen() {
                     color:
                       telemetry.ph === null
                         ? theme.textMuted
-                        : telemetry.ph <= 4.2
+                        : telemetry.ph >= 3.8 && telemetry.ph <= 4.2
                         ? theme.safe
-                        : telemetry.ph <= 4.8
-                        ? theme.caution
                         : theme.unsafe
                   }
                 ]}
@@ -260,15 +264,33 @@ export default function ResultScreen() {
             </View>
 
             <View style={[styles.metricItem, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
-              <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Estimated Moisture</Text>
-              <Text style={[styles.metricVal, { color: telemetry.moisture !== null ? theme.accent : theme.textMuted }]}>
+              <View style={styles.metricItemHeader}>
+                <AppIcon name="water" size={13} color={theme.accent} />
+                <Text style={[styles.metricLabel, { color: theme.textMuted, marginLeft: 4 }]}>Moisture</Text>
+              </View>
+              <Text
+                style={[
+                  styles.metricVal,
+                  {
+                    color:
+                      telemetry.moisture === null
+                        ? theme.textMuted
+                        : telemetry.moisture >= 60 && telemetry.moisture <= 68
+                        ? theme.accent
+                        : theme.unsafe
+                  }
+                ]}
+              >
                 {telemetry.moisture !== null ? `${telemetry.moisture.toFixed(1)}%` : "--"}
               </Text>
               <Text style={[styles.metricTarget, { color: theme.textMuted }]}>Target: 60 - 68%</Text>
             </View>
 
             <View style={[styles.metricItem, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
-              <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Thermal Rise (?T)</Text>
+              <View style={styles.metricItemHeader}>
+                <AppIcon name="thermometer" size={13} color={theme.caution} />
+                <Text style={[styles.metricLabel, { color: theme.textMuted, marginLeft: 4 }]}>Core Heat Rise</Text>
+              </View>
               <Text
                 style={[
                   styles.metricVal,
@@ -282,13 +304,16 @@ export default function ResultScreen() {
                   }
                 ]}
               >
-                {deltaTemp !== null ? `+${deltaTemp.toFixed(1)}°C` : "--"}
+                {deltaTemp !== null ? `+${deltaTemp.toFixed(1)}C` : "--"}
               </Text>
-              <Text style={[styles.metricTarget, { color: theme.textMuted }]}>Target: &lt; 3.0°C</Text>
+              <Text style={[styles.metricTarget, { color: theme.textMuted }]}>Target: &lt; 3.0C</Text>
             </View>
 
             <View style={[styles.metricItem, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
-              <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Visual Mould Signal</Text>
+              <View style={styles.metricItemHeader}>
+                <AppIcon name="camera" size={13} color={theme.primary} />
+                <Text style={[styles.metricLabel, { color: theme.textMuted, marginLeft: 4 }]}>Mould Signal</Text>
+              </View>
               <Text
                 style={[
                   styles.metricVal,
@@ -324,7 +349,14 @@ export default function ResultScreen() {
           ]}
         >
           <View style={styles.qrHeader}>
-            <Text style={styles.qrIcon}>??</Text>
+            <View
+              style={[
+                styles.qrIconBadge,
+                { backgroundColor: theme.accent + "1A", borderRadius: theme.radiusSm }
+              ]}
+            >
+              <AppIcon name="qr-code" size={20} color={theme.accent} />
+            </View>
             <View style={styles.qrHeaderText}>
               <Text style={[styles.qrTitle, { color: theme.text }]}>DIGITAL BATCH CERTIFICATE</Text>
               <Text style={[styles.qrSub, { color: theme.textMuted }]}>
@@ -340,11 +372,11 @@ export default function ResultScreen() {
                 { backgroundColor: theme.surface, borderColor: theme.primary, borderRadius: theme.radiusSm }
               ]}
             >
-              <Text style={[styles.qrMockCode, { color: theme.primary }]}>¦ ¦ ¦ ¦ ¦ ¦ ¦ ¦ ¦ ¦ ¦ ¦</Text>
-              <Text style={[styles.qrMockCode, { color: theme.primary }]}>¦   ¦   ¦   ¦   ¦   ¦</Text>
-              <Text style={[styles.qrMockCode, { color: theme.text }]}>¦ ¦   SILAGEGUARD  ¦ ¦</Text>
-              <Text style={[styles.qrMockCode, { color: theme.accent }]}>¦   ¦   {decision}   ¦   ¦</Text>
-              <Text style={[styles.qrMockCode, { color: theme.primary }]}>¦ ¦ ¦ ¦ ¦ ¦ ¦ ¦ ¦ ¦ ¦ ¦</Text>
+              <Text style={[styles.qrMockCode, { color: theme.primary }]}>[#  #  #  #  #]</Text>
+              <Text style={[styles.qrMockCode, { color: theme.primary }]}>[#   SILAGE   #]</Text>
+              <Text style={[styles.qrMockCode, { color: theme.text }]}>[#    GUARD   #]</Text>
+              <Text style={[styles.qrMockCode, { color: theme.accent }]}>[#  {decision.padEnd(8)}  #]</Text>
+              <Text style={[styles.qrMockCode, { color: theme.primary }]}>[#  #  #  #  #]</Text>
             </View>
             <Text style={[styles.qrHash, { color: theme.textMuted }]}>
               {generateSilageQRPayload({
@@ -375,7 +407,10 @@ export default function ResultScreen() {
             onPress={() => router.push("/history" as any)}
             activeOpacity={0.8}
           >
-            <Text style={[styles.historyBtnText, { color: theme.text }]}>VIEW PAST BATCHES</Text>
+            <AppIcon name="history" size={16} color={theme.text} />
+            <Text style={[styles.historyBtnText, { color: theme.text, marginLeft: 6 }]}>
+              PAST BATCHES
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -389,7 +424,8 @@ export default function ResultScreen() {
             onPress={handleScanAnother}
             activeOpacity={0.85}
           >
-            <Text style={styles.newScanBtnText}>+ TEST NEXT BATCH</Text>
+            <AppIcon name="camera" size={16} color="#090D16" />
+            <Text style={styles.newScanBtnText}>TEST NEXT BATCH</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -412,11 +448,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     alignItems: "flex-start"
   },
-  disclaimerIcon: {
-    fontSize: 14,
-    marginRight: 6,
-    marginTop: 1
-  },
   disclaimerText: {
     flex: 1,
     fontSize: 11,
@@ -435,10 +466,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 4
   },
-  overrideIcon: {
-    fontSize: 16,
-    marginRight: 6
-  },
   overrideTitle: {
     fontSize: 12,
     fontWeight: "900",
@@ -446,7 +473,8 @@ const styles = StyleSheet.create({
   },
   overrideReason: {
     fontSize: 12,
-    fontWeight: "600"
+    fontWeight: "600",
+    marginTop: 4
   },
   sectionCard: {
     borderWidth: 1,
@@ -496,6 +524,11 @@ const styles = StyleSheet.create({
     padding: 10,
     marginVertical: 4
   },
+  metricItemHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4
+  },
   metricLabel: {
     fontSize: 10,
     fontWeight: "700",
@@ -520,9 +553,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10
   },
-  qrIcon: {
-    fontSize: 18,
-    marginRight: 8
+  qrIconBadge: {
+    width: 36,
+    height: 36,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10
   },
   qrHeaderText: {
     flex: 1
@@ -565,6 +601,8 @@ const styles = StyleSheet.create({
   },
   historyBtn: {
     flex: 1,
+    flexDirection: "row",
+    justifyContent: "center",
     borderWidth: 1,
     paddingVertical: 14,
     alignItems: "center",
@@ -576,6 +614,8 @@ const styles = StyleSheet.create({
   },
   newScanBtn: {
     flex: 1,
+    flexDirection: "row",
+    justifyContent: "center",
     paddingVertical: 14,
     alignItems: "center",
     marginLeft: 6
@@ -583,6 +623,7 @@ const styles = StyleSheet.create({
   newScanBtnText: {
     color: "#090D16",
     fontSize: 12,
-    fontWeight: "900"
+    fontWeight: "900",
+    marginLeft: 6
   }
 });

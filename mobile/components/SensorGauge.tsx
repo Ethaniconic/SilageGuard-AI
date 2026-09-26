@@ -1,5 +1,5 @@
 /**
- * SILAGEGUARD AI — Sensor Telemetry Gauge & Metric Tile
+ * SILAGEGUARD AI - Sensor Telemetry Gauge & Metric Tile
  * Displays pH, Moisture, Core Temp with agronomic safe-band indicators.
  * Gracefully renders empty "--" state when probe is disconnected.
  */
@@ -7,6 +7,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useTheme } from "../features/ble/bleManager";
+import { AppIcon, IconName } from "./AppIcon";
 
 interface Props {
   label: string;
@@ -14,7 +15,8 @@ interface Props {
   unit: string;
   targetRange: string;
   status: "safe" | "caution" | "unsafe" | "disconnected";
-  iconText: string;
+  iconName?: IconName;
+  iconText?: string;
 }
 
 export const SensorGauge: React.FC<Props> = ({
@@ -23,6 +25,7 @@ export const SensorGauge: React.FC<Props> = ({
   unit,
   targetRange,
   status,
+  iconName,
   iconText
 }) => {
   const { theme } = useTheme();
@@ -53,7 +56,13 @@ export const SensorGauge: React.FC<Props> = ({
     >
       <View style={styles.headerRow}>
         <View style={styles.titleContainer}>
-          <Text style={styles.icon}>{iconText}</Text>
+          {iconName ? (
+            <View style={styles.iconWrapper}>
+              <AppIcon name={iconName} size={14} color={statusColor} />
+            </View>
+          ) : iconText ? (
+            <Text style={styles.icon}>{iconText}</Text>
+          ) : null}
           <Text style={[styles.label, { color: theme.textMuted }]}>{label}</Text>
         </View>
         <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
@@ -91,6 +100,9 @@ const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: "row",
     alignItems: "center"
+  },
+  iconWrapper: {
+    marginRight: 6
   },
   icon: {
     fontSize: 14,

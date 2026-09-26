@@ -1,11 +1,14 @@
 /**
- * SILAGEGUARD AI — Multilingual Farmer Language Selector
- * Instant toggle between English, हिन्दी, मराठी, ಕನ್ನಡ, and తెలుగు.
+ * SILAGEGUARD AI - Multilingual Farmer Language Selector
+ * Instant toggle between English, Hindi, Marathi, Kannada, and Telugu.
+ * High-contrast theme styling with clean industrial geometry.
  */
 
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
-import { SUPPORTED_LANGUAGES, LanguageCode, THEME_COLORS } from "../utils/constants";
+import { SUPPORTED_LANGUAGES, LanguageCode } from "../utils/constants";
+import { useTheme } from "../features/ble/bleManager";
+import { AppIcon } from "./AppIcon";
 
 interface Props {
   selectedLanguage: LanguageCode;
@@ -13,23 +16,51 @@ interface Props {
 }
 
 export const LanguagePicker: React.FC<Props> = ({ selectedLanguage, onSelectLanguage }) => {
+  const { theme } = useTheme();
+
   return (
     <View style={styles.container}>
-      <Text style={styles.headerTitle}>SELECT FARMER LANGUAGE / भाषा निवडा</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <View style={styles.titleRow}>
+        <AppIcon name="settings" size={14} color={theme.textMuted} />
+        <Text style={[styles.headerTitle, { color: theme.textMuted }]}>
+          SELECT FARMER LANGUAGE
+        </Text>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {SUPPORTED_LANGUAGES.map((lang) => {
           const isSelected = lang.code === selectedLanguage;
           return (
             <TouchableOpacity
               key={lang.code}
-              style={[styles.pill, isSelected && styles.pillActive]}
+              style={[
+                styles.pill,
+                {
+                  backgroundColor: isSelected ? theme.primary + "1A" : theme.card,
+                  borderColor: isSelected ? theme.primary : theme.cardBorder,
+                  borderRadius: theme.radiusSm
+                }
+              ]}
               onPress={() => onSelectLanguage(lang.code)}
               activeOpacity={0.8}
             >
-              <Text style={[styles.nativeText, isSelected && styles.nativeTextActive]}>
+              <Text
+                style={[
+                  styles.nativeText,
+                  { color: isSelected ? theme.primary : theme.text }
+                ]}
+              >
                 {lang.nativeLabel}
               </Text>
-              <Text style={[styles.codeText, isSelected && styles.codeTextActive]}>
+              <Text
+                style={[
+                  styles.codeText,
+                  { color: isSelected ? theme.primary : theme.textMuted }
+                ]}
+              >
                 {lang.label}
               </Text>
             </TouchableOpacity>
@@ -42,50 +73,39 @@ export const LanguagePicker: React.FC<Props> = ({ selectedLanguage, onSelectLang
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 12
+    marginVertical: 8
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+    paddingHorizontal: 2
   },
   headerTitle: {
-    color: "#94A3B8",
     fontSize: 11,
     fontWeight: "800",
     letterSpacing: 0.5,
-    marginBottom: 8,
-    paddingHorizontal: 4
+    marginLeft: 6
   },
   scrollContent: {
     flexDirection: "row",
-    paddingVertical: 4
+    paddingVertical: 2
   },
   pill: {
-    backgroundColor: THEME_COLORS.card,
     borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginRight: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginRight: 8,
     alignItems: "center",
     minWidth: 95
   },
-  pillActive: {
-    backgroundColor: "rgba(16, 185, 129, 0.15)",
-    borderColor: THEME_COLORS.primary
-  },
   nativeText: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#E2E8F0"
-  },
-  nativeTextActive: {
-    color: THEME_COLORS.primary
+    fontSize: 14,
+    fontWeight: "800"
   },
   codeText: {
-    fontSize: 11,
-    color: "#64748B",
+    fontSize: 10,
     marginTop: 2,
-    fontWeight: "600"
-  },
-  codeTextActive: {
-    color: "#A7F3D0"
+    fontWeight: "700"
   }
 });

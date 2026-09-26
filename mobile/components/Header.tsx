@@ -1,31 +1,41 @@
 /**
  * SILAGEGUARD AI — Global Top Navigation Header
  * Features:
+ * - Clean industry-grade brand title: "SilageGuard AI" (No "Silage Scanning", No "SIH26111")
  * - Safe area inset padding to prevent notification bar / notch clipping
- * - Dark / Light theme toggle switch button
- * - Offline Status Badge
- * - Connected Probe Pill with real battery status
+ * - Vector SVG icons for theme toggle, back navigation, offline status, and BLE
+ * - Redirection guard: clicking probe option redirects once only (no multiple pushes)
  * - Sharp industrial border radii
  */
 
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
+import { AppIcon } from "./AppIcon";
 
 interface Props {
-  title: string;
+  title?: string;
   showBack?: boolean;
 }
 
 export const Header: React.FC<Props> = ({ title, showBack = false }) => {
   const router = useRouter();
+  const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { bleStatus, telemetry } = useAppStore();
   const { theme, isDark, toggleTheme } = useTheme();
 
   const isConnected = bleStatus === "CONNECTED";
+  const isOnBleScreen = pathname === "/ble";
+
+  const handleProbePress = () => {
+    // Once on the probe screen, no further duplicate redirections
+    if (!isOnBleScreen) {
+      router.push("/ble" as any);
+    }
+  };
 
   return (
     <View
@@ -46,20 +56,17 @@ export const Header: React.FC<Props> = ({ title, showBack = false }) => {
               {
                 backgroundColor: theme.card,
                 borderColor: theme.cardBorder,
-                borderRadius: theme.radiusMd
+                borderRadius: theme.radiusSm
               }
             ]}
             onPress={() => router.back()}
             activeOpacity={0.7}
           >
-            <Text style={[styles.backArrow, { color: theme.text }]}>?</Text>
+            <AppIcon name="arrow-back" size={16} color={theme.text} />
           </TouchableOpacity>
         )}
         <View>
-          <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
-          <Text style={[styles.brandSubtitle, { color: theme.accent }]}>
-            SILAGEGUARD AI • SIH26111
-          </Text>
+          <Text style={[styles.title, { color: theme.text }]}>SilageGuard AI</Text>
         </View>
       </View>
 
@@ -67,18 +74,22 @@ export const Header: React.FC<Props> = ({ title, showBack = false }) => {
         {/* Theme Toggle Button (Light/Dark mode) */}
         <TouchableOpacity
           style={[
-            styles.themeToggle,
+            styles.iconButton,
             {
               backgroundColor: theme.card,
               borderColor: theme.cardBorder,
-              borderRadius: theme.radiusMd
+              borderRadius: theme.radiusSm
             }
           ]}
           onPress={toggleTheme}
           activeOpacity={0.7}
           accessibilityLabel="Toggle Dark / Light Theme"
         >
-          <Text style={styles.themeIcon}>{isDark ? "??" : "??"}</Text>
+          <AppIcon
+            name={isDark ? "sun" : "moon"}
+            size={16}
+            color={isDark ? theme.caution : theme.accent}
+          />
         </TouchableOpacity>
 
         {/* Offline Badge */}
@@ -92,7 +103,7 @@ export const Header: React.FC<Props> = ({ title, showBack = false }) => {
             }
           ]}
         >
-          <Text style={[styles.offlineDot, { color: theme.safe }]}>?</Text>
+          <AppIcon name="cloud-offline" size={11} color={theme.safe} strokeWidth={2.2} />
           <Text style={[styles.offlineText, { color: theme.safe }]}>OFFLINE</Text>
         </View>
 
@@ -102,14 +113,24 @@ export const Header: React.FC<Props> = ({ title, showBack = false }) => {
             styles.probePill,
             { borderRadius: theme.radiusSm },
             isConnected
-              ? { backgroundColor: theme.accent + "22", borderColor: theme.accent }
-              : { backgroundColor: theme.subtle, borderColor: theme.cardBorder }
+              ? { backgroundColor: theme.accent + "1A", borderColor: theme.accent }
+              : { backgroundColor: theme.card, borderColor: theme.cardBorder },
+            isOnBleScreen && { opacity: 0.85 }
           ]}
-          onPress={() => router.push("/ble" as any)}
-          activeOpacity={0.8}
+          onPress={handleProbePress}
+          activeOpacity={isOnBleScreen ? 1 : 0.8}
         >
-          <Text style={styles.probeIcon}>{isConnected ? "?" : "?"}</Text>
-          <Text style={[styles.probeText, { color: theme.text }]}>
+          <AppIcon
+            name={isConnected ? "bluetooth-connected" : "bluetooth"}
+            size={12}
+            color={isConnected ? theme.accent : theme.textMuted}
+          />
+          <Text
+            style={[
+              styles.probeText,
+              { color: isConnected ? theme.accent : theme.textMuted }
+            ]}
+          >
             {isConnected && telemetry.battery !== null ? `${telemetry.battery}%` : "PROBE"}
           </Text>
         </TouchableOpacity>
@@ -134,57 +155,42 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginRight: 10,
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center"
   },
-  backArrow: {
-    fontSize: 18,
-    fontWeight: "900"
-  },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "900",
     letterSpacing: 0.3
-  },
-  brandSubtitle: {
-    fontSize: 9,
-    fontWeight: "800",
-    letterSpacing: 0.5
   },
   rightRow: {
     flexDirection: "row",
     alignItems: "center"
   },
-  themeToggle: {
-    width: 34,
-    height: 34,
+  iconButton: {
+    width: 32,
+    height: 32,
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 6
   },
-  themeIcon: {
-    fontSize: 14
-  },
   offlineBadge: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
     marginRight: 6
-  },
-  offlineDot: {
-    fontSize: 8,
-    marginRight: 3
   },
   offlineText: {
     fontSize: 9,
     fontWeight: "900",
-    letterSpacing: 0.5
+    letterSpacing: 0.5,
+    marginLeft: 4
   },
   probePill: {
     flexDirection: "row",
@@ -193,12 +199,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderWidth: 1
   },
-  probeIcon: {
-    fontSize: 10,
-    marginRight: 3
-  },
   probeText: {
     fontSize: 10,
-    fontWeight: "800"
+    fontWeight: "800",
+    marginLeft: 4
   }
 });

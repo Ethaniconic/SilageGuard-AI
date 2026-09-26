@@ -1,17 +1,19 @@
 /**
  * SILAGEGUARD AI — Metric Statistic Card
- * Clean agricultural dashboard tile with theme support and sharp modern corners.
+ * Clean agricultural dashboard tile with vector icons, theme support, and sharp modern corners.
  */
 
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useTheme } from "../features/ble/bleManager";
+import { AppIcon, IconName } from "./AppIcon";
 
 interface Props {
   label: string;
   value: string | number;
   subtext?: string;
-  icon: string;
+  iconName?: IconName;
+  icon?: string;
   accentColor?: string;
 }
 
@@ -19,6 +21,7 @@ export const StatCard: React.FC<Props> = ({
   label,
   value,
   subtext,
+  iconName,
   icon,
   accentColor
 }) => {
@@ -37,7 +40,13 @@ export const StatCard: React.FC<Props> = ({
       ]}
     >
       <View style={styles.topRow}>
-        <Text style={styles.icon}>{icon}</Text>
+        {iconName ? (
+          <View style={styles.iconWrapper}>
+            <AppIcon name={iconName} size={13} color={activeColor} />
+          </View>
+        ) : icon ? (
+          <Text style={styles.iconText}>{icon}</Text>
+        ) : null}
         <Text style={[styles.label, { color: theme.textMuted }]}>{label}</Text>
       </View>
 
@@ -59,9 +68,12 @@ const styles = StyleSheet.create({
   topRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4
+    marginBottom: 6
   },
-  icon: {
+  iconWrapper: {
+    marginRight: 6
+  },
+  iconText: {
     fontSize: 14,
     marginRight: 6
   },

@@ -1,5 +1,5 @@
 /**
- * SCREEN 8 — BATCH DETAILS & DIAGNOSTIC AUDIT
+ * SCREEN 8 - BATCH DETAILS & DIAGNOSTIC AUDIT
  * Deep-dive audit view for a specific saved silage scan:
  * - Scanned silage surface preview
  * - Sensor telemetry breakdown & Delta T graphs (handles null sensors gracefully)
@@ -7,6 +7,7 @@
  * - Detailed agronomic explanations
  * - Voice advisory replay
  * - QR code certificate export & copy
+ * - Vector AppIcons throughout
  * - Theme & full viewport width support
  */
 
@@ -24,6 +25,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header } from "../components/Header";
 import { TrafficLightCard } from "../components/TrafficLightCard";
 import { MssiScoreGauge } from "../components/MssiScoreGauge";
+import { AppIcon } from "../components/AppIcon";
 import { batchRepository, CompleteBatchDetails } from "../sqlite/batchRepository";
 import { generateFarmerAdvisory } from "../features/advisory/advisoryEngine";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
@@ -49,7 +51,7 @@ export default function BatchDetailsScreen() {
   if (!details) {
     return (
       <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
-        <Header title="BATCH DETAILS" showBack={true} />
+        <Header title="SilageGuard AI" showBack={true} />
         <View style={styles.loadingContainer}>
           <Text style={[styles.loadingText, { color: theme.textMuted }]}>
             Loading Batch Record...
@@ -75,9 +77,6 @@ export default function BatchDetailsScreen() {
         window.speechSynthesis.cancel();
         const utter = new SpeechSynthesisUtterance(advisory.speechText);
         window.speechSynthesis.speak(utter);
-      } else {
-        const Speech = require("expo-speech");
-        Speech.speak(advisory.speechText, { language });
       }
     } catch (e) {
       console.log("TTS notice:", e);
@@ -90,7 +89,7 @@ export default function BatchDetailsScreen() {
 
   return (
     <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title={batch.id} showBack={true} />
+      <Header title="SilageGuard AI" showBack={true} />
 
       <ScrollView
         contentContainerStyle={[
@@ -106,31 +105,43 @@ export default function BatchDetailsScreen() {
               styles.overrideAlert,
               {
                 backgroundColor: theme.unsafeBg,
-                borderColor: theme.unsafeBorder,
+                borderColor: theme.unsafe,
                 borderRadius: theme.radiusSm
               }
             ]}
           >
-            <Text style={[styles.overrideTitle, { color: theme.unsafe }]}>
-              ?? SAFETY RULE OVERRIDE RECORDED
-            </Text>
-            <Text style={[styles.overrideReason, { color: theme.text }]}>
-              {batch.rule_reason || "Agronomic safety threshold exceeded."}
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <AppIcon name="alert" size={16} color={theme.unsafe} />
+              <Text style={[styles.overrideTitle, { color: theme.unsafe, marginLeft: 6 }]}>
+                DETERMINISTIC OVERRIDE: {batch.rule_reason}
+              </Text>
+            </View>
+            <Text style={[styles.overrideReason, { color: theme.unsafe }]}>
+              Safety lock applied to protect cattle health.
             </Text>
           </View>
         )}
 
-        {/* Result Traffic Light Banner */}
+        {/* Primary Verdict Card */}
         <TrafficLightCard
           decision={batch.decision}
           confidence={batch.confidence}
           mssiScore={batch.mssi_score}
+          cropType={batch.crop_type}
+          pitDepthCm={batch.pit_depth_cm}
         />
 
-        {/* Model Versioning & Provenance Metadata Card */}
+        {/* Score Gauge */}
+        <MssiScoreGauge
+          score={batch.mssi_score}
+          decision={batch.decision}
+          confidence={batch.confidence}
+        />
+
+        {/* Multi-Modal Evidence Breakdown */}
         <View
           style={[
-            styles.versionCard,
+            styles.explainCard,
             {
               backgroundColor: theme.card,
               borderColor: theme.cardBorder,
@@ -138,93 +149,46 @@ export default function BatchDetailsScreen() {
             }
           ]}
         >
-          <Text style={[styles.versionCardTitle, { color: theme.text }]}>
-            MODEL REPRODUCIBILITY & AUDIT PROVENANCE
+          <Text style={[styles.cardHeaderTitle, { color: theme.text }]}>
+            MULTIMODAL EVIDENCE CHAIN
           </Text>
-          <View style={styles.versionRow}>
-            <Text style={[styles.versionLabel, { color: theme.textMuted }]}>Sensor Model:</Text>
-            <Text style={[styles.versionVal, { color: theme.text }]}>
-              {batch.sensor_model_version || "sensor_rf_v2.0"}
-            </Text>
-          </View>
-          <View style={styles.versionRow}>
-            <Text style={[styles.versionLabel, { color: theme.textMuted }]}>Vision Model:</Text>
-            <Text style={[styles.versionVal, { color: theme.text }]}>
-              {batch.vision_model_version || "mobilenetv3_silage_v2.0"}
-            </Text>
-          </View>
-          <View style={styles.versionRow}>
-            <Text style={[styles.versionLabel, { color: theme.textMuted }]}>Fusion Weights:</Text>
-            <Text style={[styles.versionVal, { color: theme.text }]}>
-              {batch.fusion_version || "mssi_v2.1"} (0.55/0.45)
-            </Text>
-          </View>
-          <View style={styles.versionRow}>
-            <Text style={[styles.versionLabel, { color: theme.textMuted }]}>Safety Rules:</Text>
-            <Text style={[styles.versionVal, { color: theme.text }]}>
-              {batch.rule_version || "rules_v2.0"}
-            </Text>
-          </View>
-          <View style={styles.versionRow}>
-            <Text style={[styles.versionLabel, { color: theme.textMuted }]}>Data Origin:</Text>
-            <Text
+          {explainabilityPoints.map((item, idx) => (
+            <View
+              key={idx}
               style={[
-                styles.versionVal,
-                { color: batch.is_demo ? theme.caution : theme.safe }
+                styles.explainRow,
+                { borderBottomColor: theme.cardBorder },
+                idx === explainabilityPoints.length - 1 && { borderBottomWidth: 0 }
               ]}
             >
-              {batch.is_demo ? "DEMO MODE (Simulated)" : "FIELD OBSERVED (Production)"}
-            </Text>
-          </View>
-        </View>
-
-        {/* Explainability Chain */}
-        {explainabilityPoints.length > 0 && (
-          <View
-            style={[
-              styles.explainCard,
-              {
-                backgroundColor: theme.card,
-                borderColor: theme.cardBorder,
-                borderRadius: theme.radiusMd
-              }
-            ]}
-          >
-            <Text style={[styles.cardHeaderTitle, { color: theme.text }]}>
-              EXPLAINABILITY DECISION CHAIN
-            </Text>
-            {explainabilityPoints.map((pt, i) => (
-              <View
-                key={i}
-                style={[styles.explainRow, { borderBottomColor: theme.cardBorder }]}
-              >
-                <View style={styles.explainHeader}>
-                  <Text style={[styles.explainParam, { color: theme.text }]}>{pt.parameter}</Text>
-                  <Text
-                    style={[
-                      styles.explainStatus,
-                      {
-                        color:
-                          pt.status === "ALERT"
-                            ? theme.unsafe
-                            : pt.status === "BORDERLINE"
-                            ? theme.caution
-                            : theme.safe
-                      }
-                    ]}
-                  >
-                    {pt.measuredValue} ({pt.status})
-                  </Text>
-                </View>
-                <Text style={[styles.explainText, { color: theme.textMuted }]}>
-                  {pt.assessment}
+              <View style={styles.explainHeader}>
+                <Text style={[styles.explainParam, { color: theme.text }]}>
+                  {item.parameter}
+                </Text>
+                <Text
+                  style={[
+                    styles.explainStatus,
+                    {
+                      color:
+                        item.status === "NORMAL"
+                          ? theme.safe
+                          : item.status === "UNAVAILABLE"
+                          ? theme.textMuted
+                          : theme.unsafe
+                    }
+                  ]}
+                >
+                  {item.measuredValue}
                 </Text>
               </View>
-            ))}
-          </View>
-        )}
+              <Text style={[styles.explainText, { color: theme.textMuted }]}>
+                {item.assessment}
+              </Text>
+            </View>
+          ))}
+        </View>
 
-        {/* Sensor Readings Breakdown (Handles null values honestly) */}
+        {/* Sensor Breakdown Grid */}
         <View
           style={[
             styles.sensorGridCard,
@@ -236,51 +200,52 @@ export default function BatchDetailsScreen() {
           ]}
         >
           <Text style={[styles.cardHeaderTitle, { color: theme.text }]}>
-            PROBE SENSOR TELEMETRY
+            SENSOR TELEMETRY ARCHIVE
           </Text>
+
           <View style={styles.gridRow}>
             <View style={[styles.gridCell, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
-              <Text style={[styles.cellLabel, { color: theme.textMuted }]}>pH Value</Text>
-              <Text
-                style={[
-                  styles.cellVal,
-                  {
-                    color:
-                      sensor.ph === null
-                        ? theme.textMuted
-                        : sensor.ph <= 4.2
-                        ? theme.safe
-                        : theme.caution
-                  }
-                ]}
-              >
+              <View style={styles.gridCellHeader}>
+                <AppIcon name="ph" size={13} color={theme.safe} />
+                <Text style={[styles.cellLabel, { color: theme.textMuted, marginLeft: 4 }]}>pH Acidity</Text>
+              </View>
+              <Text style={[styles.cellVal, { color: sensor.ph !== null ? theme.safe : theme.textMuted }]}>
                 {sensor.ph !== null ? sensor.ph.toFixed(2) : "--"}
               </Text>
-              <Text style={[styles.cellTarget, { color: theme.textMuted }]}>Optimal: 3.8 – 4.2</Text>
+              <Text style={[styles.cellTarget, { color: theme.textMuted }]}>Optimal: 3.8 - 4.2</Text>
             </View>
 
             <View style={[styles.gridCell, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
-              <Text style={[styles.cellLabel, { color: theme.textMuted }]}>Moisture %</Text>
+              <View style={styles.gridCellHeader}>
+                <AppIcon name="water" size={13} color={theme.accent} />
+                <Text style={[styles.cellLabel, { color: theme.textMuted, marginLeft: 4 }]}>Moisture</Text>
+              </View>
               <Text style={[styles.cellVal, { color: sensor.moisture !== null ? theme.accent : theme.textMuted }]}>
                 {sensor.moisture !== null ? `${sensor.moisture.toFixed(1)}%` : "--"}
               </Text>
-              <Text style={[styles.cellTarget, { color: theme.textMuted }]}>Optimal: 60 – 68%</Text>
+              <Text style={[styles.cellTarget, { color: theme.textMuted }]}>Optimal: 60 - 68%</Text>
             </View>
           </View>
 
           <View style={styles.gridRow}>
             <View style={[styles.gridCell, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
-              <Text style={[styles.cellLabel, { color: theme.textMuted }]}>Core Temp</Text>
+              <View style={styles.gridCellHeader}>
+                <AppIcon name="thermometer" size={13} color={theme.caution} />
+                <Text style={[styles.cellLabel, { color: theme.textMuted, marginLeft: 4 }]}>Core Temp</Text>
+              </View>
               <Text style={[styles.cellVal, { color: sensor.temperature !== null ? theme.caution : theme.textMuted }]}>
-                {sensor.temperature !== null ? `${sensor.temperature.toFixed(1)}°C` : "--"}
+                {sensor.temperature !== null ? `${sensor.temperature.toFixed(1)}C` : "--"}
               </Text>
               <Text style={[styles.cellTarget, { color: theme.textMuted }]}>
-                Ambient: {sensor.ambient !== null ? `${sensor.ambient.toFixed(1)}°C` : "--"}
+                Ambient: {sensor.ambient !== null ? `${sensor.ambient.toFixed(1)}C` : "--"}
               </Text>
             </View>
 
             <View style={[styles.gridCell, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
-              <Text style={[styles.cellLabel, { color: theme.textMuted }]}>Delta T Rise</Text>
+              <View style={styles.gridCellHeader}>
+                <AppIcon name="trending-up" size={13} color={theme.primary} />
+                <Text style={[styles.cellLabel, { color: theme.textMuted, marginLeft: 4 }]}>Delta T Rise</Text>
+              </View>
               <Text
                 style={[
                   styles.cellVal,
@@ -294,9 +259,9 @@ export default function BatchDetailsScreen() {
                   }
                 ]}
               >
-                {sensor.delta_temp !== null ? `+${sensor.delta_temp.toFixed(1)}°C` : "--"}
+                {sensor.delta_temp !== null ? `+${sensor.delta_temp.toFixed(1)}C` : "--"}
               </Text>
-              <Text style={[styles.cellTarget, { color: theme.textMuted }]}>Safe: &lt; 3.0°C</Text>
+              <Text style={[styles.cellTarget, { color: theme.textMuted }]}>Safe: &lt; 3.0C</Text>
             </View>
           </View>
         </View>
@@ -317,8 +282,8 @@ export default function BatchDetailsScreen() {
           </Text>
           {reasons.map((r, i) => (
             <View key={i} style={styles.reasonLine}>
-              <Text style={[styles.reasonDot, { color: theme.primary }]}>•</Text>
-              <Text style={[styles.reasonText, { color: theme.text }]}>{r}</Text>
+              <AppIcon name="check" size={12} color={theme.primary} strokeWidth={2.5} />
+              <Text style={[styles.reasonText, { color: theme.text, marginLeft: 6 }]}>{r}</Text>
             </View>
           ))}
         </View>
@@ -335,9 +300,12 @@ export default function BatchDetailsScreen() {
           ]}
         >
           <View style={styles.voiceTopRow}>
-            <Text style={[styles.voiceTitle, { color: theme.text }]}>
-              ?? FARMER ADVISORY ({language.toUpperCase()})
-            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <AppIcon name="volume" size={16} color={theme.text} />
+              <Text style={[styles.voiceTitle, { color: theme.text, marginLeft: 6 }]}>
+                FARMER ADVISORY ({language.toUpperCase()})
+              </Text>
+            </View>
             <TouchableOpacity
               style={[
                 styles.voiceBtn,
@@ -349,7 +317,10 @@ export default function BatchDetailsScreen() {
               ]}
               onPress={handleVoicePlay}
             >
-              <Text style={[styles.voiceBtnText, { color: theme.accent }]}>?? Replay Audio</Text>
+              <AppIcon name="refresh" size={11} color={theme.accent} />
+              <Text style={[styles.voiceBtnText, { color: theme.accent, marginLeft: 4 }]}>
+                Replay Audio
+              </Text>
             </TouchableOpacity>
           </View>
           <Text style={[styles.voiceAdvisoryText, { color: theme.textMuted }]}>
@@ -368,22 +339,33 @@ export default function BatchDetailsScreen() {
             }
           ]}
         >
-          <Text style={[styles.cardHeaderTitle, { color: theme.text }]}>
-            VERIFIABLE QR PAYLOAD
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+            <AppIcon name="qr-code" size={16} color={theme.text} />
+            <Text style={[styles.cardHeaderTitle, { color: theme.text, marginLeft: 6, marginBottom: 0 }]}>
+              VERIFIABLE QR PAYLOAD
+            </Text>
+          </View>
           <View
             style={[
               styles.qrPayloadBox,
-              { backgroundColor: theme.surface, borderColor: theme.cardBorder, borderRadius: theme.radiusSm }
+              {
+                backgroundColor: theme.surface,
+                borderColor: theme.cardBorder,
+                borderRadius: theme.radiusSm
+              }
             ]}
           >
             <Text style={[styles.qrPayloadText, { color: theme.textMuted }]}>{batch.qr_data}</Text>
           </View>
           <TouchableOpacity
-            style={[styles.shareBtn, { backgroundColor: theme.primary, borderRadius: theme.radiusSm }]}
+            style={[
+              styles.shareBtn,
+              { backgroundColor: theme.primary, borderRadius: theme.radiusSm }
+            ]}
             onPress={handleShareCertificate}
           >
-            <Text style={styles.shareBtnText}>SHARE / COPY CERTIFICATE</Text>
+            <AppIcon name="share" size={15} color="#090D16" />
+            <Text style={[styles.shareBtnText, { marginLeft: 6 }]}>SHARE / COPY CERTIFICATE</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -428,30 +410,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2
   },
-  versionCard: {
-    borderWidth: 1,
-    padding: 12,
-    marginVertical: 6
-  },
-  versionCardTitle: {
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 0.5,
-    marginBottom: 8
-  },
-  versionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 3
-  },
-  versionLabel: {
-    fontSize: 11,
-    fontWeight: "600"
-  },
-  versionVal: {
-    fontSize: 11,
-    fontWeight: "800"
-  },
   explainCard: {
     borderWidth: 1,
     padding: 12,
@@ -495,6 +453,11 @@ const styles = StyleSheet.create({
     padding: 8,
     alignItems: "center"
   },
+  gridCellHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 2
+  },
   cellLabel: {
     fontSize: 10,
     fontWeight: "700"
@@ -515,13 +478,8 @@ const styles = StyleSheet.create({
   },
   reasonLine: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    marginVertical: 3
-  },
-  reasonDot: {
-    fontSize: 14,
-    marginRight: 6,
-    lineHeight: 18
+    alignItems: "center",
+    marginVertical: 4
   },
   reasonText: {
     flex: 1,
@@ -544,6 +502,8 @@ const styles = StyleSheet.create({
     fontWeight: "900"
   },
   voiceBtn: {
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
     paddingHorizontal: 8,
     paddingVertical: 4
@@ -571,8 +531,10 @@ const styles = StyleSheet.create({
     fontFamily: "monospace"
   },
   shareBtn: {
-    paddingVertical: 12,
+    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
+    paddingVertical: 12,
     marginTop: 4
   },
   shareBtnText: {

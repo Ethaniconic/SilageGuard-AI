@@ -1,9 +1,10 @@
 /**
- * SCREEN 7 — BATCH HISTORY (SQLITE STORE)
+ * SCREEN 7 - BATCH HISTORY (SQLITE STORE)
  * - Lists all past silage quality scans saved offline in SQLite
  * - Instant search by batch ID or crop type
  * - Filter pills: ALL, SAFE, CAUTION, UNSAFE
- * - Tap to open detailed diagnostic report (Screen 8)
+ * - Vector AppIcons throughout
+ * - Tap to open detailed diagnostic report
  * - Theme & full viewport width support
  */
 
@@ -19,6 +20,7 @@ import {
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header } from "../components/Header";
+import { AppIcon } from "../components/AppIcon";
 import { batchRepository } from "../sqlite/batchRepository";
 import { BatchRecord } from "../sqlite/database";
 import { useTheme } from "../features/ble/bleManager";
@@ -122,7 +124,12 @@ export default function HistoryScreen() {
         </View>
 
         <View style={styles.batchMidRow}>
-          <Text style={[styles.cropText, { color: theme.text }]}>?? {item.crop_type}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <AppIcon name="leaf" size={13} color={theme.primary} />
+            <Text style={[styles.cropText, { color: theme.text, marginLeft: 6 }]}>
+              {item.crop_type}
+            </Text>
+          </View>
           <Text style={[styles.depthText, { color: theme.textMuted }]}>
             Pit Depth: {item.pit_depth_cm} cm
           </Text>
@@ -139,7 +146,12 @@ export default function HistoryScreen() {
             <Text style={[styles.confVal, { color: theme.text }]}>{item.confidence}%</Text>
           </View>
 
-          <Text style={[styles.viewReportLink, { color: theme.accent }]}>View Details ?</Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Text style={[styles.viewReportLink, { color: theme.accent, marginRight: 4 }]}>
+              View Details
+            </Text>
+            <AppIcon name="arrow-forward" size={13} color={theme.accent} />
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -147,7 +159,7 @@ export default function HistoryScreen() {
 
   return (
     <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="BATCH HISTORY" showBack={true} />
+      <Header title="SilageGuard AI" showBack={true} />
 
       <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         {/* Search Input Box */}
@@ -161,7 +173,7 @@ export default function HistoryScreen() {
             }
           ]}
         >
-          <Text style={styles.searchIcon}>??</Text>
+          <AppIcon name="search" size={16} color={theme.textMuted} />
           <TextInput
             style={[styles.searchInput, { color: theme.text }]}
             placeholder="Search by batch ID or crop type..."
@@ -171,7 +183,7 @@ export default function HistoryScreen() {
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery("")}>
-              <Text style={[styles.clearSearch, { color: theme.textMuted }]}>?</Text>
+              <AppIcon name="close" size={16} color={theme.textMuted} />
             </TouchableOpacity>
           )}
         </View>
@@ -225,8 +237,10 @@ export default function HistoryScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyIcon}>??</Text>
-              <Text style={[styles.emptyTitle, { color: theme.text }]}>No Silage Batches Found</Text>
+              <AppIcon name="history" size={38} color={theme.textMuted} />
+              <Text style={[styles.emptyTitle, { color: theme.text, marginTop: 10 }]}>
+                No Silage Batches Found
+              </Text>
               <Text style={[styles.emptySub, { color: theme.textMuted }]}>
                 {searchQuery.length > 0
                   ? "Try adjusting your search query or filter criteria."
@@ -257,18 +271,11 @@ const styles = StyleSheet.create({
     height: 44,
     marginBottom: 10
   },
-  searchIcon: {
-    fontSize: 14,
-    marginRight: 8
-  },
   searchInput: {
     flex: 1,
     fontSize: 13,
-    fontWeight: "600"
-  },
-  clearSearch: {
-    fontSize: 14,
-    padding: 4
+    fontWeight: "600",
+    marginLeft: 8
   },
   filterRow: {
     flexDirection: "row",
@@ -375,10 +382,6 @@ const styles = StyleSheet.create({
     paddingVertical: 50,
     alignItems: "center",
     justifyContent: "center"
-  },
-  emptyIcon: {
-    fontSize: 36,
-    marginBottom: 8
   },
   emptyTitle: {
     fontSize: 15,

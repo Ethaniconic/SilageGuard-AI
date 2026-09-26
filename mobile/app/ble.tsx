@@ -1,5 +1,5 @@
 /**
- * SCREEN 3 — BLE PROBE TELEMETRY & HARDWARE CONTROL
+ * SCREEN 3 - BLE PROBE TELEMETRY & HARDWARE CONTROL
  * Connects to ESP32-S3 Agricultural Probe via BLE GATT (UUID: 4fafc201...)
  * Displays live sensor telemetry gauges with agronomic status bands.
  * Clean empty state when disconnected (No dummy values!)
@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header } from "../components/Header";
 import { SensorGauge } from "../components/SensorGauge";
+import { AppIcon } from "../components/AppIcon";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
 
 export default function BleScreen() {
@@ -73,7 +74,7 @@ export default function BleScreen() {
 
   return (
     <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="ESP32-S3 PROBE" showBack={true} />
+      <Header title="SilageGuard AI" showBack={true} />
 
       <ScrollView
         contentContainerStyle={[
@@ -101,10 +102,12 @@ export default function BleScreen() {
                   { backgroundColor: theme.primary + "1A", borderRadius: theme.radiusSm }
                 ]}
               >
-                <Text style={styles.deviceIconText}>??</Text>
+                <AppIcon name="probe" size={24} color={theme.primary} />
               </View>
               <View>
-                <Text style={[styles.deviceName, { color: theme.text }]}>SilageGuard-Probe</Text>
+                <Text style={[styles.deviceName, { color: theme.text }]}>
+                  SilageGuard-Probe
+                </Text>
                 <Text style={[styles.deviceSub, { color: theme.textMuted }]}>
                   UUID: 4fafc201-1fb5-459e-8fcc-c5c9c331914b
                 </Text>
@@ -114,18 +117,21 @@ export default function BleScreen() {
                     { borderRadius: theme.radiusSm },
                     telemetry.mode === "REAL_SENSOR"
                       ? { backgroundColor: theme.safeBg, borderColor: theme.safeBorder }
-                      : { backgroundColor: theme.cautionBg, borderColor: theme.cautionBorder }
+                      : { backgroundColor: theme.surface, borderColor: theme.cardBorder }
                   ]}
                 >
                   <Text
                     style={[
                       styles.modeText,
-                      { color: telemetry.mode === "REAL_SENSOR" ? theme.safe : theme.caution }
+                      {
+                        color:
+                          telemetry.mode === "REAL_SENSOR"
+                            ? theme.safe
+                            : theme.textMuted
+                      }
                     ]}
                   >
-                    {telemetry.mode === "REAL_SENSOR"
-                      ? "?? REAL SENSOR MODE"
-                      : "?? WOKWI SIMULATION MODE"}
+                    MODE: {telemetry.mode}
                   </Text>
                 </View>
               </View>
@@ -135,25 +141,17 @@ export default function BleScreen() {
               style={[
                 styles.statusIndicator,
                 {
-                  backgroundColor: isConnected
-                    ? theme.safeBg
-                    : isScanning
-                    ? theme.cautionBg
-                    : theme.surface,
-                  borderRadius: theme.radiusSm
+                  borderRadius: theme.radiusSm,
+                  backgroundColor: isConnected ? theme.safeBg : theme.surface,
+                  borderWidth: 1,
+                  borderColor: isConnected ? theme.safeBorder : theme.cardBorder
                 }
               ]}
             >
               <Text
                 style={[
                   styles.statusIndicatorText,
-                  {
-                    color: isConnected
-                      ? theme.safe
-                      : isScanning
-                      ? theme.caution
-                      : theme.textMuted
-                  }
+                  { color: isConnected ? theme.safe : theme.textMuted }
                 ]}
               >
                 {bleStatus}
@@ -165,10 +163,10 @@ export default function BleScreen() {
           <TouchableOpacity
             style={[
               styles.actionButton,
-              { borderRadius: theme.radiusSm },
-              isConnected
-                ? { backgroundColor: theme.unsafe }
-                : { backgroundColor: theme.primary }
+              {
+                backgroundColor: isConnected ? theme.unsafe : theme.primary,
+                borderRadius: theme.radiusSm
+              }
             ]}
             onPress={isConnected ? disconnectProbe : () => connectProbe()}
             disabled={isScanning}
@@ -177,13 +175,23 @@ export default function BleScreen() {
             {isScanning ? (
               <ActivityIndicator color="#090D16" />
             ) : (
-              <Text style={styles.actionButtonText}>
-                {isConnected ? "DISCONNECT PROBE" : "PAIR & CONNECT VIA BLE"}
-              </Text>
+              <View style={styles.actionBtnRow}>
+                <AppIcon
+                  name={isConnected ? "close" : "bluetooth"}
+                  size={15}
+                  color="#090D16"
+                  strokeWidth={2.4}
+                />
+                <Text style={styles.actionButtonText}>
+                  {isConnected ? "DISCONNECT PROBE" : "PAIR & CONNECT VIA BLE"}
+                </Text>
+              </View>
             )}
           </TouchableOpacity>
 
-          <Text style={[styles.statusMsg, { color: theme.textMuted }]}>{statusMessage}</Text>
+          <Text style={[styles.statusMsg, { color: theme.textMuted }]}>
+            {statusMessage}
+          </Text>
         </View>
 
         {/* Demo Preset Selector */}
@@ -280,17 +288,17 @@ export default function BleScreen() {
                 label="pH Acidity"
                 value={telemetry.ph}
                 unit="pH"
-                targetRange="3.8 – 4.2"
+                targetRange="3.8 - 4.2"
                 status={phStatus}
-                iconText="??"
+                iconName="ph"
               />
               <SensorGauge
                 label="Moisture"
                 value={telemetry.moisture}
                 unit="%"
-                targetRange="60 – 68%"
+                targetRange="60 - 68%"
                 status={moistStatus}
-                iconText="??"
+                iconName="water"
               />
             </View>
 
@@ -298,29 +306,29 @@ export default function BleScreen() {
               <SensorGauge
                 label="Core Temp"
                 value={telemetry.temp}
-                unit="°C"
-                targetRange="< 30°C"
+                unit="C"
+                targetRange="< 30C"
                 status={tempStatus}
-                iconText="???"
+                iconName="thermometer"
               />
               <SensorGauge
                 label="Ambient Temp"
                 value={telemetry.ambient}
-                unit="°C"
+                unit="C"
                 targetRange="Ref"
                 status={isConnected ? "safe" : "disconnected"}
-                iconText="???"
+                iconName="thermometer"
               />
             </View>
 
             <View style={styles.gaugeRow}>
               <SensorGauge
-                label="Delta Temp (?T)"
+                label="Delta Temp"
                 value={deltaTemp}
-                unit="°C Rise"
-                targetRange="< 3.0°C"
+                unit="C Rise"
+                targetRange="< 3.0C"
                 status={tempStatus}
-                iconText="??"
+                iconName="trending-up"
               />
               <SensorGauge
                 label="Probe Battery"
@@ -334,7 +342,7 @@ export default function BleScreen() {
                     ? "safe"
                     : "unsafe"
                 }
-                iconText="??"
+                iconName="battery"
               />
             </View>
           </View>
@@ -375,9 +383,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 10
   },
-  deviceIconText: {
-    fontSize: 22
-  },
   deviceName: {
     fontSize: 14,
     fontWeight: "900"
@@ -411,11 +416,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginVertical: 4
   },
+  actionBtnRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center"
+  },
   actionButtonText: {
     color: "#090D16",
     fontSize: 12,
     fontWeight: "900",
-    letterSpacing: 0.5
+    letterSpacing: 0.5,
+    marginLeft: 6
   },
   statusMsg: {
     fontSize: 10,

@@ -1,21 +1,30 @@
 /**
- * SILAGEGUARD AI — Traffic Light Safety Result Card
+ * SILAGEGUARD AI - Traffic Light Safety Result Card
  * Large high-contrast visual display designed for field farmers.
- * Sharp industrial corners and theme support.
+ * Vector icons for indicators, sharp industrial corners, and theme support.
  */
 
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { SilageDecision } from "../features/fusion/multimodalFusionEngine";
 import { useTheme } from "../features/ble/bleManager";
+import { AppIcon } from "./AppIcon";
 
 interface Props {
   decision: SilageDecision;
   confidence: number;
   mssiScore: number;
+  cropType?: string;
+  pitDepthCm?: number;
 }
 
-export const TrafficLightCard: React.FC<Props> = ({ decision, confidence, mssiScore }) => {
+export const TrafficLightCard: React.FC<Props> = ({
+  decision,
+  confidence,
+  mssiScore,
+  cropType,
+  pitDepthCm
+}) => {
   const { theme } = useTheme();
 
   const isSafe = decision === "SAFE";
@@ -26,12 +35,17 @@ export const TrafficLightCard: React.FC<Props> = ({ decision, confidence, mssiSc
   const bgColor = isSafe ? theme.safeBg : isCaution ? theme.cautionBg : theme.unsafeBg;
   const borderColor = isSafe ? theme.safeBorder : isCaution ? theme.cautionBorder : theme.unsafeBorder;
 
-  const decisionLabel = isSafe ? "LOW SCREENING RISK" : isCaution ? "FEED WITH CAUTION" : "UNSAFE / SPOILED";
-  const decisionSubtext = isSafe
-    ? "Safe to feed • Optimal preservation criteria met"
+  const decisionLabel = isSafe
+    ? "LOW SCREENING RISK"
     : isCaution
-    ? "Aerobic Heating Signal • Monitor closely / Feed within 6h"
-    : "Elevated Spoilage Signal • Do not feed suspect forage";
+    ? "FEED WITH CAUTION"
+    : "UNSAFE / SPOILED";
+
+  const decisionSubtext = isSafe
+    ? "Safe to feed - Optimal preservation criteria met"
+    : isCaution
+    ? "Aerobic Heating Signal - Monitor closely / Feed within 6h"
+    : "Elevated Spoilage Signal - Do not feed suspect forage";
 
   return (
     <View
@@ -56,18 +70,27 @@ export const TrafficLightCard: React.FC<Props> = ({ decision, confidence, mssiSc
         ]}
       >
         <View style={[styles.lightCircle, isUnsafe ? styles.activeRed : styles.dimRed]}>
-          <Text style={styles.lightIcon}>{isUnsafe ? "!" : ""}</Text>
+          {isUnsafe && <AppIcon name="alert" size={14} color="#FFFFFF" strokeWidth={2.4} />}
         </View>
         <View style={[styles.lightCircle, isCaution ? styles.activeYellow : styles.dimYellow]}>
-          <Text style={styles.lightIcon}>{isCaution ? "!" : ""}</Text>
+          {isCaution && <AppIcon name="alert" size={14} color="#FFFFFF" strokeWidth={2.4} />}
         </View>
         <View style={[styles.lightCircle, isSafe ? styles.activeGreen : styles.dimGreen]}>
-          <Text style={styles.lightIcon}>{isSafe ? "?" : ""}</Text>
+          {isSafe && <AppIcon name="check" size={14} color="#FFFFFF" strokeWidth={2.5} />}
         </View>
       </View>
 
       <Text style={[styles.decisionText, { color: mainColor }]}>{decisionLabel}</Text>
       <Text style={[styles.subtext, { color: theme.text }]}>{decisionSubtext}</Text>
+
+      {cropType && (
+        <View style={styles.cropBadge}>
+          <AppIcon name="leaf" size={12} color={theme.textMuted} />
+          <Text style={[styles.cropBadgeText, { color: theme.textMuted }]}>
+            {cropType.split(" ")[0]} {pitDepthCm ? `(${pitDepthCm}cm depth)` : ""}
+          </Text>
+        </View>
+      )}
 
       <View style={[styles.metaRow, { borderTopColor: borderColor + "44" }]}>
         <View style={styles.badge}>
@@ -113,7 +136,6 @@ const styles = StyleSheet.create({
   dimYellow: { backgroundColor: "rgba(245, 158, 11, 0.2)" },
   activeGreen: { backgroundColor: "#10B981" },
   dimGreen: { backgroundColor: "rgba(16, 185, 129, 0.2)" },
-  lightIcon: { color: "#FFFFFF", fontWeight: "900", fontSize: 14 },
   decisionText: {
     fontSize: 22,
     fontWeight: "900",
@@ -125,6 +147,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontWeight: "600",
     textAlign: "center"
+  },
+  cropBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 6
+  },
+  cropBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    marginLeft: 4
   },
   metaRow: {
     flexDirection: "row",

@@ -1,9 +1,9 @@
 /**
- * SCREEN 4 — GUIDED SURFACE CAMERA & SCAN PIPELINE
+ * SCREEN 4 - GUIDED SURFACE CAMERA & SCAN PIPELINE
  * Redesigned for Dairy Farmers:
  * - Un-crowded, step-by-step intuitive flow
  * - Live real hardware camera with expo-camera (CameraView)
- * - Gallery upload & sample demo fallbacks
+ * - Vector AppIcon library (no mangled question marks or raw emojis)
  * - Honest sensor telemetry card (no dummy data if probe disconnected)
  * - Sharp industrial corners & full viewport width
  * - Light & Dark theme support
@@ -26,6 +26,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header } from "../components/Header";
 import { CameraGuidanceOverlay } from "../components/CameraGuidanceOverlay";
+import { AppIcon } from "../components/AppIcon";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
 
 export default function CameraScreen() {
@@ -36,7 +37,6 @@ export default function CameraScreen() {
   const {
     scanImages,
     addScanImage,
-    removeScanImage,
     clearScanImages,
     cropType,
     setCropType,
@@ -121,7 +121,7 @@ export default function CameraScreen() {
 
   return (
     <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="SILAGE SCANNER" showBack={true} />
+      <Header title="SilageGuard AI" showBack={true} />
 
       <ScrollView
         contentContainerStyle={[
@@ -132,7 +132,13 @@ export default function CameraScreen() {
       >
         {/* STEP 1: SURFACE CAMERA VIEWFINDER */}
         <View style={styles.stepHeader}>
-          <View style={[styles.stepBadge, { backgroundColor: theme.primary, borderRadius: theme.radiusSm }]}>
+          <View
+            style={[
+              styles.stepBadge,
+              { backgroundColor: theme.primary, borderRadius: theme.radiusSm }
+            ]}
+          >
+            <AppIcon name="camera" size={13} color="#090D16" />
             <Text style={styles.stepNumber}>STEP 1</Text>
           </View>
           <Text style={[styles.stepTitle, { color: theme.text }]}>
@@ -166,17 +172,30 @@ export default function CameraScreen() {
               <View
                 style={[
                   styles.previewSuccessBadge,
-                  { backgroundColor: theme.safeBg, borderColor: theme.safeBorder, borderRadius: theme.radiusSm }
+                  {
+                    backgroundColor: theme.safeBg,
+                    borderColor: theme.safeBorder,
+                    borderRadius: theme.radiusSm
+                  }
                 ]}
               >
+                <AppIcon name="check" size={14} color={theme.safe} strokeWidth={2.5} />
                 <Text style={[styles.previewSuccessText, { color: theme.safe }]}>
-                  ? Photo Captured Ready for AI
+                  Photo Captured - Ready for AI
                 </Text>
               </View>
               <TouchableOpacity
-                style={[styles.retakeButton, { backgroundColor: "rgba(0,0,0,0.75)", borderRadius: theme.radiusSm }]}
+                style={[
+                  styles.retakeButton,
+                  {
+                    backgroundColor: "rgba(0,0,0,0.8)",
+                    borderColor: theme.cardBorder,
+                    borderRadius: theme.radiusSm
+                  }
+                ]}
                 onPress={() => clearScanImages()}
               >
+                <AppIcon name="refresh" size={14} color="#FFFFFF" />
                 <Text style={styles.retakeText}>Retake Photo</Text>
               </TouchableOpacity>
             </View>
@@ -193,7 +212,7 @@ export default function CameraScreen() {
           ) : (
             // CAMERA PERMISSION REQUEST CARD
             <View style={styles.permissionCard}>
-              <Text style={styles.cameraIcon}>??</Text>
+              <AppIcon name="camera" size={44} color={theme.primary} />
               <Text style={[styles.permissionTitle, { color: "#FFFFFF" }]}>
                 Camera Access Needed
               </Text>
@@ -201,7 +220,10 @@ export default function CameraScreen() {
                 To scan the silage bunker face for mould, moisture staining, and discoloration.
               </Text>
               <TouchableOpacity
-                style={[styles.grantButton, { backgroundColor: theme.primary, borderRadius: theme.radiusSm }]}
+                style={[
+                  styles.grantButton,
+                  { backgroundColor: theme.primary, borderRadius: theme.radiusSm }
+                ]}
                 onPress={requestPermission}
               >
                 <Text style={styles.grantButtonText}>Enable Camera</Text>
@@ -217,12 +239,16 @@ export default function CameraScreen() {
             <TouchableOpacity
               style={[
                 styles.auxButton,
-                { backgroundColor: theme.card, borderColor: theme.cardBorder, borderRadius: theme.radiusSm }
+                {
+                  backgroundColor: theme.card,
+                  borderColor: theme.cardBorder,
+                  borderRadius: theme.radiusSm
+                }
               ]}
               onPress={handlePickGallery}
               activeOpacity={0.8}
             >
-              <Text style={styles.auxIcon}>???</Text>
+              <AppIcon name="gallery" size={18} color={theme.text} />
               <Text style={[styles.auxText, { color: theme.text }]}>Gallery</Text>
             </TouchableOpacity>
 
@@ -236,7 +262,12 @@ export default function CameraScreen() {
               {isCapturing ? (
                 <ActivityIndicator color={theme.primary} />
               ) : (
-                <View style={[styles.mainShutterInner, { backgroundColor: theme.primary }]} />
+                <View
+                  style={[
+                    styles.mainShutterInner,
+                    { backgroundColor: theme.primary }
+                  ]}
+                />
               )}
             </TouchableOpacity>
 
@@ -244,21 +275,45 @@ export default function CameraScreen() {
             <TouchableOpacity
               style={[
                 styles.auxButton,
-                { backgroundColor: theme.card, borderColor: theme.cardBorder, borderRadius: theme.radiusSm }
+                {
+                  backgroundColor: theme.card,
+                  borderColor: theme.cardBorder,
+                  borderRadius: theme.radiusSm
+                }
               ]}
               onPress={useFallbackSample}
               activeOpacity={0.8}
             >
-              <Text style={styles.auxIcon}>??</Text>
-              <Text style={[styles.auxText, { color: theme.text }]}>Sample</Text>
+              <AppIcon name="flask" size={18} color={theme.accent} />
+              <Text style={[styles.auxText, { color: theme.accent }]}>Sample</Text>
             </TouchableOpacity>
           </View>
         ) : null}
 
         {/* STEP 2: SENSOR PROBE STATUS CARD (Transparent, No Dummy Data) */}
         <View style={styles.stepHeader}>
-          <View style={[styles.stepBadge, { backgroundColor: isConnected ? theme.safe : theme.cardBorder, borderRadius: theme.radiusSm }]}>
-            <Text style={styles.stepNumber}>STEP 2</Text>
+          <View
+            style={[
+              styles.stepBadge,
+              {
+                backgroundColor: isConnected ? theme.safe : theme.cardBorder,
+                borderRadius: theme.radiusSm
+              }
+            ]}
+          >
+            <AppIcon
+              name={isConnected ? "bluetooth-connected" : "probe"}
+              size={13}
+              color={isConnected ? "#090D16" : theme.textMuted}
+            />
+            <Text
+              style={[
+                styles.stepNumber,
+                { color: isConnected ? "#090D16" : theme.textMuted }
+              ]}
+            >
+              STEP 2
+            </Text>
           </View>
           <Text style={[styles.stepTitle, { color: theme.text }]}>
             Probe Telemetry Reading
@@ -292,44 +347,124 @@ export default function CameraScreen() {
               style={[
                 styles.probePairBtn,
                 {
-                  backgroundColor: isConnected ? theme.accent + "1A" : theme.primary + "1A",
+                  backgroundColor: isConnected
+                    ? theme.accent + "1A"
+                    : theme.primary + "1A",
                   borderColor: isConnected ? theme.accent : theme.primary,
                   borderRadius: theme.radiusSm
                 }
               ]}
               onPress={() => router.push("/ble" as any)}
             >
-              <Text style={[styles.probePairBtnText, { color: isConnected ? theme.accent : theme.primary }]}>
-                {isConnected ? "Settings ?" : "Connect Probe ?"}
+              <Text
+                style={[
+                  styles.probePairBtnText,
+                  { color: isConnected ? theme.accent : theme.primary }
+                ]}
+              >
+                {isConnected ? "Status" : "Pair Probe"}
               </Text>
+              <AppIcon
+                name="arrow-forward"
+                size={12}
+                color={isConnected ? theme.accent : theme.primary}
+              />
             </TouchableOpacity>
           </View>
 
           {/* Telemetry Readings (Honest: "--" if disconnected, no fake numbers!) */}
           <View style={styles.telemetryGrid}>
-            <View style={[styles.telemetryCell, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
-              <Text style={[styles.telemetryLabel, { color: theme.textMuted }]}>pH ACIDITY</Text>
-              <Text style={[styles.telemetryVal, { color: isConnected && telemetry.ph !== null ? theme.safe : theme.textMuted }]}>
-                {isConnected && telemetry.ph !== null ? telemetry.ph.toFixed(2) : "--"}
+            <View
+              style={[
+                styles.telemetryCell,
+                { backgroundColor: theme.surface, borderRadius: theme.radiusSm }
+              ]}
+            >
+              <View style={styles.cellHeader}>
+                <AppIcon name="ph" size={13} color={theme.safe} />
+                <Text style={[styles.telemetryLabel, { color: theme.textMuted }]}>
+                  pH
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.telemetryVal,
+                  {
+                    color:
+                      isConnected && telemetry.ph !== null
+                        ? theme.safe
+                        : theme.textMuted
+                  }
+                ]}
+              >
+                {isConnected && telemetry.ph !== null
+                  ? telemetry.ph.toFixed(2)
+                  : "--"}
               </Text>
             </View>
-            <View style={[styles.telemetryCell, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
-              <Text style={[styles.telemetryLabel, { color: theme.textMuted }]}>MOISTURE</Text>
-              <Text style={[styles.telemetryVal, { color: isConnected && telemetry.moisture !== null ? theme.accent : theme.textMuted }]}>
-                {isConnected && telemetry.moisture !== null ? `${telemetry.moisture.toFixed(1)}%` : "--"}
+
+            <View
+              style={[
+                styles.telemetryCell,
+                { backgroundColor: theme.surface, borderRadius: theme.radiusSm }
+              ]}
+            >
+              <View style={styles.cellHeader}>
+                <AppIcon name="water" size={13} color={theme.accent} />
+                <Text style={[styles.telemetryLabel, { color: theme.textMuted }]}>
+                  MOISTURE
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.telemetryVal,
+                  {
+                    color:
+                      isConnected && telemetry.moisture !== null
+                        ? theme.accent
+                        : theme.textMuted
+                  }
+                ]}
+              >
+                {isConnected && telemetry.moisture !== null
+                  ? `${telemetry.moisture.toFixed(1)}%`
+                  : "--"}
               </Text>
             </View>
-            <View style={[styles.telemetryCell, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
-              <Text style={[styles.telemetryLabel, { color: theme.textMuted }]}>CORE TEMP</Text>
-              <Text style={[styles.telemetryVal, { color: isConnected && telemetry.temp !== null ? theme.caution : theme.textMuted }]}>
-                {isConnected && telemetry.temp !== null ? `${telemetry.temp.toFixed(1)}°C` : "--"}
+
+            <View
+              style={[
+                styles.telemetryCell,
+                { backgroundColor: theme.surface, borderRadius: theme.radiusSm }
+              ]}
+            >
+              <View style={styles.cellHeader}>
+                <AppIcon name="thermometer" size={13} color={theme.caution} />
+                <Text style={[styles.telemetryLabel, { color: theme.textMuted }]}>
+                  TEMP
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.telemetryVal,
+                  {
+                    color:
+                      isConnected && telemetry.temp !== null
+                        ? theme.caution
+                        : theme.textMuted
+                  }
+                ]}
+              >
+                {isConnected && telemetry.temp !== null
+                  ? `${telemetry.temp.toFixed(1)}C`
+                  : "--"}
               </Text>
             </View>
           </View>
 
           {!isConnected && (
             <Text style={[styles.probeHintText, { color: theme.textMuted }]}>
-              ?? Tip: You can scan right now using Vision-Only AI, or connect probe for multimodal fusion.
+              Tip: You can scan right now using Vision-Only AI, or connect probe for multimodal fusion.
             </Text>
           )}
         </View>
@@ -347,17 +482,33 @@ export default function CameraScreen() {
           onPress={() => setShowAdvancedParams(!showAdvancedParams)}
           activeOpacity={0.8}
         >
-          <Text style={[styles.accordionTitle, { color: theme.text }]}>
-            ?? Silage Type & Depth: {cropType.split(" ")[0]} • {pitDepthCm}cm
-          </Text>
-          <Text style={[styles.accordionArrow, { color: theme.textMuted }]}>
-            {showAdvancedParams ? "?" : "?"}
-          </Text>
+          <View style={styles.accordionLeft}>
+            <AppIcon name="leaf" size={16} color={theme.primary} />
+            <Text style={[styles.accordionTitle, { color: theme.text }]}>
+              Silage Type & Depth: {cropType.split(" ")[0]} ({pitDepthCm}cm)
+            </Text>
+          </View>
+          <AppIcon
+            name={showAdvancedParams ? "chevron-up" : "chevron-down"}
+            size={16}
+            color={theme.textMuted}
+          />
         </TouchableOpacity>
 
         {showAdvancedParams && (
-          <View style={[styles.accordionContent, { backgroundColor: theme.card, borderColor: theme.cardBorder, borderRadius: theme.radiusSm }]}>
-            <Text style={[styles.paramsLabel, { color: theme.textMuted }]}>Select Forage Crop:</Text>
+          <View
+            style={[
+              styles.accordionContent,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.cardBorder,
+                borderRadius: theme.radiusSm
+              }
+            ]}
+          >
+            <Text style={[styles.paramsLabel, { color: theme.textMuted }]}>
+              Select Forage Crop:
+            </Text>
             <View style={styles.cropWrap}>
               {crops.map((c) => (
                 <TouchableOpacity
@@ -366,8 +517,14 @@ export default function CameraScreen() {
                     styles.cropPill,
                     { borderRadius: theme.radiusSm },
                     cropType === c
-                      ? { backgroundColor: theme.primary, borderColor: theme.primary }
-                      : { backgroundColor: theme.surface, borderColor: theme.cardBorder }
+                      ? {
+                          backgroundColor: theme.primary,
+                          borderColor: theme.primary
+                        }
+                      : {
+                          backgroundColor: theme.surface,
+                          borderColor: theme.cardBorder
+                        }
                   ]}
                   onPress={() => setCropType(c)}
                 >
@@ -383,7 +540,12 @@ export default function CameraScreen() {
               ))}
             </View>
 
-            <Text style={[styles.paramsLabel, { color: theme.textMuted, marginTop: 10 }]}>
+            <Text
+              style={[
+                styles.paramsLabel,
+                { color: theme.textMuted, marginTop: 10 }
+              ]}
+            >
               Bunker Depth:
             </Text>
             <View style={styles.depthRow}>
@@ -394,8 +556,14 @@ export default function CameraScreen() {
                     styles.depthPill,
                     { borderRadius: theme.radiusSm },
                     pitDepthCm === d
-                      ? { backgroundColor: theme.accent, borderColor: theme.accent }
-                      : { backgroundColor: theme.surface, borderColor: theme.cardBorder }
+                      ? {
+                          backgroundColor: theme.accent,
+                          borderColor: theme.accent
+                        }
+                      : {
+                          backgroundColor: theme.surface,
+                          borderColor: theme.cardBorder
+                        }
                   ]}
                   onPress={() => setPitDepthCm(d)}
                 >
@@ -425,9 +593,9 @@ export default function CameraScreen() {
           onPress={handleProceedToAI}
           activeOpacity={0.85}
         >
-          <Text style={styles.analyzeButtonText}>
-            RUN AI QUALITY EVALUATION ?
-          </Text>
+          <AppIcon name="scan" size={20} color="#090D16" strokeWidth={2.4} />
+          <Text style={styles.analyzeButtonText}>RUN AI EVALUATION</Text>
+          <AppIcon name="arrow-forward" size={18} color="#090D16" strokeWidth={2.4} />
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -448,35 +616,35 @@ const styles = StyleSheet.create({
     marginVertical: 8
   },
   stepBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     marginRight: 8
   },
   stepNumber: {
-    color: "#090D16",
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "900",
-    letterSpacing: 0.5
+    color: "#090D16",
+    marginLeft: 4
   },
   stepTitle: {
-    fontSize: 14,
-    fontWeight: "900",
+    fontSize: 13,
+    fontWeight: "800",
     letterSpacing: 0.3
   },
   viewfinderContainer: {
-    height: 270,
+    height: 250,
     borderWidth: 1,
     overflow: "hidden",
-    position: "relative",
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
+    marginBottom: 10
   },
   previewWrapper: {
     width: "100%",
     height: "100%",
-    position: "relative",
-    justifyContent: "center",
-    alignItems: "center"
+    position: "relative"
   },
   previewImage: {
     width: "100%",
@@ -484,87 +652,92 @@ const styles = StyleSheet.create({
   },
   previewSuccessBadge: {
     position: "absolute",
-    top: 12,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 6
+    top: 10,
+    left: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 1
   },
   previewSuccessText: {
-    fontSize: 12,
-    fontWeight: "800"
+    fontSize: 11,
+    fontWeight: "800",
+    marginLeft: 6
   },
   retakeButton: {
     position: "absolute",
-    bottom: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 8
+    bottom: 10,
+    right: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1
   },
   retakeText: {
     color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "800"
+    fontSize: 11,
+    fontWeight: "800",
+    marginLeft: 6
   },
   permissionCard: {
     alignItems: "center",
-    padding: 20
-  },
-  cameraIcon: {
-    fontSize: 40,
-    marginBottom: 8
+    paddingHorizontal: 20
   },
   permissionTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "800",
-    marginBottom: 4
+    marginTop: 8
   },
   permissionSubtitle: {
     fontSize: 12,
     textAlign: "center",
-    marginBottom: 16,
-    paddingHorizontal: 16
+    marginTop: 4,
+    marginBottom: 14
   },
   grantButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10
+    paddingHorizontal: 18,
+    paddingVertical: 8
   },
   grantButtonText: {
     color: "#090D16",
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "900"
   },
   shutterRow: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    justifyContent: "space-around",
-    marginVertical: 12
+    marginBottom: 12,
+    paddingHorizontal: 10
   },
   auxButton: {
     borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    justifyContent: "center",
     minWidth: 80
-  },
-  auxIcon: {
-    fontSize: 18,
-    marginBottom: 2
   },
   auxText: {
     fontSize: 11,
-    fontWeight: "700"
+    fontWeight: "800",
+    marginTop: 4
   },
   mainShutterBtn: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     borderWidth: 4,
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
+    backgroundColor: "transparent"
   },
   mainShutterInner: {
-    width: 46,
-    height: 46,
-    borderRadius: 23
+    width: 52,
+    height: 52,
+    borderRadius: 26
   },
   probeStatusCard: {
     borderWidth: 1,
@@ -592,13 +765,16 @@ const styles = StyleSheet.create({
     fontWeight: "800"
   },
   probePairBtn: {
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
     paddingHorizontal: 8,
     paddingVertical: 4
   },
   probePairBtnText: {
     fontSize: 11,
-    fontWeight: "800"
+    fontWeight: "800",
+    marginRight: 4
   },
   telemetryGrid: {
     flexDirection: "row",
@@ -606,23 +782,30 @@ const styles = StyleSheet.create({
   },
   telemetryCell: {
     flex: 1,
+    padding: 10,
     marginHorizontal: 3,
-    padding: 8,
     alignItems: "center"
   },
+  cellHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4
+  },
   telemetryLabel: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: "800",
-    marginBottom: 2
+    letterSpacing: 0.3,
+    marginLeft: 4
   },
   telemetryVal: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "900"
   },
   probeHintText: {
     fontSize: 10,
+    fontWeight: "500",
     marginTop: 8,
-    lineHeight: 14
+    textAlign: "center"
   },
   accordionHeader: {
     borderWidth: 1,
@@ -630,19 +813,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginVertical: 4
+    marginBottom: 10
+  },
+  accordionLeft: {
+    flexDirection: "row",
+    alignItems: "center"
   },
   accordionTitle: {
     fontSize: 12,
-    fontWeight: "700"
-  },
-  accordionArrow: {
-    fontSize: 10
+    fontWeight: "800",
+    marginLeft: 8
   },
   accordionContent: {
     borderWidth: 1,
     padding: 12,
-    marginBottom: 8
+    marginBottom: 10
   },
   paramsLabel: {
     fontSize: 11,
@@ -651,42 +836,43 @@ const styles = StyleSheet.create({
   },
   cropWrap: {
     flexDirection: "row",
-    flexWrap: "wrap"
+    flexWrap: "wrap",
+    gap: 6
   },
   cropPill: {
     borderWidth: 1,
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginRight: 6,
-    marginBottom: 6
+    paddingVertical: 6
   },
   cropPillText: {
     fontSize: 11,
     fontWeight: "700"
   },
   depthRow: {
-    flexDirection: "row"
+    flexDirection: "row",
+    gap: 6
   },
   depthPill: {
     borderWidth: 1,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginRight: 8
+    paddingVertical: 6
   },
   depthPillText: {
     fontSize: 11,
-    fontWeight: "800"
+    fontWeight: "700"
   },
   analyzeButton: {
-    paddingVertical: 14,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 10
+    paddingVertical: 14,
+    marginTop: 6
   },
   analyzeButtonText: {
     color: "#090D16",
     fontSize: 14,
     fontWeight: "900",
-    letterSpacing: 0.5
+    letterSpacing: 0.5,
+    marginHorizontal: 8
   }
 });

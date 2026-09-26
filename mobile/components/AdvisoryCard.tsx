@@ -1,13 +1,14 @@
 /**
- * SILAGEGUARD AI — Actionable Farmer Advisory Card
+ * SILAGEGUARD AI - Actionable Farmer Advisory Card
  * Displays structured agronomic guidance (Problem, Reason, Immediate Action, Prevention)
- * with Voice TTS narration trigger, theme support, and clean industrial corners.
+ * with Voice TTS narration trigger, theme support, AppIcon, and clean industrial corners.
  */
 
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { FarmerAdvisory } from "../features/advisory/advisoryEngine";
 import { useTheme } from "../features/ble/bleManager";
+import { AppIcon } from "./AppIcon";
 
 interface Props {
   advisory: FarmerAdvisory;
@@ -59,30 +60,41 @@ export const AdvisoryCard: React.FC<Props> = ({ advisory, onPlayVoice }) => {
           onPress={handleVoicePress}
           activeOpacity={0.8}
         >
+          <AppIcon
+            name="volume"
+            size={13}
+            color={isPlaying ? "#FFFFFF" : theme.accent}
+          />
           <Text
             style={[
               styles.voiceButtonText,
               { color: isPlaying ? "#FFFFFF" : theme.accent }
             ]}
           >
-            {isPlaying ? "?? Playing..." : "?? Read Out"}
+            {isPlaying ? "Playing..." : "Read Out"}
           </Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>
-          ?? IDENTIFIED ISSUE
-        </Text>
+        <View style={styles.sectionLabelRow}>
+          <AppIcon name="alert" size={12} color={theme.textMuted} />
+          <Text style={[styles.sectionLabel, { color: theme.textMuted, marginLeft: 4 }]}>
+            IDENTIFIED ISSUE
+          </Text>
+        </View>
         <Text style={[styles.sectionContent, { color: theme.text }]}>
           {advisory.problem}
         </Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>
-          ?? AGRONOMIC CAUSE
-        </Text>
+        <View style={styles.sectionLabelRow}>
+          <AppIcon name="flask" size={12} color={theme.textMuted} />
+          <Text style={[styles.sectionLabel, { color: theme.textMuted, marginLeft: 4 }]}>
+            AGRONOMIC CAUSE
+          </Text>
+        </View>
         <Text style={[styles.sectionContent, { color: theme.text }]}>
           {advisory.reason}
         </Text>
@@ -99,18 +111,24 @@ export const AdvisoryCard: React.FC<Props> = ({ advisory, onPlayVoice }) => {
           }
         ]}
       >
-        <Text style={[styles.sectionLabel, { color: theme.primary }]}>
-          ? IMMEDIATE ACTION REQUIRED
-        </Text>
+        <View style={styles.sectionLabelRow}>
+          <AppIcon name="check" size={12} color={theme.primary} strokeWidth={2.5} />
+          <Text style={[styles.sectionLabel, { color: theme.primary, marginLeft: 4 }]}>
+            IMMEDIATE ACTION REQUIRED
+          </Text>
+        </View>
         <Text style={[styles.sectionContent, styles.actionText, { color: theme.text }]}>
           {advisory.immediateAction}
         </Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>
-          ??? FUTURE HARVEST / PIT PREVENTION
-        </Text>
+        <View style={styles.sectionLabelRow}>
+          <AppIcon name="shield" size={12} color={theme.textMuted} />
+          <Text style={[styles.sectionLabel, { color: theme.textMuted, marginLeft: 4 }]}>
+            FUTURE HARVEST / PIT PREVENTION
+          </Text>
+        </View>
         <Text style={[styles.sectionContent, { color: theme.text }]}>
           {advisory.futurePrevention}
         </Text>
@@ -143,22 +161,29 @@ const styles = StyleSheet.create({
     lineHeight: 20
   },
   voiceButton: {
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
     paddingHorizontal: 10,
     paddingVertical: 6
   },
   voiceButtonText: {
     fontSize: 11,
-    fontWeight: "800"
+    fontWeight: "800",
+    marginLeft: 4
   },
   section: {
     marginVertical: 4
   },
+  sectionLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 2
+  },
   sectionLabel: {
     fontSize: 10,
     fontWeight: "800",
-    letterSpacing: 0.5,
-    marginBottom: 2
+    letterSpacing: 0.5
   },
   sectionContent: {
     fontSize: 13,

@@ -1,10 +1,11 @@
 /**
- * SCREEN 9 — FARMER SETTINGS & MULTILINGUAL CONFIGURATION
+ * SCREEN 9 - FARMER SETTINGS & MULTILINGUAL CONFIGURATION
  * - Language selection (English, Hindi, Marathi, Kannada, Telugu)
  * - Dark / Light mode toggle switch
  * - Audio volume / speech rate controls
  * - Demo mode toggle & hardware simulation presets
  * - Offline model diagnostics & storage statistics
+ * - Vector AppIcons throughout
  * - Full viewport width & sharp industrial corners
  */
 
@@ -21,6 +22,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header } from "../components/Header";
 import { LanguagePicker } from "../components/LanguagePicker";
+import { AppIcon } from "../components/AppIcon";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
 
 export default function SettingsScreen() {
@@ -55,7 +57,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="SETTINGS" showBack={true} />
+      <Header title="SilageGuard AI" showBack={true} />
 
       <ScrollView
         contentContainerStyle={[
@@ -64,7 +66,10 @@ export default function SettingsScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Appearance Section: Light / Dark Mode Toggle */}
+        {/* Language Selection */}
+        <LanguagePicker selectedLanguage={language} onSelectLanguage={setLanguage} />
+
+        {/* Display Appearance: Dark / Light Mode Switch */}
         <View
           style={[
             styles.sectionCard,
@@ -75,46 +80,44 @@ export default function SettingsScreen() {
             }
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>THEME & DISPLAY</Text>
-
           <View style={styles.settingRow}>
-            <View style={styles.settingLabelArea}>
-              <Text style={[styles.settingTitle, { color: theme.text }]}>
-                {isDark ? "High-Contrast Dark Theme" : "Daylight High-Visibility Light Theme"}
-              </Text>
-              <Text style={[styles.settingSub, { color: theme.textMuted }]}>
-                {isDark
-                  ? "Optimized for outdoor bunker pit contrast & battery saving"
-                  : "Bright daytime readability under direct sunlight"}
-              </Text>
+            <View style={styles.iconWithText}>
+              <View
+                style={[
+                  styles.iconBox,
+                  {
+                    backgroundColor: isDark
+                      ? theme.caution + "1A"
+                      : theme.accent + "1A",
+                    borderRadius: theme.radiusSm
+                  }
+                ]}
+              >
+                <AppIcon
+                  name={isDark ? "moon" : "sun"}
+                  size={18}
+                  color={isDark ? theme.caution : theme.accent}
+                />
+              </View>
+              <View style={styles.settingLabelArea}>
+                <Text style={[styles.settingTitle, { color: theme.text }]}>
+                  {isDark ? "Dark Industrial Theme" : "Daylight High-Contrast"}
+                </Text>
+                <Text style={[styles.settingSub, { color: theme.textMuted }]}>
+                  Optimized for outdoor sunlight readability in farm fields
+                </Text>
+              </View>
             </View>
             <Switch
               value={isDark}
               onValueChange={toggleTheme}
               trackColor={{ false: theme.cardBorder, true: theme.primary }}
-              thumbColor="#FFFFFF"
+              thumbColor={isDark ? "#090D16" : "#FFFFFF"}
             />
           </View>
         </View>
 
-        {/* Language Selector Section */}
-        <View
-          style={[
-            styles.sectionCard,
-            {
-              backgroundColor: theme.card,
-              borderColor: theme.cardBorder,
-              borderRadius: theme.radiusMd
-            }
-          ]}
-        >
-          <LanguagePicker
-            selectedLanguage={language}
-            onSelectLanguage={(l) => setLanguage(l)}
-          />
-        </View>
-
-        {/* Demo Mode & Hardware Simulation Controls */}
+        {/* Evaluation Mode: Demo Simulator vs Real Probe */}
         <View
           style={[
             styles.sectionCard,
@@ -126,49 +129,70 @@ export default function SettingsScreen() {
           ]}
         >
           <View style={styles.settingRow}>
-            <View style={styles.settingLabelArea}>
-              <Text style={[styles.settingTitle, { color: theme.text }]}>
-                HACKATHON DEMO MODE
-              </Text>
-              <Text style={[styles.settingSub, { color: theme.textMuted }]}>
-                Simulates ESP32-S3 sensor stream without physical hardware.
-              </Text>
+            <View style={styles.iconWithText}>
+              <View
+                style={[
+                  styles.iconBox,
+                  {
+                    backgroundColor: theme.accent + "1A",
+                    borderRadius: theme.radiusSm
+                  }
+                ]}
+              >
+                <AppIcon name="flask" size={18} color={theme.accent} />
+              </View>
+              <View style={styles.settingLabelArea}>
+                <Text style={[styles.settingTitle, { color: theme.text }]}>
+                  Hardware Simulation Mode
+                </Text>
+                <Text style={[styles.settingSub, { color: theme.textMuted }]}>
+                  Enables offline evaluation presets when physical ESP32 probe is unavailable
+                </Text>
+              </View>
             </View>
             <Switch
               value={isDemoMode}
               onValueChange={setDemoMode}
-              trackColor={{ false: theme.cardBorder, true: theme.primary }}
-              thumbColor="#FFFFFF"
+              trackColor={{ false: theme.cardBorder, true: theme.accent }}
+              thumbColor={isDemoMode ? "#FFFFFF" : "#94A3B8"}
             />
           </View>
 
           {isDemoMode && (
             <View style={styles.demoPresetContainer}>
               <Text style={[styles.demoPresetLabel, { color: theme.textMuted }]}>
-                ACTIVE INJECTION PRESET:
+                SIMULATION BENCHMARK PRESET:
               </Text>
               <View style={styles.presetButtons}>
-                {(["SAFE", "CAUTION", "UNSAFE"] as const).map((p) => {
-                  const isSelected = demoPreset === p;
-                  const col =
-                    p === "SAFE" ? theme.safe : p === "CAUTION" ? theme.caution : theme.unsafe;
+                {(["SAFE", "CAUTION", "UNSAFE"] as const).map((preset) => {
+                  const isActive = demoPreset === preset;
+                  const color =
+                    preset === "SAFE"
+                      ? theme.safe
+                      : preset === "CAUTION"
+                      ? theme.caution
+                      : theme.unsafe;
 
                   return (
                     <TouchableOpacity
-                      key={p}
+                      key={preset}
                       style={[
                         styles.presetPill,
                         {
-                          backgroundColor: isSelected ? col + "22" : theme.surface,
-                          borderColor: isSelected ? col : theme.cardBorder,
-                          borderRadius: theme.radiusSm
+                          borderRadius: theme.radiusSm,
+                          backgroundColor: isActive ? color + "22" : theme.surface,
+                          borderColor: isActive ? color : theme.cardBorder
                         }
                       ]}
-                      onPress={() => setDemoPreset(p)}
-                      activeOpacity={0.8}
+                      onPress={() => setDemoPreset(preset)}
                     >
-                      <Text style={[styles.presetText, { color: isSelected ? col : theme.textMuted }]}>
-                        {p}
+                      <Text
+                        style={[
+                          styles.presetText,
+                          { color: isActive ? color : theme.textMuted }
+                        ]}
+                      >
+                        {preset}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -178,7 +202,7 @@ export default function SettingsScreen() {
           )}
         </View>
 
-        {/* pH Sensor 2-Point Calibration Section */}
+        {/* Sensor Probe Calibration */}
         <View
           style={[
             styles.sectionCard,
@@ -189,12 +213,27 @@ export default function SettingsScreen() {
             }
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            HARDWARE PROBE pH CALIBRATION
-          </Text>
-          <Text style={[styles.settingSub, { color: theme.textMuted }]}>
-            Standard 2-point buffer calibration (pH 4.01 & pH 7.00 at 25°C).
-          </Text>
+          <View style={styles.iconWithText}>
+            <View
+              style={[
+                styles.iconBox,
+                {
+                  backgroundColor: theme.primary + "1A",
+                  borderRadius: theme.radiusSm
+                }
+              ]}
+            >
+              <AppIcon name="probe" size={18} color={theme.primary} />
+            </View>
+            <View style={styles.settingLabelArea}>
+              <Text style={[styles.settingTitle, { color: theme.text }]}>
+                HARDWARE PROBE pH CALIBRATION
+              </Text>
+              <Text style={[styles.settingSub, { color: theme.textMuted }]}>
+                Standard 2-point buffer calibration (pH 4.01 & pH 7.00 at 25C).
+              </Text>
+            </View>
+          </View>
 
           <View style={styles.calibStatusRow}>
             <View style={styles.calibParam}>
@@ -213,7 +252,14 @@ export default function SettingsScreen() {
 
           <View style={styles.calibButtonsRow}>
             <TouchableOpacity
-              style={[styles.calibBtn, { backgroundColor: theme.surface, borderColor: theme.cardBorder, borderRadius: theme.radiusSm }]}
+              style={[
+                styles.calibBtn,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.cardBorder,
+                  borderRadius: theme.radiusSm
+                }
+              ]}
               onPress={() => Alert.alert("Buffer Calibration", "Immerse probe in pH 7.00 neutral buffer.")}
               activeOpacity={0.8}
             >
@@ -221,7 +267,14 @@ export default function SettingsScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.calibBtn, { backgroundColor: theme.surface, borderColor: theme.cardBorder, borderRadius: theme.radiusSm }]}
+              style={[
+                styles.calibBtn,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.cardBorder,
+                  borderRadius: theme.radiusSm
+                }
+              ]}
               onPress={() => Alert.alert("Buffer Calibration", "Immerse probe in pH 4.01 acid buffer.")}
               activeOpacity={0.8}
             >
@@ -242,14 +295,34 @@ export default function SettingsScreen() {
           ]}
         >
           <View style={styles.settingRow}>
-            <View style={styles.settingLabelArea}>
-              <Text style={[styles.settingTitle, { color: theme.text }]}>Audio Speech Rate</Text>
-              <Text style={[styles.settingSub, { color: theme.textMuted }]}>
-                Farmer advisory narration tempo
-              </Text>
+            <View style={styles.iconWithText}>
+              <View
+                style={[
+                  styles.iconBox,
+                  {
+                    backgroundColor: theme.safe + "1A",
+                    borderRadius: theme.radiusSm
+                  }
+                ]}
+              >
+                <AppIcon name="volume" size={18} color={theme.safe} />
+              </View>
+              <View style={styles.settingLabelArea}>
+                <Text style={[styles.settingTitle, { color: theme.text }]}>Audio Speech Rate</Text>
+                <Text style={[styles.settingSub, { color: theme.textMuted }]}>
+                  Farmer advisory narration tempo
+                </Text>
+              </View>
             </View>
             <TouchableOpacity
-              style={[styles.tempoBtn, { backgroundColor: theme.surface, borderColor: theme.cardBorder, borderRadius: theme.radiusSm }]}
+              style={[
+                styles.tempoBtn,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.cardBorder,
+                  borderRadius: theme.radiusSm
+                }
+              ]}
               onPress={() => setSpeechRate(speechRate === "normal" ? "slow" : "normal")}
             >
               <Text style={[styles.tempoBtnText, { color: theme.text }]}>
@@ -270,9 +343,22 @@ export default function SettingsScreen() {
             }
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            ON-DEVICE AI SYSTEM DIAGNOSTICS
-          </Text>
+          <View style={[styles.iconWithText, { marginBottom: 8 }]}>
+            <View
+              style={[
+                styles.iconBox,
+                {
+                  backgroundColor: theme.primary + "1A",
+                  borderRadius: theme.radiusSm
+                }
+              ]}
+            >
+              <AppIcon name="shield" size={18} color={theme.primary} />
+            </View>
+            <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 0 }]}>
+              ON-DEVICE AI SYSTEM DIAGNOSTICS
+            </Text>
+          </View>
 
           <View style={styles.diagRow}>
             <Text style={[styles.diagLabel, { color: theme.textMuted }]}>Sensor Model:</Text>
@@ -312,11 +398,15 @@ export default function SettingsScreen() {
 
         {/* Clear Data Action */}
         <TouchableOpacity
-          style={[styles.clearDbBtn, { borderColor: theme.unsafe, borderRadius: theme.radiusSm }]}
+          style={[
+            styles.clearDbBtn,
+            { borderColor: theme.unsafe, borderRadius: theme.radiusSm }
+          ]}
           onPress={handleClearDatabase}
           activeOpacity={0.8}
         >
-          <Text style={[styles.clearDbText, { color: theme.unsafe }]}>
+          <AppIcon name="trash" size={15} color={theme.unsafe} />
+          <Text style={[styles.clearDbText, { color: theme.unsafe, marginLeft: 6 }]}>
             RESET LOCAL CACHED SCANS
           </Text>
         </TouchableOpacity>
@@ -341,8 +431,19 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 12,
     fontWeight: "900",
-    letterSpacing: 0.5,
-    marginBottom: 8
+    letterSpacing: 0.5
+  },
+  iconWithText: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1
+  },
+  iconBox: {
+    width: 32,
+    height: 32,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10
   },
   settingRow: {
     flexDirection: "row",
@@ -444,6 +545,8 @@ const styles = StyleSheet.create({
     fontWeight: "800"
   },
   clearDbBtn: {
+    flexDirection: "row",
+    justifyContent: "center",
     borderWidth: 1,
     paddingVertical: 12,
     alignItems: "center",

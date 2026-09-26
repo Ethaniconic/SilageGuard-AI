@@ -1,11 +1,12 @@
 /**
- * SCREEN 2 — HOME DASHBOARD
+ * SCREEN 2 - HOME DASHBOARD
  * Main farmer landing interface:
  * - High-contrast Dark/Light theme support
  * - Reduced screen padding to maximize viewport width
  * - Sharp industrial corners (less rounded)
  * - Safe area top-inset handling
  * - Zero dummy data: Starts empty until scans are performed
+ * - High-definition vector AppIcons across all cards
  * - Transparent live probe connection banner
  */
 
@@ -22,6 +23,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header } from "../components/Header";
 import { StatCard } from "../components/StatCard";
 import { QualityTrendChart } from "../components/QualityTrendChart";
+import { AppIcon } from "../components/AppIcon";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { batchRepository } from "../sqlite/batchRepository";
 
@@ -55,7 +57,7 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Header title="SILAGEGUARD AI" showBack={false} />
+      <Header title="SilageGuard AI" showBack={false} />
 
       <ScrollView
         contentContainerStyle={[
@@ -88,18 +90,30 @@ export default function HomeScreen() {
             />
             <View style={{ flex: 1 }}>
               <Text style={[styles.probeTitle, { color: theme.text }]}>
-                {isConnected ? "ESP32-S3 Silage Probe Connected" : "Probe Disconnected • Tap to Pair"}
+                {isConnected ? "ESP32-S3 Silage Probe Connected" : "Probe Disconnected - Tap to Pair"}
               </Text>
               <Text style={[styles.probeSubtitle, { color: theme.textMuted }]}>
                 {isConnected && telemetry.ph !== null
-                  ? `Telemetry Active • ${telemetry.battery}% Battery • pH ${telemetry.ph} • ${telemetry.temp}°C`
+                  ? `Telemetry Active | ${telemetry.battery}% Battery | pH ${telemetry.ph} | ${telemetry.temp}C`
                   : "Tap to connect BLE hardware probe or test with demo preset"}
               </Text>
             </View>
           </View>
-          <Text style={[styles.probeAction, { color: theme.accent }]}>
-            {isConnected ? "LIVE ?" : "PAIR ?"}
-          </Text>
+          <View style={styles.probeActionBadge}>
+            <AppIcon
+              name={isConnected ? "bluetooth-connected" : "bluetooth"}
+              size={14}
+              color={isConnected ? theme.safe : theme.accent}
+            />
+            <Text
+              style={[
+                styles.probeActionText,
+                { color: isConnected ? theme.safe : theme.accent }
+              ]}
+            >
+              {isConnected ? "LIVE" : "PAIR"}
+            </Text>
+          </View>
         </TouchableOpacity>
 
         {/* PRIMARY BIG SCAN BUTTON (Farmer-Friendly, High Contrast) */}
@@ -115,8 +129,13 @@ export default function HomeScreen() {
           onPress={() => router.push("/camera" as any)}
           activeOpacity={0.85}
         >
-          <View style={[styles.scanIconBadge, { backgroundColor: theme.primary + "22", borderRadius: theme.radiusSm }]}>
-            <Text style={styles.scanIconText}>??</Text>
+          <View
+            style={[
+              styles.scanIconBadge,
+              { backgroundColor: theme.primary + "22", borderRadius: theme.radiusSm }
+            ]}
+          >
+            <AppIcon name="camera" size={24} color={theme.primary} />
           </View>
           <View style={styles.scanTextContainer}>
             <Text style={[styles.scanTitle, { color: theme.text }]}>START SILAGE SCAN</Text>
@@ -124,18 +143,23 @@ export default function HomeScreen() {
               Camera Surface Inspection + Probe Sensor AI Fusion
             </Text>
           </View>
-          <View style={[styles.scanArrowBadge, { backgroundColor: theme.primary, borderRadius: theme.radiusSm }]}>
-            <Text style={styles.scanArrow}>?</Text>
+          <View
+            style={[
+              styles.scanArrowBadge,
+              { backgroundColor: theme.primary, borderRadius: theme.radiusSm }
+            ]}
+          >
+            <AppIcon name="arrow-forward" size={16} color="#090D16" strokeWidth={2.5} />
           </View>
         </TouchableOpacity>
 
-        {/* Quick Metrics Row — ZERO dummy data! */}
+        {/* Quick Metrics Row - ZERO dummy data */}
         <View style={styles.statsRow}>
           <StatCard
             label="TODAY'S SCANS"
             value={stats.total}
             subtext={stats.total > 0 ? "Saved locally" : "No scans yet"}
-            icon="??"
+            iconName="scan"
             accentColor={theme.accent}
           />
           <StatCard
@@ -146,7 +170,7 @@ export default function HomeScreen() {
                 ? `${Math.round((stats.safeCount / stats.total) * 100)}% Pass Rate`
                 : "Awaiting scans"
             }
-            icon="???"
+            iconName="shield"
             accentColor={theme.safe}
           />
         </View>
@@ -156,14 +180,14 @@ export default function HomeScreen() {
             label="AVG MSSI INDEX"
             value={stats.total > 0 ? `${stats.avgMssi}/100` : "--"}
             subtext={stats.total > 0 ? "Safety benchmark" : "No data"}
-            icon="??"
+            iconName="trending-up"
             accentColor={theme.primary}
           />
           <StatCard
             label="PROBE BATTERY"
             value={isConnected && telemetry.battery !== null ? `${telemetry.battery}%` : "--"}
             subtext={isConnected ? "Li-Ion Active" : "Disconnected"}
-            icon="??"
+            iconName="battery"
             accentColor={theme.caution}
           />
         </View>
@@ -185,7 +209,14 @@ export default function HomeScreen() {
           activeOpacity={0.8}
         >
           <View style={styles.historyLeft}>
-            <Text style={styles.historyIcon}>??</Text>
+            <View
+              style={[
+                styles.navIconBadge,
+                { backgroundColor: theme.accent + "1A", borderRadius: theme.radiusSm }
+              ]}
+            >
+              <AppIcon name="history" size={18} color={theme.accent} />
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.historyTitle, { color: theme.text }]}>BATCH SCAN HISTORY</Text>
               <Text style={[styles.historySubtitle, { color: theme.textMuted }]}>
@@ -195,7 +226,7 @@ export default function HomeScreen() {
               </Text>
             </View>
           </View>
-          <Text style={[styles.historyArrow, { color: theme.textMuted }]}>?</Text>
+          <AppIcon name="arrow-forward" size={16} color={theme.textMuted} />
         </TouchableOpacity>
 
         {/* Quick Settings & Mode Banner */}
@@ -211,16 +242,23 @@ export default function HomeScreen() {
           onPress={() => router.push("/settings" as any)}
           activeOpacity={0.8}
         >
-          <Text style={styles.settingsIcon}>??</Text>
+          <View
+            style={[
+              styles.navIconBadge,
+              { backgroundColor: theme.primary + "1A", borderRadius: theme.radiusSm }
+            ]}
+          >
+            <AppIcon name="settings" size={18} color={theme.primary} />
+          </View>
           <View style={styles.settingsTextArea}>
             <Text style={[styles.settingsTitle, { color: theme.text }]}>
               SETTINGS & MULTILINGUAL ADVISORY
             </Text>
             <Text style={[styles.settingsSubtitle, { color: theme.textMuted }]}>
-              Language: {language.toUpperCase()} • Demo Mode: {isDemoMode ? "ON" : "OFF"}
+              Language: {language.toUpperCase()} | Demo Mode: {isDemoMode ? "ON" : "OFF"}
             </Text>
           </View>
-          <Text style={[styles.settingsArrow, { color: theme.textMuted }]}>?</Text>
+          <AppIcon name="arrow-forward" size={16} color={theme.textMuted} />
         </TouchableOpacity>
       </ScrollView>
 
@@ -237,7 +275,8 @@ export default function HomeScreen() {
         onPress={() => router.push("/camera" as any)}
         activeOpacity={0.85}
       >
-        <Text style={styles.fabIcon}>? SCAN NOW</Text>
+        <AppIcon name="camera" size={18} color="#090D16" />
+        <Text style={styles.fabText}>SCAN NOW</Text>
       </TouchableOpacity>
     </View>
   );
@@ -248,7 +287,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   scrollContent: {
-    paddingHorizontal: 12, // Reduced padding for full viewport width
+    paddingHorizontal: 12,
     paddingTop: 10
   },
   probeBanner: {
@@ -279,10 +318,15 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginTop: 2
   },
-  probeAction: {
+  probeActionBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 6
+  },
+  probeActionText: {
     fontSize: 11,
     fontWeight: "800",
-    marginLeft: 6
+    marginLeft: 4
   },
   primaryScanCard: {
     borderWidth: 2,
@@ -297,9 +341,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12
-  },
-  scanIconText: {
-    fontSize: 24
   },
   scanTextContainer: {
     flex: 1
@@ -321,11 +362,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginLeft: 6
   },
-  scanArrow: {
-    color: "#090D16",
-    fontSize: 16,
-    fontWeight: "900"
-  },
   statsRow: {
     flexDirection: "row",
     marginHorizontal: -3
@@ -343,8 +379,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1
   },
-  historyIcon: {
-    fontSize: 20,
+  navIconBadge: {
+    width: 34,
+    height: 34,
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 10
   },
   historyTitle: {
@@ -356,21 +395,12 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontWeight: "500"
   },
-  historyArrow: {
-    fontSize: 16,
-    fontWeight: "800",
-    marginLeft: 6
-  },
   settingsBanner: {
     borderWidth: 1,
     padding: 12,
     flexDirection: "row",
     alignItems: "center",
     marginTop: 4
-  },
-  settingsIcon: {
-    fontSize: 18,
-    marginRight: 10
   },
   settingsTextArea: {
     flex: 1
@@ -384,14 +414,12 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontWeight: "600"
   },
-  settingsArrow: {
-    fontSize: 14,
-    fontWeight: "800"
-  },
   fab: {
     position: "absolute",
     right: 14,
-    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 18,
     paddingVertical: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -399,10 +427,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8
   },
-  fabIcon: {
+  fabText: {
     color: "#090D16",
     fontSize: 13,
     fontWeight: "900",
-    letterSpacing: 0.5
+    letterSpacing: 0.5,
+    marginLeft: 6
   }
 });
