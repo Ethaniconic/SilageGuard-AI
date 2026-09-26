@@ -225,7 +225,7 @@ export function computeMultimodalFusion(input: FusionInputV2): MultimodalFusionO
     mouldProbability: hasVision ? mouldProb : 0.05
   });
 
-  let finalVerdict = baseVerdict;
+  let finalVerdict: SilageVerdict = baseVerdict;
   let ruleOverride = false;
   let ruleId: string | null = null;
   let ruleReason: string | null = null;

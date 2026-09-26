@@ -42,9 +42,11 @@ export default function CameraScreen() {
     isAcceptable: true,
     brightnessScore: 68,
     sharpnessScore: 78,
+    coverageScore: 85,
     tiltAngleDeg: 2,
     issues: [],
-    guidanceMessage: "Camera aligned. Optimal lighting and sharpness."
+    guidanceMessage: "Camera aligned. Optimal lighting and sharpness.",
+    instructions: []
   });
 
   const [simulatedShutterCount, setSimulatedShutterCount] = useState(0);
