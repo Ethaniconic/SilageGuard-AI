@@ -1,0 +1,522 @@
+[
+  {
+    "file": "vision\\CAUTION\\FileBacterial_blight_of_orchid_leaf_at_a_nursery_on_the_island_of_Hawaii_8251192670.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 23.1 below threshold 35.0"
+  },
+  {
+    "file": "vision\\SAFE\\FileUlrichshorst_u\u017cytki_rolne_2016-09-01_p2.jpg",
+    "reason": "EXTREME_ASPECT_RATIO",
+    "details": "Aspect ratio 2.56 outside permissible range [0.4, 2.5]"
+  },
+  {
+    "file": "vision\\source_001_silage\\2010_10_20_Gulen_Molde_153.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\File2010_10_20_Gulen_Molde_153.jpg (MD5: 534aa9a2522db8ba31f80da3c04dbdff)"
+  },
+  {
+    "file": "vision\\source_001_silage\\AIV-rehu.JPG",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileAIV-rehu.JPG (MD5: ae331cbd0f8ad6a21c2bfd6b21b8289e)"
+  },
+  {
+    "file": "vision\\source_001_silage\\A_book_on_silage__1895___20212021020_.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileA_book_on_silage_1895_20212021020.jpg (MD5: 7ce4faa7f3bc78dc4ddb6e55228c1f64)"
+  },
+  {
+    "file": "vision\\source_001_silage\\A_book_on_silage__1895___20406260011_.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileA_book_on_silage_1895_20406260011.jpg (MD5: a35d95668fae3545fb10090b249bb6fe)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Agriculture_in_Belarus.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileAgriculture_in_Belarus.jpg (MD5: 8458dcecd528f62b329484ff1c21f7e6)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Bales_in_a_field_-_geograph.org.uk_-_4555193.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileBales_in_a_field_-_geograph.org.uk_-_4555193.jpg (MD5: 114a538f1c83750ccb7bd84689e9205f)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Beef_cattle_at_Glan_Aber_Farm_-_geograph.org.uk_-_292176.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileBeef_cattle_at_Glan_Aber_Farm_-_geograph.org.uk_-_292176.jpg (MD5: 066f55e93933b3f948152c01aadb22d0)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Bichl_-_Bauernhof_Oberpetterer__Bichl_2__a.JPG",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileBichl_-_Bauernhof_Oberpetterer_Bichl_2_a.JPG (MD5: d01edfc45e6e1ec3878ac1bfa4970d19)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Biomassehaufen_Biogasanlage.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileBiomassehaufen_Biogasanlage.jpg (MD5: ccadf86a91df95f01f7abaa969a94760)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Boles_silo_moes_d__oct\u00f4be.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileBoles_silo_moes_d_oct\u00f4be.jpg (MD5: 71f9e249d2e621ee73d790b4f41afdfb)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Bundesarchiv_Bild_183-W0627-0003__LPG_Reinholdshain__Anlegen_eines_Futtersilos.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileBundesarchiv_Bild_183-W0627-0003_LPG_Reinholdshain_Anlegen_eines_Futtersilos.jpg (MD5: c28cf13b539aa549f1e7b7f48bdf82c9)"
+  },
+  {
+    "file": "vision\\source_001_silage\\CLAAS.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileCLAAS.jpg (MD5: d5732b38cd0f97502b361d5a12f15c2c)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Caption-_The_four_Mission_oxen_taste_silage_for_the_first_time_in_their_lives._They_licked_the__platter__clean._circa_1964.__8203129303_.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileCaption-_The_four_Mission_oxen_taste_silage_for_the_first_time_in_their_lives._They_licked_the_platter_clean._circa_1964._8203129303.jpg (MD5: d673c39068dd1725da061198b8b98019)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Cattle_feed_-_geograph.org.uk_-_1765804.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileCattle_feed_-_geograph.org.uk_-_1765804.jpg (MD5: 4767f5ac77de10b7733d57898f848bd3)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Concrete_silos__a_booklet_of_practical_information_for_the_farmer_and_the_rural_contractor__1914___20679534765_.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileConcrete_silos_a_booklet_of_practical_information_for_the_farmer_and_the_rural_contractor_1914_20679534765.jpg (MD5: f54fc594ac6637a3d0fa6730ff029287)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Dechow_Farm_Silage_Mover__fe8f175e-155d-4519-3ef9-97827d3f3a8e_.JPG",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileDechow_Farm_Silage_Mover_fe8f175e-155d-4519-3ef9-97827d3f3a8e.JPG (MD5: 8658b97a63089e868d9271c1798cfcef)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Discarded_silage_bale__Lund_-_geograph.org.uk_-_2481708.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileDiscarded_silage_bale_Lund_-_geograph.org.uk_-_2481708.jpg (MD5: d725b60e90d721e3fc559442ec784175)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Dung_pile_at_Bentley_Hall_-_geograph.org.uk_-_470171.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileDung_pile_at_Bentley_Hall_-_geograph.org.uk_-_470171.jpg (MD5: b397143862782687cc7393f35219b233)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Eko-Pasz._Wytw\u00f3rnia_w_Mo\u0144kach_1.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileEko-Pasz._Wytw\u00f3rnia_w_Mo\u0144kach_1.jpg (MD5: 2454ece05b6ee4149cd6162b74612192)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Essilaedje_Douccala.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileEssilaedje_Douccala.jpg (MD5: 4b1590f5249b788a623aa47e801428a4)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Fahrsilo_mit_Beton-Bodenplatte_und_Seitenw\u00e4nden.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileFahrsilo_mit_Beton-Bodenplatte_und_Seitenw\u00e4nden.jpg (MD5: 4f11aaa2bea9b97bfae522714ae63876)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Farming_activity_-_geograph.org.uk_-_814626.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileFarming_activity_-_geograph.org.uk_-_814626.jpg (MD5: 76f832c9931087e593fb4390add2231a)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Ferme_de_Gramont__18_.JPG",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileFerme_de_Gramont_18.JPG (MD5: e223c122ac1d96f2935155b880e210cd)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Fresh_Country_Air_-_geograph.org.uk_-_1751694.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileFresh_Country_Air_-_geograph.org.uk_-_1751694.jpg (MD5: c67d74472ceaf60b494cad1da2384ac7)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Grass_field_and_silage_bales_-_geograph.org.uk_-_7278793.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileGrass_field_and_silage_bales_-_geograph.org.uk_-_7278793.jpg (MD5: b54046a1c6022ce22f952609d4d93ea4)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Hazlebadge_Farmhouse_01.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileHazlebadge_Farmhouse_01.jpg (MD5: a03cdaa5e0c248016bd761ceed4fb552)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Hekseldatud_silo__silo_auku_valamine.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileHekseldatud_silo_silo_auku_valamine.jpg (MD5: 46a5a83cff87e89455dd1a256335769d)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Hopea_silo_blanc_plastike_Hesbaye.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileHopea_silo_blanc_plastike_Hesbaye.jpg (MD5: 18c3d88c068eca3b0a475c6c32da998f)"
+  },
+  {
+    "file": "vision\\source_001_silage\\H\u00f6balar_i_Salems_kommun_2015.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileH\u00f6balar_i_Salems_kommun_2015.jpg (MD5: 7738b87ab0c1f7fbc655b8b056c3792c)"
+  },
+  {
+    "file": "vision\\source_001_silage\\JA\u3057\u307e\u306d_\u304f\u306b\u3073\u304d\u55b6\u8fb2\u90e8\u30ab\u30f3\u30c8\u30ea\u30fc\u30a8\u30ec\u30d9\u30fc\u30bf\u30fc\u7a32\u8535_Oct_28__2025.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileJA\u3057\u307e\u306d_\u304f\u306b\u3073\u304d\u55b6\u8fb2\u90e8\u30ab\u30f3\u30c8\u30ea\u30fc\u30a8\u30ec\u30d9\u30fc\u30bf\u30fc\u7a32\u8535_Oct_28_2025.jpg (MD5: 5384dee445ee2bf429b817fa2835a7cd)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Lancaster_PA_Silage.png",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileLancasterPA_Silage.png (MD5: a93f349470268b8a51264f663ade49eb)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Loaders_compacting_silage__Revivim_2007.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileLoaders_compacting_silage_Revivim_2007.jpg (MD5: 14f01f44d901ee5b0b0a8bb0d2a08c3e)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Machinery12.tif__27098928939_.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileMachinery12.tif_27098928939.jpg (MD5: 62fc8881f6e7b4d44314a68312ecde42)"
+  },
+  {
+    "file": "vision\\source_001_silage\\PikiWiki_Israel_2141_Cows_in_a_kibbutz_Israel_\u05e4\u05e8\u05d4_\u05d1\u05e8\u05e4\u05ea.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FilePikiWiki_Israel_2141_Cows_in_a_kibbutz_Israel_\u05e4\u05e8\u05d4_\u05d1\u05e8\u05e4\u05ea.jpg (MD5: 350da9386189602accd6264d98640815)"
+  },
+  {
+    "file": "vision\\source_001_silage\\PikiWiki_Israel_2142_Cows_in_a_kibbutz_Israel_\u05e4\u05e8\u05d5\u05ea_\u05d1\u05e8\u05e4\u05ea_\u05d1\u05e1\u05e2\u05d5\u05d3\u05d4_\u05d3\u05e9\u05e0\u05d4.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FilePikiWiki_Israel_2142_Cows_in_a_kibbutz_Israel_\u05e4\u05e8\u05d5\u05ea_\u05d1\u05e8\u05e4\u05ea_\u05d1\u05e1\u05e2\u05d5\u05d3\u05d4_\u05d3\u05e9\u05e0\u05d4.jpg (MD5: bc1f9536ec7fb68cabcad377fe14a071)"
+  },
+  {
+    "file": "vision\\source_001_silage\\PikiWiki_Israel_4390_Gan-Shmuel_zk5-_5.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FilePikiWiki_Israel_4390_Gan-Shmuel_zk5-_5.jpg (MD5: e1c79d47cd7850050965f10b1e7de44d)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Pile_of_silage_bales_at_Swartmill_Farm_-_geograph.org.uk_-_6313596.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FilePile_of_silage_bales_at_Swartmill_Farm_-_geograph.org.uk_-_6313596.jpg (MD5: c4eab55803e15243dda78f45a98054cf)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Pit_silo_a_success__8204220162_.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FilePit_silo_a_success_8204220162.jpg (MD5: ec84024a12bf35e846176ee81079173c)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Pott_Lords_Farmhouse__Higher_Sutton.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FilePott_Lords_Farmhouse_Higher_Sutton.jpg (MD5: 2ea3c21b28526babb09384380b660dbd)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Queensland_State_Archives_1753_Fodder_crops_and_conservation_South_East_Queensland_March_1955.png",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileQueensland_State_Archives_1753_Fodder_crops_and_conservation_South_East_Queensland_March_1955.png (MD5: fbc72af89895736dabef16d469cc8034)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Queensland_State_Archives_1759_Fodder_crops_and_conservation_South_East_Queensland_March_1955.png",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileQueensland_State_Archives_1759_Fodder_crops_and_conservation_South_East_Queensland_March_1955.png (MD5: e016d8d0b15d3f290d93aff82abdc70c)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Recebimento_de_ra\u00e7\u00e3o_em_silo_vertical.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileRecebimento_de_ra\u00e7\u00e3o_em_silo_vertical.jpg (MD5: 30e14b8b9ef6dbcdef01beabf7a53cdd)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Saetchs_essilaedje.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileSaetchs_essilaedje.jpg (MD5: bbfe27c9f159b1010a9400f7e045c2b6)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Silage_bales_in_the_Vale_of_Rheidol_-_geograph.org.uk_-_4552059.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileSilage_bales_in_the_Vale_of_Rheidol_-_geograph.org.uk_-_4552059.jpg (MD5: aafb1d90f8e8fb9014a9f74c1536d580)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Silage_bales_seen_from_the_track_from_Binn_Lane_to_Hill_Top__COL-221-60___Marsden_-_geograph.org.uk_-_8379000.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileSilage_bales_seen_from_the_track_from_Binn_Lane_to_Hill_Top_COL-221-60_Marsden_-_geograph.org.uk_-_8379000.jpg (MD5: 59df9c2dcccf9a07f378cab6d42265c1)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Silage_clamp__Cowarne_Court_-_geograph.org.uk_-_455374.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileSilage_clamp_Cowarne_Court_-_geograph.org.uk_-_455374.jpg (MD5: 62855b043b8f8c201ac15c6ba9c20068)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Silagem_de_milho_em_trincheira.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileSilagem_de_milho_em_trincheira.jpg (MD5: 14d5ec976a2e4896d7010f9dce0243c7)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Silaging-local_DSCN4087_-_Flickr_-_ianpreston.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileSilaging-local_DSCN4087_-_Flickr_-_ianpreston.jpg (MD5: fff463b46d3c2ba69f0d5e5b63325275)"
+  },
+  {
+    "file": "vision\\source_001_silage\\Silo_hekseldamine.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileSilo_hekseldamine.jpg (MD5: 439cb503a3d9317d256114e4c2bf09c3)"
+  },
+  {
+    "file": "vision\\source_001_silage\\The_ensilage_of_maize__and_other_green_fodder_crops__1879___14595588039_.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileThe_ensilage_of_maize_and_other_green_fodder_crops_1879_14595588039.jpg (MD5: 3d353f7e398293d8b47878bfa9e8b955)"
+  },
+  {
+    "file": "vision\\source_001_silage\\The_ensilage_of_maize__and_other_green_fodder_crops__1879___14779101561_.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\SAFE\\FileThe_ensilage_of_maize_and_other_green_fodder_crops_1879_14779101561.jpg (MD5: e1153fc7ab5179fddda07f79c93af520)"
+  },
+  {
+    "file": "vision\\source_002_mold\\Aspergillus_fumigatus_Growth_on_Sabouraud_Dextrose_Agar.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 4.7 below threshold 35.0"
+  },
+  {
+    "file": "vision\\source_002_mold\\Aspergillus_hyphae_in_LPCB_tease_mount_of_culture_microscopy.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 2.8 below threshold 35.0"
+  },
+  {
+    "file": "vision\\source_002_mold\\Aspergillus_mold_growing_a_tomato.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 0.7 below threshold 35.0"
+  },
+  {
+    "file": "vision\\source_002_mold\\Aspergillus_niger_along_with_its_reproductive_structures.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 13.9 below threshold 35.0"
+  },
+  {
+    "file": "vision\\source_002_mold\\Aspergillus_niger_growth_on_RCM.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 27.5 below threshold 35.0"
+  },
+  {
+    "file": "vision\\source_002_mold\\Aspergillus_ochraceus__432_76_Tv\u00e5\u00e5ker__Sweden_iNaturalist.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 24.0 below threshold 35.0"
+  },
+  {
+    "file": "vision\\source_002_mold\\Aspergillus_spp.___The_wicked_broom__.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 31.0 below threshold 35.0"
+  },
+  {
+    "file": "vision\\source_002_mold\\Comparative_Colony_Morphology_of_Various_Aspergillus_Species_on_a_Quad-Plate_of_CMA.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 6.8 below threshold 35.0"
+  },
+  {
+    "file": "vision\\source_002_mold\\Comparative_Colony_Morphology_of_Various_Aspergillus_Species_on_a_Quad-Plate_of_PDA.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 10.1 below threshold 35.0"
+  },
+  {
+    "file": "vision\\source_002_mold\\Comparative_Colony_Morphology_of_Various_Aspergillus_Species_on_a_Quad-Plate_of_Sabouraud_dextrose_agar__SDA_.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 16.3 below threshold 35.0"
+  },
+  {
+    "file": "vision\\source_002_mold\\Conidia__sterigma__vesicle__and_conidiophore_of_Aspergillus.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 4.9 below threshold 35.0"
+  },
+  {
+    "file": "vision\\source_002_mold\\Dornbirn-Bread_mold-03ASD.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 26.1 below threshold 35.0"
+  },
+  {
+    "file": "vision\\source_002_mold\\Dornbirn-Bread_mold-04ASD.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 23.3 below threshold 35.0"
+  },
+  {
+    "file": "vision\\source_002_mold\\Hongo_Aspergillus.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 8.6 below threshold 35.0"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileA_Moldy_Loaf_of_Bread.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\A_Moldy_Loaf_of_Bread.jpg (MD5: 51eb0a3a50af6caa7589e5a20390eb50)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileAspergillus_niger_along_with_its_reproductive_structures.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Aspergillus_niger_along_with_its_reproductive_structures.jpg (MD5: 83005d323aaf00ee88b467858d813f83)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileBread_Mold_NIH_BioArt_705_-_788829.png",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Bread_Mold__NIH_BioArt_705_-_788829_.png (MD5: 0c8f322c36a3cf12858a44e88cce97c3)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileBread_Mold_NIH_BioArt_705_-_788834.png",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Bread_Mold__NIH_BioArt_705_-_788834_.png (MD5: 91f607d41780dd05c4a6ed56afbc03b0)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileBread_Mold_NIH_BioArt_705_-_788838.png",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Bread_Mold__NIH_BioArt_705_-_788838_.png (MD5: f689ed8d5841656f45ad3d416d5dc936)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileBread_Mold_NIH_BioArt_705_-_788850.png",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Bread_Mold__NIH_BioArt_705_-_788850_.png (MD5: 58ab6d0baed5bd1baaf701116954ef9e)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileBread_Mold_NIH_BioArt_705_-_788854.png",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Bread_Mold__NIH_BioArt_705_-_788854_.png (MD5: ec23dbcd9403f60bd68545e040ed40ed)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileBread_Mold_NIH_BioArt_705_-_788858.png",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Bread_Mold__NIH_BioArt_705_-_788858_.png (MD5: f81078268ccc895cf1b0ad26a9b789c5)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileBread_Mold_NIH_BioArt_705_-_788862.png",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Bread_Mold__NIH_BioArt_705_-_788862_.png (MD5: 846c3ee9c1197f875a0932daa5574544)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileBread_Mold_NIH_BioArt_705_-_788866.png",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Bread_Mold__NIH_BioArt_705_-_788866_.png (MD5: 38b2a8c8333dff473e824572896f52db)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileBread_mould.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Bread_mould.jpg (MD5: 055a3ee17bb994e87aa0e15c4a7e3126)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileBrot-Schimmel.JPG",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Brot-Schimmel.JPG (MD5: eb915bcdfcaa513c3f38150bf8ca301f)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileConidiophore_and_vesicle_of_Aspergillus__400x.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Conidiophore_and_vesicle_of_Aspergillus___400x.jpg (MD5: 326a991b7d16b2dcd4aa0130c0529b1e)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileDie_Frau_als_Haus\u00e4rztin_1911_040_Schimmliges_Brot.png",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Die_Frau_als_Haus\u00e4rztin__1911__040_Schimmliges_Brot.png (MD5: c7d40543dc0f81832dff0161b45b791b)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileDiverses_moisissures_sur_un_vieux_g\u00e2teau.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Diverses_moisissures_sur_un_vieux_g\u00e2teau.jpg (MD5: a6153615e6d84c77d14925f108ce2a11)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileDornbirn-Bread_mold-02ASD.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Dornbirn-Bread_mold-02ASD.jpg (MD5: f2472bb85248ab95f50a957cf66ea380)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileDornbirn-Bread_mold-03ASD.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Dornbirn-Bread_mold-03ASD.jpg (MD5: c0c8a2c958db3fa76d290032419020df)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileDornbirn-Bread_mold-04ASD.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Dornbirn-Bread_mold-04ASD.jpg (MD5: 52cd81f168209920d6637e7df2f6bfa2)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileDornbirn-Bread_mold-05ASD.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Dornbirn-Bread_mold-05ASD.jpg (MD5: 3a6962870da25a0669bdbda3986cb2ad)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileDornbirn-Bread_mold-06ASD.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Dornbirn-Bread_mold-06ASD.jpg (MD5: 36a9c824d9ba5d877f67124175f5bcee)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileDornbirn-Bread_mold-07ASD.jpg",
+    "reason": "DUPLICATE_HASH",
+    "details": "Exact match with vision\\source_002_mold\\Dornbirn-Bread_mold-07ASD.jpg (MD5: 2ac783103b418a3061b62738fa99f69a)"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileMcDonald-s_cheeseburger_after_a_molding_experiment_-_1_-_2011-11-21.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 17.3 below threshold 35.0"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileMcDonald-s_cheeseburger_after_a_molding_experiment_-_2_-_2011-11-21.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 33.1 below threshold 35.0"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileMoho_del_Pan_2013_000.JPG",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 22.1 below threshold 35.0"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileMoho_del_Pan_2013_001.JPG",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 27.1 below threshold 35.0"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileMoho_del_Pan_2013_002.JPG",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 21.9 below threshold 35.0"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileMoho_del_Pan_2013_003.JPG",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 23.0 below threshold 35.0"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileMoho_del_Pan_2013_004.JPG",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 26.1 below threshold 35.0"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileMoho_del_Pan_2013_005.JPG",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 17.4 below threshold 35.0"
+  },
+  {
+    "file": "vision\\UNSAFE\\FilePenicillium_Pengo.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 21.3 below threshold 35.0"
+  },
+  {
+    "file": "vision\\UNSAFE\\FilePenicillium_in_LPCB_Tease_Mount_Microscopy.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 4.4 below threshold 35.0"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileVerschimmeltes_Brot_2008-12-07.JPG",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 8.0 below threshold 35.0"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileZygo1000.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 30.3 below threshold 35.0"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileZygo1001.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 12.5 below threshold 35.0"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileZygo1002.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 17.9 below threshold 35.0"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileZygo1003.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 16.6 below threshold 35.0"
+  },
+  {
+    "file": "vision\\UNSAFE\\FileZygo1004.jpg",
+    "reason": "EXCESSIVE_BLUR",
+    "details": "Laplacian variance 17.7 below threshold 35.0"
+  }
+]

@@ -26,6 +26,7 @@ import { QualityTrendChart } from "../components/QualityTrendChart";
 import { AppIcon } from "../components/AppIcon";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { batchRepository } from "../sqlite/batchRepository";
+import { BottomNavBar } from "../components/BottomNavBar";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -262,22 +263,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* FLOATING ACTION BUTTON (FAB) */}
-      <TouchableOpacity
-        style={[
-          styles.fab,
-          {
-            backgroundColor: theme.primary,
-            borderRadius: theme.radiusMd,
-            bottom: Math.max(insets.bottom, 16) + 12
-          }
-        ]}
-        onPress={() => router.push("/camera" as any)}
-        activeOpacity={0.85}
-      >
-        <AppIcon name="camera" size={18} color="#090D16" />
-        <Text style={styles.fabText}>SCAN NOW</Text>
-      </TouchableOpacity>
+      <BottomNavBar />
     </View>
   );
 }
@@ -288,7 +274,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 12,
-    paddingTop: 10
+    paddingTop: 10,
+    paddingBottom: 12
   },
   probeBanner: {
     flexDirection: "row",
@@ -414,24 +401,4 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontWeight: "600"
   },
-  fab: {
-    position: "absolute",
-    right: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8
-  },
-  fabText: {
-    color: "#090D16",
-    fontSize: 13,
-    fontWeight: "900",
-    letterSpacing: 0.5,
-    marginLeft: 6
-  }
 });

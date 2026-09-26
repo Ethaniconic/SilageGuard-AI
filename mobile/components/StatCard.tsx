@@ -1,5 +1,5 @@
 /**
- * SILAGEGUARD AI — Metric Statistic Card
+ * SILAGEGUARD AI â€” Metric Statistic Card
  * Clean agricultural dashboard tile with vector icons, theme support, and sharp modern corners.
  */
 
@@ -93,4 +93,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginTop: 2
   }
-});
+});

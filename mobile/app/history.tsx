@@ -24,6 +24,7 @@ import { AppIcon } from "../components/AppIcon";
 import { batchRepository } from "../sqlite/batchRepository";
 import { BatchRecord } from "../sqlite/database";
 import { useTheme } from "../features/ble/bleManager";
+import { BottomNavBar } from "../components/BottomNavBar";
 
 export default function HistoryScreen() {
   const router = useRouter();
@@ -159,7 +160,7 @@ export default function HistoryScreen() {
 
   return (
     <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="SilageGuard AI" showBack={true} />
+      <Header title="SilageGuard AI" showBack={false} />
 
       <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         {/* Search Input Box */}
@@ -250,6 +251,7 @@ export default function HistoryScreen() {
           }
         />
       </View>
+      <BottomNavBar />
     </View>
   );
 }

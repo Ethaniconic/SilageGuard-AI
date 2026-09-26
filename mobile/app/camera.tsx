@@ -207,7 +207,7 @@ export default function CameraScreen() {
                 style={StyleSheet.absoluteFill}
                 facing="back"
               />
-              <CameraGuidanceOverlay photoCount={scanImages.length} maxPhotos={3} />
+              <CameraGuidanceOverlay currentStep={scanImages.length + 1} photoCount={scanImages.length} maxPhotos={3} probeConnected={isConnected} />
             </View>
           ) : (
             // CAMERA PERMISSION REQUEST CARD

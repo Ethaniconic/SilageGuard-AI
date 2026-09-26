@@ -1,5 +1,5 @@
 /**
- * SCREEN 5 — AI MULTIMODAL INFERENCE PIPELINE
+ * SCREEN 5 â€” AI MULTIMODAL INFERENCE PIPELINE
  * Executes real on-device AI in sequential animated stages:
  *  1. Sensor Inference: Random Forest evaluation on probe telemetry (or Vision-only bypass if disconnected)
  *  2. Vision Inference: MobileNetV3-Small INT8 model evaluation
@@ -9,6 +9,7 @@
 
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
+import { AppIcon } from "../components/AppIcon";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header } from "../components/Header";
@@ -57,7 +58,7 @@ export default function ProcessingScreen() {
       name: "1. Sensor AI Model",
       subtitle: isProbeConnected
         ? "Random Forest (25 Trees) evaluating pH & thermal rise"
-        : "Probe Disconnected • Bypassing (Vision-Only Screening)",
+        : "Probe Disconnected â€¢ Bypassing (Vision-Only Screening)",
       status: "running"
     },
     {
@@ -109,9 +110,7 @@ export default function ProcessingScreen() {
 
       // --- STAGE 2: Vision AI ---
       await new Promise((r) => setTimeout(r, 600));
-      const forcedQ =
-        demoPreset === "UNSAFE" ? "unsafe" : demoPreset === "CAUTION" ? "caution" : "safe";
-      const visionRes = await runVisionInference(scanImages, forcedQ);
+      const visionRes = await runVisionInference(scanImages, demoPreset);
 
       setStages((prev) =>
         prev.map((s, idx) =>
@@ -160,26 +159,28 @@ export default function ProcessingScreen() {
         timestamp
       });
 
-      await batchRepository.saveBatchReport(
+      await batchRepository.saveCompleteBatch(
         {
           id: batchId,
           timestamp,
           crop_type: cropType,
+          storage_type: "Bunker Pit",
           pit_depth_cm: pitDepthCm,
           mssi_score: fusionRes.mssiScore,
           decision: fusionRes.decision,
           confidence: fusionRes.confidence,
-          confidence_level: fusionRes.confidence_level,
-          rule_override: fusionRes.rule_override,
-          rule_reason: fusionRes.rule_reason,
+          confidence_level: fusionRes.confidenceLevel,
+          rule_override: fusionRes.ruleOverride,
+          rule_id: fusionRes.ruleId,
+          rule_reason: fusionRes.ruleReason,
           is_demo: isDemoMode,
-          sensor_model_version: fusionRes.metadata.sensor_model_version,
-          vision_model_version: fusionRes.metadata.vision_model_version,
-          fusion_version: fusionRes.metadata.fusion_version,
-          rule_version: fusionRes.metadata.rule_version,
+          sensor_model_version: fusionRes.metadata.sensorModelVersion,
+          vision_model_version: fusionRes.metadata.visionModelVersion,
+          fusion_version: fusionRes.metadata.fusionVersion,
+          rule_version: fusionRes.metadata.ruleVersion,
           image_uri: scanImages[0] || "assets/images/safe_sample.jpg",
           qr_data: qrData,
-          summary_reason: fusionRes.summary_reason
+          summary_reason: fusionRes.summaryReason
         },
         {
           id: `SR-${batchId}`,
@@ -192,19 +193,34 @@ export default function ProcessingScreen() {
             telemetry.temp !== null && telemetry.ambient !== null
               ? Number((telemetry.temp - telemetry.ambient).toFixed(2))
               : null,
-          temp_rise:
+          heat_rise:
             telemetry.temp !== null && telemetry.ambient !== null
               ? Number(Math.max(0, telemetry.temp - telemetry.ambient).toFixed(2))
               : null
         },
         {
-          id: `PR-${batchId}`,
+          id: `VP-${batchId}`,
           batch_id: batchId,
-          sensor_decision: sensorRes ? sensorRes.prediction : "DISCONNECTED",
-          vision_decision: visionRes.prediction,
+          prediction: visionRes.prediction,
+          confidence: visionRes.confidence,
+          safe_prob: visionRes.probabilities.safe,
+          caution_prob: visionRes.probabilities.caution,
+          unsafe_prob: visionRes.probabilities.unsafe,
           mould_prob: visionRes.mouldProbability,
-          reasons_json: JSON.stringify(fusionRes.explanations),
-          explainability_json: JSON.stringify(fusionRes.explainability_chain)
+          iqa_passed: true,
+          num_frames: scanImages.length || 1
+        },
+        {
+          id: `FR-${batchId}`,
+          batch_id: batchId,
+          fusion_score: fusionRes.fusionScore,
+          modality_state: fusionRes.modalityState,
+          rule_override: fusionRes.ruleOverride,
+          need_retake: fusionRes.needRetake,
+          need_probe: fusionRes.needProbe,
+          reasons_json: JSON.stringify(fusionRes.reasons),
+          evidence_json: JSON.stringify(fusionRes.evidenceList),
+          explainability_json: JSON.stringify(fusionRes.explainabilityChain)
         }
       );
 
@@ -267,7 +283,7 @@ export default function ProcessingScreen() {
                     ]}
                   >
                     {isCompleted ? (
-                      <Text style={styles.checkMark}>?</Text>
+                      <AppIcon name="check" size={16} color="#090D16" strokeWidth={3} />
                     ) : isRunning ? (
                       <ActivityIndicator size="small" color="#090D16" />
                     ) : (
@@ -318,7 +334,9 @@ export default function ProcessingScreen() {
             }
           ]}
         >
-          <Text style={styles.edgeShieldIcon}>??</Text>
+          <View style={{ marginRight: 10 }}>
+            <AppIcon name="shield" size={22} color={theme.safe} />
+          </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.edgeGuaranteeTitle, { color: theme.text }]}>
               ZERO CLOUD INFERENCE GUARANTEE
@@ -381,11 +399,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 12
   },
-  checkMark: {
-    color: "#090D16",
-    fontSize: 14,
-    fontWeight: "900"
-  },
   pendingDot: {
     width: 6,
     height: 6,
@@ -419,10 +432,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center"
   },
-  edgeShieldIcon: {
-    fontSize: 20,
-    marginRight: 10
-  },
   edgeGuaranteeTitle: {
     fontSize: 11,
     fontWeight: "800"
@@ -432,3 +441,4 @@ const styles = StyleSheet.create({
     marginTop: 2
   }
 });
+

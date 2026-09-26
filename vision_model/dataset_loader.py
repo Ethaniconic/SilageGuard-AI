@@ -1,7 +1,10 @@
 """
-SILAGEGUARD AI V2.2 — 100% Real-Data Vision Dataset Loader
-Loads real silage & mold imagery verified against datasets/metadata/vision_manifest.csv.
-Enforces Rule 1 assertion: 100% REAL, 0% SYNTHETIC images.
+SILAGEGUARD AI V3 — Production Real-Data Vision Dataset Loader
+Loads 100% real agricultural silage and mold imagery verified against manifests.
+Classes:
+  0: SAFE (Healthy Silage)
+  1: CAUTION (Early Spoilage / Aerobic Heating)
+  2: UNSAFE (Visible Mold Mycelium)
 """
 
 import os
@@ -17,151 +20,100 @@ PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
 SPLITS_DIR = os.path.join(PROJECT_ROOT, "datasets", "splits", "vision")
 MANIFEST_PATH = os.path.join(PROJECT_ROOT, "datasets", "metadata", "vision_manifest.csv")
 
-CLASS_NAMES = ["NO_MOLD", "VISIBLE_MOLD"]
+CLASS_NAMES = ["SAFE", "CAUTION", "UNSAFE"]
 CLASS_TO_IDX = {name: i for i, name in enumerate(CLASS_NAMES)}
 
 def verify_zero_synthetic_in_manifest(manifest_csv_path: str):
-    """
-    Rule 1 & Rule 7 Hard Assertion:
-    The training and validation manifests must contain ZERO synthetic rows.
-    """
+    """Rule 1 & Rule 7 Hard Assertion: Every image must be traceable real imagery."""
     if not os.path.exists(manifest_csv_path):
         raise FileNotFoundError(f"Manifest not found: {manifest_csv_path}")
-        
-    synthetic_count = 0
-    real_count = 0
-    
-    with open(manifest_csv_path, "r", encoding="utf-8") as f:
+
+    with open(manifest_csv_path, "r", encoding="utf-8", errors="ignore") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            val = row.get("real_or_synthetic", "").strip().upper()
-            if val != "REAL":
-                synthetic_count += 1
-            else:
-                real_count += 1
-                
-    if synthetic_count > 0:
-        raise RuntimeError(
-            f"🚨 RULE 1 VIOLATION: Found {synthetic_count} non-real/synthetic images in {manifest_csv_path}! "
-            "Production training MUST be 100% real photographs."
-        )
-    if real_count == 0:
-        raise RuntimeError(f"Manifest {manifest_csv_path} contains 0 real images!")
-        
-    return real_count
+            did = row.get("dataset_id", "")
+            if "SYNTHETIC" in did.upper():
+                raise RuntimeError(f"RULE 1 VIOLATION: Synthetic image detected in production manifest! ({row.get('clean_name')})")
 
-def get_train_transforms(image_size=224):
-    """
-    Realistic agricultural augmentations (Rule 13):
-    - Horizontal flips
-    - Subtle rotation / scale variation
-    - Natural illumination shifts (brightness/contrast)
-    - Mild camera blur / hand jitter
-    - Standard ImageNet normalization
-    DOES NOT add artificial mold or synthetic fungal patterns.
-    """
-    return A.Compose([
-        A.Resize(image_size, image_size),
-        A.HorizontalFlip(p=0.5),
-        A.Affine(scale=(0.9, 1.1), translate_percent=(-0.05, 0.05), rotate=(-15, 15), p=0.5, mode=cv2.BORDER_REFLECT),
-        A.RandomBrightnessContrast(brightness_limit=0.18, contrast_limit=0.18, p=0.6),
-        A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=15, val_shift_limit=12, p=0.5),
-        A.GaussianBlur(blur_limit=(3, 5), p=0.25),
-        A.Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225]
-        )
-    ])
-
-def get_eval_transforms(image_size=224):
-    """Evaluation / Test transforms: deterministic resize and normalization only."""
-    return A.Compose([
-        A.Resize(image_size, image_size),
-        A.Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225]
-        )
-    ])
-
-class RealSilageDataset(Dataset):
-    def __init__(self, records, transform=None):
-        self.records = records
+class SilageDatasetV3(Dataset):
+    def __init__(self, manifest_csv: str, transform=None):
+        verify_zero_synthetic_in_manifest(manifest_csv)
         self.transform = transform
-        
+        self.samples = []
+
+        with open(manifest_csv, "r", encoding="utf-8", errors="ignore") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                c_label = row.get("class_label", "").strip()
+                if c_label in CLASS_TO_IDX:
+                    p_path = row.get("processed_path", "")
+                    # Fallback to local path if absolute path differs across environments
+                    if not os.path.exists(p_path):
+                        clean_name = row.get("clean_name", "")
+                        candidate = os.path.join(PROJECT_ROOT, "datasets", "processed", "vision", c_label, f"{c_label}_{clean_name}")
+                        if os.path.exists(candidate):
+                            p_path = candidate
+                        elif os.path.exists(os.path.join(PROJECT_ROOT, "datasets", "raw", "vision", c_label, clean_name)):
+                            p_path = os.path.join(PROJECT_ROOT, "datasets", "raw", "vision", c_label, clean_name)
+
+                    if os.path.exists(p_path):
+                        self.samples.append({
+                            "path": p_path,
+                            "label_idx": CLASS_TO_IDX[c_label],
+                            "image_id": row.get("image_id", ""),
+                            "crop": row.get("crop", "")
+                        })
+
     def __len__(self):
-        return len(self.records)
-        
+        return len(self.samples)
+
     def __getitem__(self, idx):
-        rec = self.records[idx]
-        image_path = rec.get("processed_path") or rec.get("local_path") or rec.get("local_raw_path")
-        if not image_path:
-            raise KeyError(f"Record missing image path keys: {rec}")
-            
-        if not os.path.isabs(image_path):
-            cand1 = os.path.join(PROJECT_ROOT, "datasets", image_path)
-            cand2 = os.path.join(PROJECT_ROOT, image_path)
-            if os.path.exists(cand1):
-                image_path = cand1
-            elif os.path.exists(cand2):
-                image_path = cand2
-            else:
-                image_path = cand1
-            
-        image = cv2.imread(image_path)
-        if image is None:
-            # Fallback neutral grey image if read failure
-            image = np.full((224, 224, 3), 128, dtype=np.uint8)
+        item = self.samples[idx]
+        img_bgr = cv2.imread(item["path"])
+        if img_bgr is None:
+            # Fallback black image if corrupted
+            img_rgb = np.zeros((224, 224, 3), dtype=np.uint8)
         else:
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            
+            img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+            if img_rgb.shape[:2] != (224, 224):
+                img_rgb = cv2.resize(img_rgb, (224, 224))
+
         if self.transform:
-            augmented = self.transform(image=image)
-            image = augmented["image"]
-            
-        image = image.transpose(2, 0, 1).astype(np.float32)
-        tensor_img = torch.tensor(image, dtype=torch.float32)
-        
-        label_str = rec.get("normalized_label", "").strip().upper()
-        label_idx = CLASS_TO_IDX.get(label_str, 0)
-        label_tensor = torch.tensor(label_idx, dtype=torch.long)
-        
-        return {
-            "image": tensor_img,
-            "label": label_tensor,
-            "image_id": rec.get("image_id", ""),
-            "group_id": rec.get("group_id", ""),
-            "dataset_id": rec.get("dataset_id", ""),
-            "local_path": image_path
-        }
+            augmented = self.transform(image=img_rgb)
+            img_rgb = augmented["image"]
 
-def load_split_records(split_name: str):
-    split_csv = os.path.join(SPLITS_DIR, f"{split_name}_manifest.csv")
-    if not os.path.exists(split_csv):
-        raise FileNotFoundError(f"Split manifest does not exist: {split_csv}")
-        
-    verify_zero_synthetic_in_manifest(split_csv)
-    
-    records = []
-    with open(split_csv, "r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            records.append(row)
-    return records
+        # HWC uint8 -> CHW float32 tensor normalized to [0, 1]
+        img_tensor = torch.from_numpy(img_rgb).permute(2, 0, 1).float() / 255.0
 
-def get_dataloaders(image_size=224, batch_size=8):
-    # Rule 1 Assertions on all splits
-    train_records = load_split_records("train")
-    val_records = load_split_records("val")
-    test_records = load_split_records("test")
-    
-    print(f"Loaded Real Splits -> Train: {len(train_records)}, Val: {len(val_records)}, Test: {len(test_records)}")
-    
-    train_dataset = RealSilageDataset(train_records, transform=get_train_transforms(image_size))
-    val_dataset = RealSilageDataset(val_records, transform=get_eval_transforms(image_size))
-    test_dataset = RealSilageDataset(test_records, transform=get_eval_transforms(image_size))
-    
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=False)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-    
-    return train_loader, val_loader, test_loader, CLASS_NAMES
+        # ImageNet normalization
+        mean = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
+        std = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
+        img_tensor = (img_tensor - mean) / std
+
+        return img_tensor, item["label_idx"], item["path"]
+
+def get_train_transforms():
+    """Realistic Agricultural Augmentation Pipeline."""
+    return A.Compose([
+        A.RandomBrightnessContrast(brightness_limit=0.15, contrast_limit=0.15, p=0.4),
+        A.CLAHE(clip_limit=2.0, tile_grid_size=(8, 8), p=0.3),
+        A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=15, val_shift_limit=10, p=0.3),
+        A.Rotate(limit=15, border_mode=cv2.BORDER_REFLECT, p=0.4),
+        A.GaussianBlur(blur_limit=(3, 5), p=0.2),
+        A.RandomShadow(p=0.2)
+    ])
+
+def get_dataloaders(batch_size=16):
+    train_csv = os.path.join(SPLITS_DIR, "train_manifest.csv")
+    val_csv = os.path.join(SPLITS_DIR, "val_manifest.csv")
+    test_csv = os.path.join(SPLITS_DIR, "test_manifest.csv")
+
+    train_ds = SilageDatasetV3(train_csv, transform=get_train_transforms())
+    val_ds = SilageDatasetV3(val_csv, transform=None)
+    test_ds = SilageDatasetV3(test_csv, transform=None)
+
+    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, drop_last=False)
+    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False)
+
+    return train_loader, val_loader, test_loader

@@ -1,5 +1,5 @@
 /**
- * SILAGEGUARD AI — Quality Trend Line Chart
+ * SILAGEGUARD AI â€” Quality Trend Line Chart
  * Visualizes the 7-scan Multimodal Silage Safety Index (MSSI) trajectory.
  * Renders an honest empty state when no historical scans exist.
  */
@@ -25,7 +25,7 @@ export const QualityTrendChart: React.FC<Props> = ({
   const paddingX = 20;
   const paddingY = 16;
 
-  // Empty state handling — DO NOT show fake graph if empty!
+  // Empty state handling â€” DO NOT show fake graph if empty!
   if (!dataPoints || dataPoints.length === 0) {
     return (
       <View
@@ -183,4 +183,4 @@ const styles = StyleSheet.create({
     marginTop: 3,
     paddingHorizontal: 16
   }
-});
+});

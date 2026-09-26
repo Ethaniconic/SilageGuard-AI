@@ -1,0 +1,12 @@
+{
+  "version": "SILAGEGUARD-AI-V3",
+  "total_images_scanned": 257,
+  "accepted_real_images": 153,
+  "rejected_images": 104,
+  "acceptance_rate_percent": 59.53,
+  "rejection_categories": {
+    "EXCESSIVE_BLUR": 31,
+    "EXTREME_ASPECT_RATIO": 1,
+    "DUPLICATE_HASH": 72
+  }
+}

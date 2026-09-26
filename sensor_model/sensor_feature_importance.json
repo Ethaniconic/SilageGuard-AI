@@ -1,10 +1,13 @@
 {
-  "temp_rise": 0.246,
-  "ph_deviation": 0.2213,
-  "ph": 0.2107,
-  "delta_temp": 0.1572,
-  "moisture": 0.0773,
-  "moisture_deviation": 0.0446,
-  "temperature": 0.0354,
-  "ambient": 0.0075
+  "heat_rise": 0.2879,
+  "delta_temp": 0.25,
+  "ph": 0.1896,
+  "ph_dev": 0.1762,
+  "moisture_dev": 0.064,
+  "moisture_adc": 0.0321,
+  "ambient": 0.0002,
+  "temperature": 0.0,
+  "storage_type": 0.0,
+  "crop_type": 0.0,
+  "depth_bucket": 0.0
 }

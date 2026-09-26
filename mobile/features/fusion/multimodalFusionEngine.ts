@@ -1,32 +1,28 @@
 /**
- * SILAGEGUARD AI V2.1 — Multimodal Evidence Fusion Engine
+ * SILAGEGUARD AI V3 — Multimodal Fusion Engine
  * 
- * Design Architecture:
- *   1. Calculate Sensor Evidence Score (0–100) & Model Confidence (if available)
- *   2. Calculate Vision Evidence Score (0–100) & Model Confidence (if available)
+ * Fusion Architecture:
+ *   1. Vision Ingestion (MobileNetV3-Small): 3-class probabilities (SAFE, CAUTION, UNSAFE)
+ *   2. Sensor Ingestion (11-Feature Random Forest): 3-class probabilities + agronomic features
  *   3. Missing Modality Handling:
- *      - Case 1: Both available -> Weighted fusion (0.55 sensor / 0.45 vision prototype weighting)
- *      - Case 2: Sensor only -> Sensor-only screening mode; vision score not invented
- *      - Case 3: Vision only -> Vision-only screening mode; sensor score not invented
- *      - Case 4: Neither -> INSUFFICIENT DATA (score 0, transparent farmer prompt)
- *   4. Pass through decoupled Safety Rule Engine
- *   5. Build transparent Explainability Chain ("WHY THIS RESULT?")
- * 
- * ⚠️ SCIENTIFIC NOTE:
- * The default weights (Sensor: 0.55, Vision: 0.45) are PROTOTYPE DESIGN PARAMETERS,
- * not clinically or agronomically established coefficients.
+ *      - MULTIMODAL: Sensor + Vision weighted fusion (0.55 sensor / 0.45 vision)
+ *      - SENSOR_ONLY: Telemetry-driven screening (Flags needProbe = false, needRetake = false)
+ *      - VISION_ONLY: Optical surface screening (Flags needProbe = true when caution/unsafe)
+ *      - INSUFFICIENT_DATA: No telemetry, no photo (Flags needRetake = true, needProbe = true)
+ *   4. Safety Rule Engine Decoupled Pass (Kung et al. 2018, Borreani et al. 2018, Moran 2005, Pitt 1990)
+ *   5. Calibrated Categorical Confidence: HIGH (>= 80%), MEDIUM (60-79%), LOW (< 60%), RETAKE_REQUIRED
+ *   6. Explainability Chain ("WHY THIS RESULT?")
  */
 
 import { SensorInferenceResult } from "../../ai/sensorInference";
 import { VisionInferenceResult } from "../../ai/visionInference";
-import { evaluateSafetyRules, RuleEvaluationResult } from "./safetyRuleEngine";
+import { evaluateSafetyRules, SafetyEvaluationResult, TriggeredRuleResult } from "./safetyRuleEngine";
 
-// Configurable prototype fusion weights
 export const FUSION_CONFIG = {
   FUSION_SENSOR_WEIGHT: 0.55,
   FUSION_VISION_WEIGHT: 0.45,
-  VERSION: "mssi_v2.1",
-  WEIGHT_DISCLAIMER: "Prototype heuristic weights for field triage screening."
+  VERSION: "mssi_v3.0",
+  DISCLAIMER: "Screening triage assessment based on calibrated empirical models. Not a replacement for accredited laboratory wet chemistry."
 };
 
 export type SilageVerdict =
@@ -38,6 +34,7 @@ export type SilageVerdict =
 
 export type SilageDecision = "SAFE" | "CAUTION" | "UNSAFE";
 export type ModalityState = "MULTIMODAL" | "SENSOR_ONLY" | "VISION_ONLY" | "INSUFFICIENT_DATA";
+export type ConfidenceTier = "HIGH" | "MEDIUM" | "LOW" | "RETAKE_REQUIRED";
 
 export interface ExplainabilityPoint {
   parameter: string;
@@ -47,55 +44,84 @@ export interface ExplainabilityPoint {
 }
 
 export interface MultimodalFusionOutput {
-  sensor_score: number | null;        // 0 to 100 or null if unavailable
-  vision_score: number | null;        // 0 to 100 or null if unavailable
-  fusion_score: number;               // 0 to 100 (Continuous MSSI)
-  sensor_confidence: number | null;   // 0 to 100% or null
-  vision_confidence: number | null;   // 0 to 100% or null
-  final_confidence: number;           // 0 to 100%
-  confidence_level: "HIGH" | "MODERATE" | "LOW_UNCERTAIN";
-  modality_state: ModalityState;
-  rule_override: boolean;
-  rule_id: string | null;
-  rule_reason: string | null;
-  rule_designation: string | null;
-  final_verdict: SilageVerdict;
-  explainability_chain: ExplainabilityPoint[];
-  summary_reason: string;
-  metadata: {
-    sensor_model_version: string;
-    vision_model_version: string;
-    fusion_version: string;
-    rule_version: string;
-    advisory_version: string;
-    modality_state: ModalityState;
-  };
-
-  // Backward-compatible properties for UI components
+  // Decision & Scoring
   decision: SilageDecision;
-  mssiScore: number;
-  confidence: number;
-  explanations: string[];
+  finalVerdict: SilageVerdict;
+  fusionScore: number;                 // 0 to 100 continuous MSSI
+  sensorScore: number | null;          // 0 to 100 or null if unavailable
+  visionScore: number | null;          // 0 to 100 or null if unavailable
+  
+  // Confidence & Calibration
+  finalConfidence: number;             // 0 to 100 continuous
+  confidenceLevel: ConfidenceTier;     // Calibrated tier (HIGH, MEDIUM, LOW, RETAKE_REQUIRED)
+  sensorConfidence: number | null;
+  visionConfidence: number | null;
+  
+  // Modality & Flow Control
+  modalityState: ModalityState;
+  needRetake: boolean;                 // Flag if image or probe retake is required
+  needProbe: boolean;                  // Flag if farmer should insert physical probe
+
+  // Rule Overrides & Reasons
+  ruleOverride: boolean;
+  ruleId: string | null;
+  ruleReason: string | null;
+  triggeredRules: TriggeredRuleResult[];
+  summaryReason: string;
+  reasons: string[];
+  evidenceList: string[];
+  explainabilityChain: ExplainabilityPoint[];
+
+  // Breakdown & Metadata
   breakdown: {
     sensorSafetyScore: number;
     visionSafetyScore: number;
     mouldProbability: number;
   };
+  metadata: {
+    sensorModelVersion: string;
+    visionModelVersion: string;
+    fusionVersion: string;
+    ruleVersion: string;
+    advisoryVersion: string;
+    modalityState: ModalityState;
+    disclaimer: string;
+  };
+
+  // Backward compatibility aliases
+  mssiScore: number;
+  confidence: number;
+  explanations: string[];
+  sensor_score: number | null;
+  vision_score: number | null;
+  fusion_score: number;
+  sensor_confidence: number | null;
+  vision_confidence: number | null;
+  final_confidence: number;
+  confidence_level: ConfidenceTier;
+  modality_state: ModalityState;
+  rule_override: boolean;
+  rule_id: string | null;
+  rule_reason: string | null;
+  final_verdict: SilageVerdict;
+  summary_reason: string;
+  explainability_chain: ExplainabilityPoint[];
 }
 
 export type FusionResult = MultimodalFusionOutput;
 
-export interface FusionInputV2 {
+export interface FusionInputV3 {
   sensorResult?: SensorInferenceResult | null;
   visionResult?: VisionInferenceResult | null;
+  iqaPassed?: boolean;
 }
 
-export function computeMultimodalFusion(input: FusionInputV2): MultimodalFusionOutput {
-  const { sensorResult, visionResult } = input;
-  const hasSensor = !!sensorResult;
+export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionOutput {
+  const { sensorResult, visionResult, iqaPassed = true } = input;
+  const hasSensor = !!sensorResult && sensorResult.features.ph > 0;
   const hasVision = !!visionResult;
 
-  // Determine Modality State
+  // 1. Determine Modality State
   let modalityState: ModalityState = "MULTIMODAL";
   if (!hasSensor && !hasVision) {
     modalityState = "INSUFFICIENT_DATA";
@@ -107,66 +133,90 @@ export function computeMultimodalFusion(input: FusionInputV2): MultimodalFusionO
     modalityState = "MULTIMODAL";
   }
 
-  // --- CASE 4: NEITHER MODALITY AVAILABLE ---
+  // --- CASE 4: INSUFFICIENT DATA ---
   if (modalityState === "INSUFFICIENT_DATA") {
+    const emptyChain: ExplainabilityPoint[] = [
+      {
+        parameter: "Sensors & Camera",
+        measuredValue: "None",
+        status: "UNAVAILABLE",
+        assessment: "No probe telemetry or silage photograph was provided for evaluation."
+      }
+    ];
+
     return {
+      decision: "CAUTION",
+      finalVerdict: "INSUFFICIENT DATA",
+      fusionScore: 0,
+      sensorScore: null,
+      visionScore: null,
+      finalConfidence: 0,
+      confidenceLevel: "RETAKE_REQUIRED",
+      sensorConfidence: null,
+      visionConfidence: null,
+      modalityState: "INSUFFICIENT_DATA",
+      needRetake: true,
+      needProbe: true,
+      ruleOverride: false,
+      ruleId: null,
+      ruleReason: null,
+      triggeredRules: [],
+      summaryReason: "INSUFFICIENT DATA: Insert silage probe or capture surface photos to run quality screening.",
+      reasons: ["No sensor or visual data available for analysis."],
+      evidenceList: ["Incomplete scan: Connect probe or snap silage photos."],
+      explainabilityChain: emptyChain,
+      breakdown: {
+        sensorSafetyScore: 0,
+        visionSafetyScore: 0,
+        mouldProbability: 0
+      },
+      metadata: {
+        sensorModelVersion: "sensor_rf_v3",
+        visionModelVersion: "mobilenetv3_silage_v3",
+        fusionVersion: FUSION_CONFIG.VERSION,
+        ruleVersion: "rules_v3.0",
+        advisoryVersion: "advisory_v3.0",
+        modalityState: "INSUFFICIENT_DATA",
+        disclaimer: FUSION_CONFIG.DISCLAIMER
+      },
+      // Aliases
+      mssiScore: 0,
+      confidence: 0,
+      explanations: ["Incomplete scan: Connect probe or snap silage photos."],
       sensor_score: null,
       vision_score: null,
       fusion_score: 0,
       sensor_confidence: null,
       vision_confidence: null,
       final_confidence: 0,
-      confidence_level: "LOW_UNCERTAIN",
+      confidence_level: "RETAKE_REQUIRED",
       modality_state: "INSUFFICIENT_DATA",
       rule_override: false,
       rule_id: null,
       rule_reason: null,
-      rule_designation: null,
       final_verdict: "INSUFFICIENT DATA",
-      explainability_chain: [
-        {
-          parameter: "Sensors & Camera",
-          measuredValue: "None",
-          status: "UNAVAILABLE",
-          assessment: "No probe telemetry or silage photograph was provided for evaluation."
-        }
-      ],
-      summary_reason: "INSUFFICIENT DATA: Insert probe or capture photos to run quality screening.",
-      metadata: {
-        sensor_model_version: "sensor_rf_v2.1",
-        vision_model_version: "mobilenetv3_silage_v2.1",
-        fusion_version: FUSION_CONFIG.VERSION,
-        rule_version: "rules_v2.1",
-        advisory_version: "advisory_v2.1",
-        modality_state: "INSUFFICIENT_DATA"
-      },
-      decision: "CAUTION",
-      mssiScore: 0,
-      confidence: 0,
-      explanations: ["Incomplete scan: Connect probe or snap silage photos."],
-      breakdown: {
-        sensorSafetyScore: 0,
-        visionSafetyScore: 0,
-        mouldProbability: 0
-      }
+      summary_reason: "INSUFFICIENT DATA: Insert silage probe or capture surface photos to run quality screening.",
+      explainability_chain: emptyChain
     };
   }
 
-  // 1. Calculate Individual Modality Scores
+  // 2. Individual Modality Scores
   let sensorScore: number | null = null;
   let sensorConfidence: number | null = null;
   let ph = 4.0;
   let moisture = 65.0;
-  let temp_rise = 0.0;
+  let deltaTemp = 0.0;
+  let coreTemp = 25.0;
 
   if (hasSensor && sensorResult) {
     sensorScore = Math.round(
-      sensorResult.probabilities.Safe * 100 + sensorResult.probabilities.Caution * 50
+      sensorResult.probabilities.safe * 100 + sensorResult.probabilities.caution * 50
     );
     sensorConfidence = Math.round(sensorResult.confidence * 100);
     ph = sensorResult.features.ph;
-    moisture = sensorResult.features.moisture;
-    temp_rise = sensorResult.features.temp_rise;
+    moisture = sensorResult.features.moisture_adc;
+    deltaTemp = sensorResult.features.delta_temp;
+    coreTemp = sensorResult.features.temperature;
   }
 
   let visionScore: number | null = null;
@@ -175,162 +225,205 @@ export function computeMultimodalFusion(input: FusionInputV2): MultimodalFusionO
 
   if (hasVision && visionResult) {
     visionScore = Math.round(
-      visionResult.probabilities.Safe * 100 + visionResult.probabilities.Caution * 50
+      visionResult.probabilities.safe * 100 + visionResult.probabilities.caution * 50
     );
     visionConfidence = Math.round(visionResult.confidence * 100);
     mouldProb = visionResult.mouldProbability;
   }
 
-  // 2. Continuous Fusion Score Calculation
+  // 3. Continuous Fusion Score & Raw Confidence
   let fusionScore = 0;
-  let finalConfidence = 0;
+  let rawConfidence = 0;
 
   if (modalityState === "MULTIMODAL" && sensorScore !== null && visionScore !== null) {
-    const sensorWeight = FUSION_CONFIG.FUSION_SENSOR_WEIGHT;
-    const visionWeight = FUSION_CONFIG.FUSION_VISION_WEIGHT;
-    fusionScore = Math.min(100, Math.max(0, Math.round(sensorWeight * sensorScore + visionWeight * visionScore)));
-    finalConfidence = Math.round(sensorWeight * (sensorConfidence ?? 0) + visionWeight * (visionConfidence ?? 0));
+    const sW = FUSION_CONFIG.FUSION_SENSOR_WEIGHT;
+    const vW = FUSION_CONFIG.FUSION_VISION_WEIGHT;
+    fusionScore = Math.min(100, Math.max(0, Math.round(sW * sensorScore + vW * visionScore)));
+    rawConfidence = Math.round(sW * (sensorConfidence ?? 0) + vW * (visionConfidence ?? 0));
   } else if (modalityState === "SENSOR_ONLY" && sensorScore !== null) {
-    // 100% Sensor-driven screening
     fusionScore = sensorScore;
-    finalConfidence = Math.round((sensorConfidence ?? 70) * 0.85); // slight penalty for single modality
+    rawConfidence = Math.round((sensorConfidence ?? 70) * 0.85); // slight penalty for missing surface inspection
   } else if (modalityState === "VISION_ONLY" && visionScore !== null) {
-    // 100% Vision-driven screening
     fusionScore = visionScore;
-    finalConfidence = Math.round((visionConfidence ?? 70) * 0.80); // higher uncertainty without core chemistry
+    rawConfidence = Math.round((visionConfidence ?? 70) * 0.75); // higher penalty for missing core fermentation chemistry
   }
 
-  let confidenceLevel: "HIGH" | "MODERATE" | "LOW_UNCERTAIN" = "HIGH";
-  if (finalConfidence < 65) {
-    confidenceLevel = "LOW_UNCERTAIN";
-  } else if (finalConfidence < 85) {
-    confidenceLevel = "MODERATE";
+  // Penalty if image quality did not cleanly pass IQA
+  if (!iqaPassed) {
+    rawConfidence = Math.max(20, rawConfidence - 20);
   }
+
+  // 4. Calibrated Confidence Tier
+  let confidenceLevel: ConfidenceTier = "HIGH";
+  let needRetake = false;
+
+  if (!iqaPassed || rawConfidence < 45) {
+    confidenceLevel = "RETAKE_REQUIRED";
+    needRetake = true;
+  } else if (rawConfidence < 65) {
+    confidenceLevel = "LOW";
+  } else if (rawConfidence < 82) {
+    confidenceLevel = "MEDIUM";
+  } else {
+    confidenceLevel = "HIGH";
+  }
+
+  // 5. Decoupled Safety Rule Engine Check
+  const ruleResult: SafetyEvaluationResult = evaluateSafetyRules({
+    ph: hasSensor ? ph : null,
+    moisture: hasSensor ? moisture : null,
+    deltaTemp: hasSensor ? deltaTemp : null,
+    coreTemp: hasSensor ? coreTemp : null,
+    mouldProbability: hasVision ? mouldProb : null,
+    iqaPassed
+  });
 
   // Base verdict from continuous fusion score
   let baseVerdict: SilageVerdict = "SAFE TO FEED (LOW SCREENING RISK)";
+  let baseDecision: SilageDecision = "SAFE";
+
   if (fusionScore < 40) {
     baseVerdict = "UNSAFE";
+    baseDecision = "UNSAFE";
   } else if (fusionScore < 72) {
     baseVerdict = "FEED WITH CAUTION";
+    baseDecision = "CAUTION";
   } else {
     baseVerdict = "SAFE TO FEED (LOW SCREENING RISK)";
+    baseDecision = "SAFE";
   }
 
-  // 3. Decoupled Safety Rule Engine Check
-  const ruleResult: RuleEvaluationResult = evaluateSafetyRules({
-    ph: hasSensor ? ph : 4.0,
-    moisture: hasSensor ? moisture : 64.0,
-    tempRise: hasSensor ? temp_rise : 1.0,
-    mouldProbability: hasVision ? mouldProb : 0.05
-  });
-
+  // Apply Rule Overrides
   let finalVerdict: SilageVerdict = baseVerdict;
+  let finalDecision: SilageDecision = baseDecision;
   let ruleOverride = false;
   let ruleId: string | null = null;
   let ruleReason: string | null = null;
-  let ruleDesignation: string | null = null;
 
-  if (ruleResult.overrideTriggered && ruleResult.overrideVerdict) {
+  if (ruleResult.hasOverride && ruleResult.enforcedVerdict) {
     ruleOverride = true;
-    ruleId = ruleResult.triggeredRuleId;
-    ruleReason = ruleResult.ruleReason;
-    ruleDesignation = ruleResult.designation;
-    finalVerdict = ruleResult.overrideVerdict === "UNSAFE" ? "DO NOT FEED" : "SAFE TO FEED (LOW SCREENING RISK)";
+    finalDecision = ruleResult.enforcedVerdict;
+    finalVerdict =
+      ruleResult.enforcedVerdict === "UNSAFE"
+        ? "DO NOT FEED"
+        : ruleResult.enforcedVerdict === "CAUTION"
+        ? "FEED WITH CAUTION"
+        : "SAFE TO FEED (LOW SCREENING RISK)";
+    ruleId = ruleResult.triggeredRules[0]?.rule.ruleId ?? null;
+    ruleReason = ruleResult.primaryReason;
   }
 
-  // 4. Construct Explainability Chain ("WHY THIS RESULT?")
-  const explainabilityChain: ExplainabilityPoint[] = [];
+  // Need probe flag: if vision only and result is not cleanly safe, advise farmer to insert probe
+  const needProbe = modalityState === "VISION_ONLY" && (finalDecision !== "SAFE" || rawConfidence < 75);
 
-  // (a) pH explanation
+  // 6. Explainability Chain Construction
+  const explainabilityChain: ExplainabilityPoint[] = [];
+  const reasons: string[] = [];
+  const evidenceList: string[] = [];
+
+  // (a) pH
   if (hasSensor) {
-    if (ph > 5.0) {
+    if (ph > 4.80) {
       explainabilityChain.push({
         parameter: "pH Acidity",
         measuredValue: `${ph.toFixed(2)} pH`,
         status: "ALERT",
-        assessment: "Significantly elevated above optimal threshold (3.8–4.2); signals clostridial degradation."
+        assessment: "Severely alkaline (> 4.80); indicates clostridial putrefaction."
       });
-    } else if (ph > 4.25) {
+      reasons.push(`High core pH (${ph.toFixed(2)}) indicates clostridial fermentation failure.`);
+      evidenceList.push(`pH: ${ph.toFixed(2)} (Limit: 4.80)`);
+    } else if (ph > 4.30) {
       explainabilityChain.push({
         parameter: "pH Acidity",
         measuredValue: `${ph.toFixed(2)} pH`,
         status: "BORDERLINE",
-        assessment: "Slightly elevated; indicates mild buffer neutralization or delayed fermentation."
+        assessment: "Slightly elevated (4.30–4.80); vulnerable to secondary aerobic spoilage."
       });
+      reasons.push(`Borderline pH (${ph.toFixed(2)}) suggests slow acidification.`);
+      evidenceList.push(`pH: ${ph.toFixed(2)} (Sub-optimal band)`);
     } else {
       explainabilityChain.push({
         parameter: "pH Acidity",
         measuredValue: `${ph.toFixed(2)} pH`,
         status: "NORMAL",
-        assessment: "Within optimal lactic acid preservation target (3.8–4.2)."
+        assessment: "Optimal lactic acid fermentation preservation (3.80–4.20)."
       });
+      evidenceList.push(`pH: ${ph.toFixed(2)} (Optimal)`);
     }
   } else {
     explainabilityChain.push({
       parameter: "pH Acidity",
       measuredValue: "Not Measured",
       status: "UNAVAILABLE",
-      assessment: "Probe telemetry not connected. pH was not acquired."
+      assessment: "Silage probe was not inserted. Core pH was not acquired."
     });
   }
 
-  // (b) Temperature rise explanation
+  // (b) Thermal delta
   if (hasSensor) {
-    if (temp_rise > 7.0) {
+    if (deltaTemp > 8.0) {
       explainabilityChain.push({
         parameter: "Core Heat Rise (ΔT)",
-        measuredValue: `+${temp_rise.toFixed(1)}°C`,
+        measuredValue: `+${deltaTemp.toFixed(1)}°C`,
         status: "ALERT",
-        assessment: "Severe thermal spike indicates active aerobic yeast and mold respiration."
+        assessment: "Severe thermal runaway (> 8.0°C rise); active aerobic microbial respiration."
       });
-    } else if (temp_rise > 3.0) {
+      reasons.push(`Core heating (+${deltaTemp.toFixed(1)}°C) reveals aerobic yeast respiration.`);
+      evidenceList.push(`ΔT: +${deltaTemp.toFixed(1)}°C (Runaway)`);
+    } else if (deltaTemp > 3.0) {
       explainabilityChain.push({
         parameter: "Core Heat Rise (ΔT)",
-        measuredValue: `+${temp_rise.toFixed(1)}°C`,
+        measuredValue: `+${deltaTemp.toFixed(1)}°C`,
         status: "BORDERLINE",
-        assessment: "Moderate temperature rise; indicates early oxygen penetration on bunker face."
+        assessment: "Moderate temperature rise (3.0–8.0°C); indicates early bunker air ingress."
       });
+      reasons.push(`Moderate heat rise (+${deltaTemp.toFixed(1)}°C) detected near face.`);
+      evidenceList.push(`ΔT: +${deltaTemp.toFixed(1)}°C (Warming)`);
     } else {
       explainabilityChain.push({
         parameter: "Core Heat Rise (ΔT)",
-        measuredValue: `+${temp_rise.toFixed(1)}°C`,
+        measuredValue: `+${deltaTemp.toFixed(1)}°C`,
         status: "NORMAL",
-        assessment: "Core temperature is in stable equilibrium with ambient air."
+        assessment: "Silage core is in thermal equilibrium with ambient surroundings."
       });
+      evidenceList.push(`ΔT: +${deltaTemp.toFixed(1)}°C (Stable)`);
     }
   } else {
     explainabilityChain.push({
       parameter: "Core Heat Rise (ΔT)",
       measuredValue: "Not Measured",
       status: "UNAVAILABLE",
-      assessment: "Silage probe was not inserted. Core heating relative to ambient was not acquired."
+      assessment: "Probe disconnected. Core temperature differential was not acquired."
     });
   }
 
-  // (c) Moisture explanation
+  // (c) Estimated Moisture
   if (hasSensor) {
     if (moisture > 72.0) {
       explainabilityChain.push({
         parameter: "Estimated Moisture",
         measuredValue: `${moisture.toFixed(1)}%`,
         status: "ALERT",
-        assessment: "High moisture content increases effluent leaching and clostridial risk."
+        assessment: "Excess moisture (> 72%) promotes clostridial butyric acid formation."
       });
+      reasons.push(`High moisture (${moisture.toFixed(1)}%) promotes effluent loss.`);
+      evidenceList.push(`Moisture: ${moisture.toFixed(1)}% (Excess)`);
     } else if (moisture < 55.0) {
       explainabilityChain.push({
         parameter: "Estimated Moisture",
         measuredValue: `${moisture.toFixed(1)}%`,
         status: "BORDERLINE",
-        assessment: "Low moisture forage is difficult to compact, trapping pockets of oxygen."
+        assessment: "Low moisture (< 55%) hampers anaerobic compaction; air pockets likely."
       });
+      evidenceList.push(`Moisture: ${moisture.toFixed(1)}% (Low)`);
     } else {
       explainabilityChain.push({
         parameter: "Estimated Moisture",
         measuredValue: `${moisture.toFixed(1)}%`,
         status: "NORMAL",
-        assessment: "Ideal moisture band for anaerobic pit packing (60–68%)."
+        assessment: "Within optimal compaction and ensiling moisture band (60–68%)."
       });
+      evidenceList.push(`Moisture: ${moisture.toFixed(1)}% (Optimal)`);
     }
   } else {
     explainabilityChain.push({
@@ -341,33 +434,37 @@ export function computeMultimodalFusion(input: FusionInputV2): MultimodalFusionO
     });
   }
 
-  // (d) Visual Mould Pattern explanation
+  // (d) Visual Mold Pattern
   if (hasVision) {
-    if (mouldProb > 0.50) {
+    if (mouldProb > 0.40) {
       explainabilityChain.push({
-        parameter: "Visual Mould Pattern",
+        parameter: "Visible Fungal Colony",
         measuredValue: `${(mouldProb * 100).toFixed(0)}% signal`,
         status: "ALERT",
-        assessment: "Visible mycelial patterns or discoloration detected; elevated spoilage risk."
+        assessment: "Macroscopic fungal mycelium or discoloration identified on forage surface."
       });
-    } else if (mouldProb > 0.20) {
+      reasons.push(`Surface image indicates macroscopic fungal colony growth (${(mouldProb * 100).toFixed(0)}%).`);
+      evidenceList.push(`Vision: ${(mouldProb * 100).toFixed(0)}% mold probability`);
+    } else if (mouldProb > 0.18) {
       explainabilityChain.push({
-        parameter: "Visual Mould Pattern",
+        parameter: "Visible Fungal Colony",
         measuredValue: `${(mouldProb * 100).toFixed(0)}% signal`,
         status: "BORDERLINE",
-        assessment: "Mild surface browning or patchy crust observed; monitor closely."
+        assessment: "Slight surface browning or weathering crust observed."
       });
+      evidenceList.push(`Vision: ${(mouldProb * 100).toFixed(0)}% mold signal (Borderline)`);
     } else {
       explainabilityChain.push({
-        parameter: "Visual Mould Pattern",
+        parameter: "Visible Fungal Colony",
         measuredValue: `${(mouldProb * 100).toFixed(0)}% signal`,
         status: "NORMAL",
-        assessment: "No abnormal mycelium or fungal colonies observed on silage surface."
+        assessment: "Clean, well-compacted face with no macroscopic fungal colonies."
       });
+      evidenceList.push("Vision: Clean surface pattern (No mold)");
     }
   } else {
     explainabilityChain.push({
-      parameter: "Visual Mould Pattern",
+      parameter: "Visible Fungal Colony",
       measuredValue: "No Photo",
       status: "UNAVAILABLE",
       assessment: "Camera capture was skipped. Surface mould risk unassessed."
@@ -378,10 +475,10 @@ export function computeMultimodalFusion(input: FusionInputV2): MultimodalFusionO
   let summaryReason = "Low screening risk signal based on available screening evidence.";
   if (ruleOverride) {
     summaryReason = `SAFETY OVERRIDE: ${ruleReason}`;
-  } else if (finalVerdict === "FEED WITH CAUTION") {
+  } else if (finalDecision === "CAUTION") {
     summaryReason = "Secondary aerobic warming or moderate moisture deviation detected. Feed promptly within 6 hours.";
-  } else if (finalVerdict === "UNSAFE" || finalVerdict === "DO NOT FEED") {
-    summaryReason = "Elevated risk signals detected. Do not feed suspect forage.";
+  } else if (finalDecision === "UNSAFE") {
+    summaryReason = "Elevated risk signals detected. Do not feed suspect forage to livestock.";
   }
 
   if (modalityState === "SENSOR_ONLY") {
@@ -390,41 +487,62 @@ export function computeMultimodalFusion(input: FusionInputV2): MultimodalFusionO
     summaryReason += " (Surface vision triage only; probe telemetry missing)";
   }
 
-  const decisionAlias: SilageDecision =
-    finalVerdict.startsWith("SAFE") ? "SAFE" : finalVerdict === "FEED WITH CAUTION" ? "CAUTION" : "UNSAFE";
+  if (reasons.length === 0) {
+    reasons.push(summaryReason);
+  }
 
   return {
+    decision: finalDecision,
+    finalVerdict,
+    fusionScore,
+    sensorScore,
+    visionScore,
+    finalConfidence: rawConfidence,
+    confidenceLevel,
+    sensorConfidence,
+    visionConfidence,
+    modalityState,
+    needRetake,
+    needProbe,
+    ruleOverride,
+    ruleId,
+    ruleReason,
+    triggeredRules: ruleResult.triggeredRules,
+    summaryReason,
+    reasons,
+    evidenceList,
+    explainabilityChain,
+    breakdown: {
+      sensorSafetyScore: sensorScore ?? 0,
+      visionSafetyScore: visionScore ?? 0,
+      mouldProbability: mouldProb
+    },
+    metadata: {
+      sensorModelVersion: "sensor_rf_v3",
+      visionModelVersion: "mobilenetv3_silage_v3",
+      fusionVersion: FUSION_CONFIG.VERSION,
+      ruleVersion: "rules_v3.0",
+      advisoryVersion: "advisory_v3.0",
+      modalityState,
+      disclaimer: FUSION_CONFIG.DISCLAIMER
+    },
+    // Backward-compatible properties
+    mssiScore: fusionScore,
+    confidence: rawConfidence,
+    explanations: explainabilityChain.map((p) => `${p.parameter}: ${p.assessment}`),
     sensor_score: sensorScore,
     vision_score: visionScore,
     fusion_score: fusionScore,
     sensor_confidence: sensorConfidence,
     vision_confidence: visionConfidence,
-    final_confidence: finalConfidence,
+    final_confidence: rawConfidence,
     confidence_level: confidenceLevel,
     modality_state: modalityState,
     rule_override: ruleOverride,
     rule_id: ruleId,
     rule_reason: ruleReason,
-    rule_designation: ruleDesignation,
     final_verdict: finalVerdict,
-    explainability_chain: explainabilityChain,
     summary_reason: summaryReason,
-    metadata: {
-      sensor_model_version: "sensor_rf_v2.1",
-      vision_model_version: "mobilenetv3_silage_v2.1",
-      fusion_version: FUSION_CONFIG.VERSION,
-      rule_version: "rules_v2.1",
-      advisory_version: "advisory_v2.1",
-      modality_state: modalityState
-    },
-    decision: decisionAlias,
-    mssiScore: fusionScore,
-    confidence: finalConfidence,
-    explanations: explainabilityChain.map((p) => `${p.parameter}: ${p.assessment}`),
-    breakdown: {
-      sensorSafetyScore: sensorScore ?? 0,
-      visionSafetyScore: visionScore ?? 0,
-      mouldProbability: mouldProb
-    }
+    explainability_chain: explainabilityChain
   };
 }

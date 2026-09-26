@@ -1,145 +1,123 @@
 {
-  "registry_version": "2.2.0",
-  "datasets": [
+  "version": "SILAGEGUARD-AI-V3",
+  "total_images": 185,
+  "class_distribution": {
+    "SAFE": 60,
+    "CAUTION": 30,
+    "UNSAFE": 95
+  },
+  "train_count": 122,
+  "val_count": 30,
+  "test_count": 33,
+  "zero_synthetic_data_verified": true,
+  "sources": [
     {
-      "dataset_id": "DS-REAL-COMMONS-SILAGE-01",
-      "dataset_name": "Wikimedia Commons Silage Archive",
-      "source_url": "https://commons.wikimedia.org/wiki/Category:Silage",
-      "paper_url": "https://commons.wikimedia.org",
-      "doi": "OpenAccess-Wikimedia-Commons",
-      "publisher": "Wikimedia Foundation & Contributing Agricultural Researchers",
-      "license": "CC-BY / CC-BY-SA / Public Domain",
-      "license_verified": true,
-      "download_date": "2026-09-25",
-      "image_count": 42,
-      "real_image": true,
-      "synthetic_image": false,
-      "ai_generated": false,
-      "original_labels": [
-        "NO_MOLD"
-      ],
-      "label_definition": "Photographic observations of Chopped Silage / Bunker Face / Bales",
-      "crop_types": [
-        "Whole-Plant Silage / Forage"
-      ],
-      "capture_conditions": "Authentic agricultural outdoor and macroscopic photography",
-      "annotation_method": "Category cataloging and scientific taxonomic identification",
-      "known_limitations": "Captured across diverse cameras and lighting conditions; domain adaptation required for mobile phone cameras",
-      "commercial_use_allowed": true,
-      "research_use_allowed": true,
-      "notes": "Verified 100% real image files. Zero synthetic pixels."
+      "dataset_id": "DS-REAL-SILAGE-01",
+      "source_name": "Wikimedia Commons Silage",
+      "category": "Silage",
+      "class_label": "SAFE",
+      "crop": "Corn / Whole-Crop Silage",
+      "silage_type": "Bunker / Pit / Clamp",
+      "storage_type": "Bunker Pit",
+      "mold_species": "None",
+      "license": "Public Domain / CC-BY-SA 4.0",
+      "items_queried": 51
     },
     {
-      "dataset_id": "DS-REAL-COMMONS-BALES-02",
-      "dataset_name": "Wikimedia Commons Silage Bales",
-      "source_url": "https://commons.wikimedia.org/wiki/Category:Silage_bales",
-      "paper_url": "https://commons.wikimedia.org",
-      "doi": "OpenAccess-Wikimedia-Commons",
-      "publisher": "Wikimedia Foundation & Contributing Agricultural Researchers",
-      "license": "CC-BY / CC-BY-SA / Public Domain",
-      "license_verified": true,
-      "download_date": "2026-09-25",
-      "image_count": 9,
-      "real_image": true,
-      "synthetic_image": false,
-      "ai_generated": false,
-      "original_labels": [
-        "NO_MOLD"
-      ],
-      "label_definition": "Photographic observations of Fermented Baled Forage",
-      "crop_types": [
-        "Grass / Forage Silage Bales"
-      ],
-      "capture_conditions": "Authentic agricultural outdoor and macroscopic photography",
-      "annotation_method": "Category cataloging and scientific taxonomic identification",
-      "known_limitations": "Captured across diverse cameras and lighting conditions; domain adaptation required for mobile phone cameras",
-      "commercial_use_allowed": true,
-      "research_use_allowed": true,
-      "notes": "Verified 100% real image files. Zero synthetic pixels."
+      "dataset_id": "DS-REAL-BALES-02",
+      "source_name": "Wikimedia Commons Silage Bales",
+      "category": "Silage_bales",
+      "class_label": "SAFE",
+      "crop": "Grass / Haylage",
+      "silage_type": "Wrapped Round Bale",
+      "storage_type": "Round Bale Wrap",
+      "mold_species": "None",
+      "license": "Public Domain / CC-BY-SA 4.0",
+      "items_queried": 9
     },
     {
-      "dataset_id": "DS-REAL-COMMONS-MOLD-03",
-      "dataset_name": "Wikimedia Commons Organic Mold Colonies",
-      "source_url": "https://commons.wikimedia.org/wiki/Category:Bread_mold",
-      "paper_url": "https://commons.wikimedia.org",
-      "doi": "OpenAccess-Wikimedia-Commons",
-      "publisher": "Wikimedia Foundation & Contributing Agricultural Researchers",
-      "license": "CC-BY / CC-BY-SA / Public Domain",
-      "license_verified": true,
-      "download_date": "2026-09-25",
-      "image_count": 20,
-      "real_image": true,
-      "synthetic_image": false,
-      "ai_generated": false,
-      "original_labels": [
-        "VISIBLE_MOLD"
-      ],
-      "label_definition": "Photographic observations of Surface Fungal Mold Mycelium",
-      "crop_types": [
-        "Grain / Organic Substrate"
-      ],
-      "capture_conditions": "Authentic agricultural outdoor and macroscopic photography",
-      "annotation_method": "Category cataloging and scientific taxonomic identification",
-      "known_limitations": "Captured across diverse cameras and lighting conditions; domain adaptation required for mobile phone cameras",
-      "commercial_use_allowed": true,
-      "research_use_allowed": true,
-      "notes": "Verified 100% real image files. Zero synthetic pixels."
+      "dataset_id": "DS-REAL-ENSILAGE-03",
+      "source_name": "Wikimedia Commons Ensilage Preservation",
+      "category": "Ensilage",
+      "class_label": "SAFE",
+      "crop": "Maize / Fodder Grass",
+      "silage_type": "Tower / Clamp Silo",
+      "storage_type": "Tower Silo",
+      "mold_species": "None",
+      "license": "Public Domain / CC-BY-SA 4.0",
+      "items_queried": 0
     },
     {
-      "dataset_id": "DS-REAL-COMMONS-ASPERGILLUS-04",
-      "dataset_name": "Wikimedia Commons Aspergillus Fungi",
-      "source_url": "https://commons.wikimedia.org/wiki/Category:Aspergillus",
-      "paper_url": "https://commons.wikimedia.org",
-      "doi": "OpenAccess-Wikimedia-Commons",
-      "publisher": "Wikimedia Foundation & Contributing Agricultural Researchers",
-      "license": "CC-BY / CC-BY-SA / Public Domain",
-      "license_verified": true,
-      "download_date": "2026-09-25",
-      "image_count": 28,
-      "real_image": true,
-      "synthetic_image": false,
-      "ai_generated": false,
-      "original_labels": [
-        "VISIBLE_MOLD"
-      ],
-      "label_definition": "Photographic observations of Aspergillus Mycelium Colonies",
-      "crop_types": [
-        "Agricultural Feed / Mycological Substrate"
-      ],
-      "capture_conditions": "Authentic agricultural outdoor and macroscopic photography",
-      "annotation_method": "Category cataloging and scientific taxonomic identification",
-      "known_limitations": "Captured across diverse cameras and lighting conditions; domain adaptation required for mobile phone cameras",
-      "commercial_use_allowed": true,
-      "research_use_allowed": true,
-      "notes": "Verified 100% real image files. Zero synthetic pixels."
+      "dataset_id": "DS-REAL-AEROBIC-04",
+      "source_name": "Wikimedia Commons Vegetative Decomposition",
+      "category": "Decomposing_leaves",
+      "class_label": "CAUTION",
+      "crop": "Vegetative Agricultural Biomass",
+      "silage_type": "Aerobic Exposed Face",
+      "storage_type": "Uncovered Bunker",
+      "mold_species": "Early Yeast / Aerobic Bacteria",
+      "license": "Public Domain / CC-BY-SA 4.0",
+      "items_queried": 30
     },
     {
-      "dataset_id": "DS-REAL-COMMONS-ROTTEN-05",
-      "dataset_name": "Wikimedia Commons Aerobic Deterioration",
-      "source_url": "https://commons.wikimedia.org/wiki/Category:Rotten_fruits",
-      "paper_url": "https://commons.wikimedia.org",
-      "doi": "OpenAccess-Wikimedia-Commons",
-      "publisher": "Wikimedia Foundation & Contributing Agricultural Researchers",
-      "license": "CC-BY / CC-BY-SA / Public Domain",
-      "license_verified": true,
-      "download_date": "2026-09-25",
-      "image_count": 0,
-      "real_image": true,
-      "synthetic_image": false,
-      "ai_generated": false,
-      "original_labels": [
-        "DETERIORATION"
-      ],
-      "label_definition": "Photographic observations of Aerobic Browning & Soft Rot",
-      "crop_types": [
-        "Organic Agricultural Biomass"
-      ],
-      "capture_conditions": "Authentic agricultural outdoor and macroscopic photography",
-      "annotation_method": "Category cataloging and scientific taxonomic identification",
-      "known_limitations": "Captured across diverse cameras and lighting conditions; domain adaptation required for mobile phone cameras",
-      "commercial_use_allowed": true,
-      "research_use_allowed": true,
-      "notes": "Verified 100% real image files. Zero synthetic pixels."
+      "dataset_id": "DS-REAL-ROTTEN-05",
+      "source_name": "Wikimedia Commons Organic Spoilage",
+      "category": "Rotten_fruits",
+      "class_label": "CAUTION",
+      "crop": "Agricultural Biomass",
+      "silage_type": "Weathered Organic Feed",
+      "storage_type": "Open Clamp",
+      "mold_species": "Soft Rot / Browning",
+      "license": "Public Domain / CC-BY-SA 4.0",
+      "items_queried": 0
+    },
+    {
+      "dataset_id": "DS-REAL-COMPOST-06",
+      "source_name": "Wikimedia Commons Agricultural Composting",
+      "category": "Composting_in_agriculture",
+      "class_label": "CAUTION",
+      "crop": "Forage Biomass",
+      "silage_type": "Aerobic Heating Biomass",
+      "storage_type": "Heap",
+      "mold_species": "Thermophilic Actinomycetes",
+      "license": "Public Domain / CC-BY-SA 4.0",
+      "items_queried": 0
+    },
+    {
+      "dataset_id": "DS-REAL-MOLD-07",
+      "source_name": "Wikimedia Commons Fungal Mold Colonies",
+      "category": "Bread_mold",
+      "class_label": "UNSAFE",
+      "crop": "Grain / Cereal Substrate",
+      "silage_type": "Surface Mold Layer",
+      "storage_type": "Silage Bunker Top Layer",
+      "mold_species": "Rhizopus / Penicillium",
+      "license": "Public Domain / CC-BY-SA 4.0",
+      "items_queried": 59
+    },
+    {
+      "dataset_id": "DS-REAL-ASPERGILLUS-08",
+      "source_name": "Wikimedia Commons Aspergillus Fungi",
+      "category": "Aspergillus",
+      "class_label": "UNSAFE",
+      "crop": "Feedgrain / Silage Inoculum",
+      "silage_type": "Infected Bunker Face",
+      "storage_type": "Bunker Pit",
+      "mold_species": "Aspergillus fumigatus / flavus",
+      "license": "Public Domain / CC-BY-SA 4.0",
+      "items_queried": 42
+    },
+    {
+      "dataset_id": "DS-REAL-PENICILLIUM-09",
+      "source_name": "Wikimedia Commons Penicillium Fungi",
+      "category": "Penicillium",
+      "class_label": "UNSAFE",
+      "crop": "Forage & Organic Feed Substrate",
+      "silage_type": "Blue-Green Mold Mat",
+      "storage_type": "Unsealed Trench",
+      "mold_species": "Penicillium roqueforti / paneum",
+      "license": "Public Domain / CC-BY-SA 4.0",
+      "items_queried": 66
     }
   ]
 }

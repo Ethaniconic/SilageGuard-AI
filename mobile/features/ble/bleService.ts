@@ -1,5 +1,5 @@
 /**
- * SILAGEGUARD AI V2 — BLE Hardware Connection Service & Sensor Calibration
+ * SILAGEGUARD AI V2 â€” BLE Hardware Connection Service & Sensor Calibration
  * Manages Bluetooth Low Energy GATT communication with ESP32-S3 probe.
  * 
  * V2 Enhancements:
@@ -59,7 +59,7 @@ class BLEServiceManager {
     moisture_wet_adc: 1250
   };
 
-  // Clean empty state when disconnected — DO NOT invent dummy data!
+  // Clean empty state when disconnected â€” DO NOT invent dummy data!
   private currentTelemetry: ProbeTelemetryData = {
     ph: null,
     moisture: null,
@@ -111,10 +111,10 @@ class BLEServiceManager {
       return { isValid: false, error: `Invalid moisture reading (${raw.moisture}%). Outside physical bound [0 - 100%].` };
     }
     if (raw.temp === null || raw.temp === undefined || raw.temp < -10.0 || raw.temp > 75.0) {
-      return { isValid: false, error: `Invalid core temperature (${raw.temp}°C). Outside physical bound [-10°C - 75°C].` };
+      return { isValid: false, error: `Invalid core temperature (${raw.temp}Â°C). Outside physical bound [-10Â°C - 75Â°C].` };
     }
     if (raw.ambient === null || raw.ambient === undefined || raw.ambient < -10.0 || raw.ambient > 60.0) {
-      return { isValid: false, error: `Invalid ambient temperature (${raw.ambient}°C). Outside physical bound [-10°C - 60°C].` };
+      return { isValid: false, error: `Invalid ambient temperature (${raw.ambient}Â°C). Outside physical bound [-10Â°C - 60Â°C].` };
     }
     if (raw.battery !== null && raw.battery !== undefined && (raw.battery < 0 || raw.battery > 100)) {
       return { isValid: false, error: `Invalid battery reading (${raw.battery}%).` };
@@ -274,4 +274,4 @@ class BLEServiceManager {
   }
 }
 
-export const bleService = new BLEServiceManager();
+export const bleService = new BLEServiceManager();

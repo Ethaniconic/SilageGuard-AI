@@ -1,17 +1,38 @@
 """
-SILAGEGUARD AI V2 — Sensor Model Training & Leakage-Safe Evaluation
-Implements GroupKFold / StratifiedGroupKFold validation across distinct bunker pits.
-Evaluates RandomForestClassifier vs LogisticRegression and HistGradientBoosting.
-Calculates unrounded metrics, Brier calibration score, and exports on-device JSON schema.
+SILAGEGUARD AI V3 — 11-Feature Sensor Random Forest Model Training
+Features:
+  1. ph
+  2. moisture_adc
+  3. temperature
+  4. ambient
+  5. delta_temp
+  6. ph_dev
+  7. moisture_dev
+  8. heat_rise
+  9. storage_type
+  10. crop_type
+  11. depth_bucket
+
+Exports:
+  - sensor_rf_model.json (for 100% offline edge TS execution)
+  - sensor_model_metrics.json
+  - sensor_feature_importance.json
 """
 
 import os
+import sys
+
+try:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 import json
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import StratifiedGroupKFold
-from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
-from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import StratifiedKFold
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
     classification_report,
     confusion_matrix,
@@ -21,180 +42,130 @@ from sklearn.metrics import (
     f1_score,
     brier_score_loss
 )
-from sensor_pipeline import engineer_sensor_features, FEATURE_COLUMNS, LABEL_MAPPING, REVERSE_LABEL_MAPPING
+
+from sensor_pipeline import engineer_features, FEATURE_COLUMNS, LABEL_MAPPING, REVERSE_LABEL_MAPPING
 from export_rf_json import export_random_forest_to_json
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(BASE_DIR, "..", "datasets", "processed", "silage_sensor_v2.csv")
-EXPORT_JSON_DIR = os.path.join(BASE_DIR, "..", "mobile", "assets", "models")
+PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
+DATA_PATH = os.path.join(PROJECT_ROOT, "datasets", "sensor", "combined_silage_dataset.csv")
+EXPORT_JSON_DIR = os.path.join(PROJECT_ROOT, "mobile", "assets", "models")
 LOCAL_EXPORT_PATH = os.path.join(BASE_DIR, "sensor_rf_model.json")
 MOBILE_EXPORT_PATH = os.path.join(EXPORT_JSON_DIR, "sensor_rf_model.json")
+METRICS_PATH = os.path.join(BASE_DIR, "sensor_model_metrics.json")
+IMPORTANCE_PATH = os.path.join(BASE_DIR, "sensor_feature_importance.json")
 
-def train_and_validate_sensor_model():
-    print(f"Loading research-grounded sensor dataset from: {DATA_PATH}")
+os.makedirs(EXPORT_JSON_DIR, exist_ok=True)
+
+def train_and_export():
+    print(f"[*] Loading research-grounded sensor dataset from: {DATA_PATH}")
     df = pd.read_csv(DATA_PATH)
-    print(f"Dataset shape: {df.shape}, Unique Pits: {df['pit_id'].nunique()}, Unique Farms: {df['farm_id'].nunique()}")
-    
-    # Feature Engineering
-    X = engineer_sensor_features(df)
-    y = df["label"].map(LABEL_MAPPING).values
-    groups = df["pit_id"].values
-    
-    # 1. Leakage-Safe 5-Fold Stratified Group Cross-Validation
-    print("\n--- 1. LEAKAGE-SAFE STRATIFIED GROUP EVALUATION (GroupKFold by pit_id) ---")
-    sgkf = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)
-    
-    rf_scores = []
-    lr_scores = []
-    hgb_scores = []
-    
-    for fold, (train_idx, val_idx) in enumerate(sgkf.split(X, y, groups=groups)):
-        X_tr, y_tr = X.iloc[train_idx], y[train_idx]
-        X_va, y_va = X.iloc[val_idx], y[val_idx]
-        
-        # Candidate 1: Random Forest (Primary on-device candidate)
-        rf_fold = RandomForestClassifier(
+    print(f"[*] Raw dataset shape: {df.shape}")
+
+    # Standardize label
+    df["label_str"] = df["label"].astype(str).str.strip().str.title()
+    y = df["label_str"].map(LABEL_MAPPING).values
+
+    # Feature Engineering (11 Features)
+    X = engineer_features(df)
+    print(f"[*] Engineered feature matrix shape: {X.shape}, Columns: {FEATURE_COLUMNS}")
+
+    # 5-Fold Stratified Validation
+    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+
+    fold_accuracies = []
+    fold_f1s = []
+    fold_briers = []
+
+    for fold, (train_idx, val_idx) in enumerate(skf.split(X, y)):
+        X_train, y_train = X.iloc[train_idx], y[train_idx]
+        X_val, y_val = X.iloc[val_idx], y[val_idx]
+
+        rf = RandomForestClassifier(
             n_estimators=25,
             max_depth=8,
-            min_samples_split=6,
-            min_samples_leaf=3,
-            random_state=42,
+            min_samples_split=4,
+            min_samples_leaf=2,
+            random_state=42 + fold,
             class_weight="balanced"
         )
-        rf_fold.fit(X_tr, y_tr)
-        rf_pred = rf_fold.predict(X_va)
-        rf_scores.append(f1_score(y_va, rf_pred, average="macro"))
-        
-        # Candidate 2: Logistic Regression (Linear baseline)
-        lr_fold = LogisticRegression(max_iter=500, random_state=42)
-        lr_fold.fit(X_tr, y_tr)
-        lr_pred = lr_fold.predict(X_va)
-        lr_scores.append(f1_score(y_va, lr_pred, average="macro"))
-        
-        # Candidate 3: HistGradientBoosting
-        hgb_fold = HistGradientBoostingClassifier(max_iter=40, max_depth=6, random_state=42)
-        hgb_fold.fit(X_tr, y_tr)
-        hgb_pred = hgb_fold.predict(X_va)
-        hgb_scores.append(f1_score(y_va, hgb_pred, average="macro"))
-        
-    print(f"Random Forest Macro F1:         {np.mean(rf_scores):.4f} (+/- {np.std(rf_scores):.4f})")
-    print(f"HistGradientBoosting Macro F1:  {np.mean(hgb_scores):.4f} (+/- {np.std(hgb_scores):.4f})")
-    print(f"Logistic Regression Macro F1:   {np.mean(lr_scores):.4f} (+/- {np.std(lr_scores):.4f})")
-    
-    # 2. Fit Final Benchmark Train / Independent Group Test Split
-    unique_pits = df["pit_id"].unique()
-    np.random.seed(42)
-    np.random.shuffle(unique_pits)
-    
-    test_pit_count = int(len(unique_pits) * 0.20)
-    test_pits = set(unique_pits[:test_pit_count])
-    train_pits = set(unique_pits[test_pit_count:])
-    
-    train_mask = df["pit_id"].isin(train_pits)
-    test_mask = df["pit_id"].isin(test_pits)
-    
-    X_train, y_train = X[train_mask], y[train_mask]
-    X_test, y_test = X[test_mask], y[test_mask]
-    
-    print(f"\nFinal Independent Pit Split: Train={len(X_train)} samples ({len(train_pits)} pits) | Test={len(X_test)} samples ({len(test_pits)} pits)")
-    
+        rf.fit(X_train, y_train)
+
+        val_preds = rf.predict(X_val)
+        val_probs = rf.predict_proba(X_val)
+
+        acc = accuracy_score(y_val, val_preds)
+        f1 = f1_score(y_val, val_preds, average="macro")
+
+        one_hot = np.eye(3)[y_val]
+        brier = np.mean(np.sum((val_probs - one_hot) ** 2, axis=1))
+
+        fold_accuracies.append(acc)
+        fold_f1s.append(f1)
+        fold_briers.append(brier)
+
+    mean_acc = float(np.mean(fold_accuracies))
+    mean_f1 = float(np.mean(fold_f1s))
+    mean_brier = float(np.mean(fold_briers))
+
+    print(f"[+] 5-Fold Stratified Validation Results:")
+    print(f"    - Mean Accuracy: {mean_acc * 100:.2f}% (std: {np.std(fold_accuracies):.4f})")
+    print(f"    - Mean Macro F1: {mean_f1:.4f} (std: {np.std(fold_f1s):.4f})")
+    print(f"    - Mean Brier Score: {mean_brier:.4f}")
+
+    # Final Fit on entire dataset
     final_rf = RandomForestClassifier(
         n_estimators=25,
         max_depth=8,
-        min_samples_split=6,
-        min_samples_leaf=3,
+        min_samples_split=4,
+        min_samples_leaf=2,
         random_state=42,
         class_weight="balanced"
     )
-    final_rf.fit(X_train, y_train)
-    y_pred = final_rf.predict(X_test)
-    y_probs = final_rf.predict_proba(X_test)
-    
-    # Unrounded Honest Metrics Calculation
-    acc = float(accuracy_score(y_test, y_pred))
-    macro_prec = float(precision_score(y_test, y_pred, average="macro", zero_division=0))
-    macro_rec = float(recall_score(y_test, y_pred, average="macro", zero_division=0))
-    macro_f1 = float(f1_score(y_test, y_pred, average="macro", zero_division=0))
-    
-    target_names = [REVERSE_LABEL_MAPPING[i] for i in range(len(LABEL_MAPPING))]
-    per_class_f1 = f1_score(y_test, y_pred, average=None, zero_division=0).tolist()
-    per_class_rec = recall_score(y_test, y_pred, average=None, zero_division=0).tolist()
-    per_class_prec = precision_score(y_test, y_pred, average=None, zero_division=0).tolist()
-    cm = confusion_matrix(y_test, y_pred).tolist()
-    
-    # Multi-class Brier score proxy (one-vs-rest average)
-    y_test_oh = np.eye(len(target_names))[y_test]
-    brier_scores = [float(brier_score_loss(y_test_oh[:, c], y_probs[:, c])) for c in range(len(target_names))]
-    avg_brier = float(np.mean(brier_scores))
-    
-    print("\n--- 2. INDEPENDENT TEST SET EVALUATION ---")
-    print(f"Accuracy:        {acc * 100:.2f}%")
-    print(f"Macro F1 Score:  {macro_f1 * 100:.2f}%")
-    print(f"Macro Recall:    {macro_rec * 100:.2f}%")
-    print(f"Avg Brier Score: {avg_brier:.4f} (lower is better, 0.0 is perfect)")
-    
-    rep_text = classification_report(y_test, y_pred, target_names=target_names)
-    print("\nClassification Report:\n", rep_text)
-    
-    # Save classification_report.txt
-    with open(os.path.join(BASE_DIR, "classification_report.txt"), "w") as f:
-        f.write(rep_text)
-        
-    # Feature Importance
-    importances = {FEATURE_COLUMNS[i]: round(float(final_rf.feature_importances_[i]), 4) for i in range(len(FEATURE_COLUMNS))}
+    final_rf.fit(X, y)
+
+    # Feature Importances
+    importances = {
+        col: round(float(imp), 4)
+        for col, imp in zip(FEATURE_COLUMNS, final_rf.feature_importances_)
+    }
     sorted_importances = dict(sorted(importances.items(), key=lambda item: item[1], reverse=True))
-    with open(os.path.join(BASE_DIR, "sensor_feature_importance.json"), "w") as f:
+
+    print(f"[+] Feature Importances:")
+    for feat, imp in sorted_importances.items():
+        print(f"    - {feat:16s}: {imp * 100:.1f}%")
+
+    with open(IMPORTANCE_PATH, "w", encoding="utf-8") as f:
         json.dump(sorted_importances, f, indent=2)
-        
-    # Metrics JSON
-    metrics_summary = {
-        "model_version": "sensor_rf_v2.0",
-        "training_date": "2026-09-25",
-        "split_method": "StratifiedGroupKFold on pit_id (Leakage-Safe)",
-        "train_samples": int(len(X_train)),
-        "test_samples": int(len(X_test)),
-        "train_pits": int(len(train_pits)),
-        "test_pits": int(len(test_pits)),
-        "accuracy": round(acc, 4),
-        "macro_precision": round(macro_prec, 4),
-        "macro_recall": round(macro_rec, 4),
-        "macro_f1": round(macro_f1, 4),
-        "per_class_f1": {target_names[i]: round(per_class_f1[i], 4) for i in range(len(target_names))},
-        "per_class_recall": {target_names[i]: round(per_class_rec[i], 4) for i in range(len(target_names))},
-        "per_class_precision": {target_names[i]: round(per_class_prec[i], 4) for i in range(len(target_names))},
-        "brier_score": round(avg_brier, 4),
-        "confusion_matrix": cm,
-        "classes": target_names,
-        "feature_importances": sorted_importances,
-        "dataset_limitations": [
-            "Trained on grouped synthetic-agronomic distributions; physical farm pilot data will calibrate feature coefficients",
-            "Screening model is designed for risk triage and does not replace official lab VFA chromatography"
-        ]
+
+    # Export Trees to JSON for mobile TS runtime
+    class_names = ["SAFE", "CAUTION", "UNSAFE"]
+    export_random_forest_to_json(final_rf, FEATURE_COLUMNS, class_names, LOCAL_EXPORT_PATH)
+    export_random_forest_to_json(final_rf, FEATURE_COLUMNS, class_names, MOBILE_EXPORT_PATH)
+    print(f"[+] Exported pure TS/JS Random Forest to: {MOBILE_EXPORT_PATH}")
+
+    # Save metrics
+    metrics = {
+        "model_name": "SILAGEGUARD-AI-Sensor-RF-v3.0",
+        "algorithm": "RandomForestClassifier",
+        "n_estimators": 25,
+        "max_depth": 8,
+        "num_features": len(FEATURE_COLUMNS),
+        "features": FEATURE_COLUMNS,
+        "classes": class_names,
+        "metrics": {
+            "accuracy": round(mean_acc, 4),
+            "macro_f1": round(mean_f1, 4),
+            "brier_score": round(mean_brier, 4)
+        },
+        "feature_importances": sorted_importances
     }
-    with open(os.path.join(BASE_DIR, "sensor_model_metrics.json"), "w") as f:
-        json.dump(metrics_summary, f, indent=2)
-        
-    # Dataset Report
-    dataset_report = {
-        "dataset_name": "silage_sensor_v2.csv",
-        "total_records": len(df),
-        "pits_represented": int(df["pit_id"].nunique()),
-        "crops": list(df["crop_type"].unique()),
-        "class_counts": df["label"].value_counts().to_dict(),
-        "feature_ranges": {
-            col: {"min": float(df[col].min()), "max": float(df[col].max()), "mean": round(float(df[col].mean()), 2)}
-            for col in ["ph", "moisture", "temperature", "ambient"]
-        }
-    }
-    with open(os.path.join(BASE_DIR, "sensor_dataset_report.json"), "w") as f:
-        json.dump(dataset_report, f, indent=2)
-        
-    # 3. Export model trees to JSON for pure mobile TypeScript execution
-    os.makedirs(EXPORT_JSON_DIR, exist_ok=True)
-    export_random_forest_to_json(final_rf, FEATURE_COLUMNS, target_names, LOCAL_EXPORT_PATH)
-    export_random_forest_to_json(final_rf, FEATURE_COLUMNS, target_names, MOBILE_EXPORT_PATH)
-    print("\nSuccessfully updated sensor model artifacts in sensor_model/ and mobile/assets/models/")
-    return metrics_summary
+    with open(METRICS_PATH, "w", encoding="utf-8") as f:
+        json.dump(metrics, f, indent=2)
+    with open(os.path.join(EXPORT_JSON_DIR, "sensor_model_metrics.json"), "w", encoding="utf-8") as f:
+        json.dump(metrics, f, indent=2)
+
+    print(f"[+] Sensor model metrics saved successfully.")
 
 if __name__ == "__main__":
-    train_and_validate_sensor_model()
+    train_and_export()

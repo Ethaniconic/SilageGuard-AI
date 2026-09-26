@@ -1,5 +1,5 @@
 /**
- * SILAGEGUARD AI — Global Top Navigation Header
+ * SILAGEGUARD AI â€” Global Top Navigation Header
  * Features:
  * - Clean industry-grade brand title: "SilageGuard AI" (No "Silage Scanning", No "SIH26111")
  * - Safe area inset padding to prevent notification bar / notch clipping
@@ -204,4 +204,4 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     marginLeft: 4
   }
-});
+});

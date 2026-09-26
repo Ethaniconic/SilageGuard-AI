@@ -1,5 +1,5 @@
 /**
- * SILAGEGUARD AI — Global Theme System
+ * SILAGEGUARD AI â€” Global Theme System
  * High-readability Dark Theme and Outdoor High-Visibility Light Theme
  * Sharp industrial border radii for professional hardware screening tool aesthetic.
  */
@@ -94,4 +94,4 @@ export const LIGHT_THEME: ThemeColors = {
   radiusLg: 10
 };
 
-export const getTheme = (isDark: boolean): ThemeColors => (isDark ? DARK_THEME : LIGHT_THEME);
+export const getTheme = (isDark: boolean): ThemeColors => (isDark ? DARK_THEME : LIGHT_THEME);

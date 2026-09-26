@@ -24,6 +24,7 @@ import { Header } from "../components/Header";
 import { LanguagePicker } from "../components/LanguagePicker";
 import { AppIcon } from "../components/AppIcon";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
+import { BottomNavBar } from "../components/BottomNavBar";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -57,7 +58,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="SilageGuard AI" showBack={true} />
+      <Header title="SilageGuard AI" showBack={false} />
 
       <ScrollView
         contentContainerStyle={[
@@ -411,6 +412,7 @@ export default function SettingsScreen() {
           </Text>
         </TouchableOpacity>
       </ScrollView>
+      <BottomNavBar />
     </View>
   );
 }

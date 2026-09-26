@@ -1,0 +1,8 @@
+{
+  "version": "SILAGEGUARD-AI-V3",
+  "total_images_scanned": 0,
+  "accepted_real_images": 0,
+  "rejected_images": 0,
+  "acceptance_rate_percent": 0.0,
+  "rejection_categories": {}
+}

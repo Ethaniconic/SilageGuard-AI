@@ -1,5 +1,5 @@
 /**
- * SILAGEGUARD AI — Global App State (Zustand Store)
+ * SILAGEGUARD AI â€” Global App State (Zustand Store)
  * Synchronizes BLE Telemetry, Scan Pipeline, Language Selection, Theme, and Offline DB.
  */
 
@@ -126,4 +126,4 @@ export function useTheme(): { theme: ThemeColors; isDark: boolean; toggleTheme: 
     isDark: isDarkMode,
     toggleTheme
   };
-}
+}
