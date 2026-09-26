@@ -1,5 +1,5 @@
 /**
- * SILAGEGUARD AI â€” Batch Repository (CRUD & Relational Queries)
+ * SILAGEGUARD AI — Batch Repository (CRUD & Relational Queries)
  * Manages saving and querying scans, sensor telemetries, and predictions offline.
  */
 
@@ -37,23 +37,24 @@ export const batchRepository = {
     if (!batch) return null;
 
     const sensor = dbInstance.sensorReadings.find((s) => s.batch_id === id) || {
-      id: "SR-DEFAULT",
+      id: "SR-EMPTY",
       batch_id: id,
-      ph: 4.0,
-      moisture: 65.0,
-      temperature: 25.0,
-      ambient: 24.0,
-      delta_temp: 1.0,
-      temp_rise: 1.0
+      ph: null,
+      moisture: null,
+      temperature: null,
+      ambient: null,
+      delta_temp: null,
+      temp_rise: null
     };
 
     const prediction = dbInstance.predictions.find((p) => p.batch_id === id) || {
-      id: "PR-DEFAULT",
+      id: "PR-EMPTY",
       batch_id: id,
       sensor_decision: batch.decision,
       vision_decision: batch.decision,
-      mould_prob: 0.05,
-      reasons_json: JSON.stringify(["Standard evaluation"])
+      mould_prob: 0.0,
+      reasons_json: JSON.stringify(["Evaluation recorded"]),
+      explainability_json: "[]"
     };
 
     return { batch, sensor, prediction };

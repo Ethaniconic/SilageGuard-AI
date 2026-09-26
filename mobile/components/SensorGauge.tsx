@@ -1,18 +1,19 @@
 /**
- * SILAGEGUARD AI â€” Sensor Telemetry Gauge & Metric Tile
- * Displays pH, Moisture, Core Temp, and Delta T with agronomic safe-band indicators.
+ * SILAGEGUARD AI — Sensor Telemetry Gauge & Metric Tile
+ * Displays pH, Moisture, Core Temp with agronomic safe-band indicators.
+ * Gracefully renders empty "--" state when probe is disconnected.
  */
 
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { THEME_COLORS } from "../utils/constants";
+import { useTheme } from "../features/ble/bleManager";
 
 interface Props {
   label: string;
-  value: number;
+  value: number | null | undefined;
   unit: string;
   targetRange: string;
-  status: "safe" | "caution" | "unsafe";
+  status: "safe" | "caution" | "unsafe" | "disconnected";
   iconText: string;
 }
 
@@ -24,33 +25,50 @@ export const SensorGauge: React.FC<Props> = ({
   status,
   iconText
 }) => {
-  const statusColor =
-    status === "safe"
-      ? THEME_COLORS.safe
-      : status === "caution"
-      ? THEME_COLORS.caution
-      : THEME_COLORS.unsafe;
+  const { theme } = useTheme();
+
+  const isDisconnected = status === "disconnected" || value === null || value === undefined;
+
+  const statusColor = isDisconnected
+    ? theme.textMuted
+    : status === "safe"
+    ? theme.safe
+    : status === "caution"
+    ? theme.caution
+    : theme.unsafe;
+
+  const displayValue = isDisconnected ? "--" : value.toFixed(1);
+  const statusLabel = isDisconnected ? "NO PROBE" : status.toUpperCase();
 
   return (
-    <View style={styles.card}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.card,
+          borderColor: theme.cardBorder,
+          borderRadius: theme.radiusMd
+        }
+      ]}
+    >
       <View style={styles.headerRow}>
         <View style={styles.titleContainer}>
           <Text style={styles.icon}>{iconText}</Text>
-          <Text style={styles.label}>{label}</Text>
+          <Text style={[styles.label, { color: theme.textMuted }]}>{label}</Text>
         </View>
         <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
       </View>
 
       <View style={styles.valueRow}>
-        <Text style={[styles.value, { color: statusColor }]}>{value.toFixed(1)}</Text>
-        <Text style={styles.unit}>{unit}</Text>
+        <Text style={[styles.value, { color: statusColor }]}>{displayValue}</Text>
+        <Text style={[styles.unit, { color: theme.textMuted }]}>{unit}</Text>
       </View>
 
-      <View style={styles.footerRow}>
-        <Text style={styles.targetLabel}>Target: {targetRange}</Text>
-        <Text style={[styles.statusText, { color: statusColor }]}>
-          {status.toUpperCase()}
+      <View style={[styles.footerRow, { borderTopColor: theme.cardBorder }]}>
+        <Text style={[styles.targetLabel, { color: theme.textMuted }]}>
+          Target: {targetRange}
         </Text>
+        <Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
       </View>
     </View>
   );
@@ -58,15 +76,12 @@ export const SensorGauge: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: THEME_COLORS.card,
-    borderRadius: 16,
     borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    padding: 14,
-    marginVertical: 6,
+    padding: 12,
+    marginVertical: 4,
     flex: 1,
-    minWidth: 140,
-    marginHorizontal: 4
+    minWidth: 130,
+    marginHorizontal: 3
   },
   headerRow: {
     flexDirection: "row",
@@ -78,32 +93,30 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   icon: {
-    fontSize: 16,
+    fontSize: 14,
     marginRight: 6
   },
   label: {
-    color: THEME_COLORS.textMuted,
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: 11,
+    fontWeight: "800",
     textTransform: "uppercase"
   },
   statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5
+    width: 8,
+    height: 8,
+    borderRadius: 4
   },
   valueRow: {
     flexDirection: "row",
     alignItems: "baseline",
-    marginVertical: 8
+    marginVertical: 6
   },
   value: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: "900"
   },
   unit: {
-    color: "#CBD5E1",
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "600",
     marginLeft: 4
   },
@@ -112,17 +125,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.07)",
     paddingTop: 6,
     marginTop: 2
   },
   targetLabel: {
-    color: "#64748B",
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "600"
   },
   statusText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "800",
     letterSpacing: 0.5
   }

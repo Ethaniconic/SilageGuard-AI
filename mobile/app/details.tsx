@@ -1,12 +1,13 @@
 /**
- * SCREEN 8 — BATCH DETAILS & DIAGNOSTIC AUDIT
+ * SCREEN 8 � BATCH DETAILS & DIAGNOSTIC AUDIT
  * Deep-dive audit view for a specific saved silage scan:
  * - Scanned silage surface preview
- * - Sensor telemetry breakdown & Delta T graphs
+ * - Sensor telemetry breakdown & Delta T graphs (handles null sensors gracefully)
  * - MSSI score breakdown
  * - Detailed agronomic explanations
  * - Voice advisory replay
  * - QR code certificate export & copy
+ * - Theme & full viewport width support
  */
 
 import React, { useEffect, useState } from "react";
@@ -16,22 +17,23 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   Alert
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header } from "../components/Header";
 import { TrafficLightCard } from "../components/TrafficLightCard";
 import { MssiScoreGauge } from "../components/MssiScoreGauge";
 import { batchRepository, CompleteBatchDetails } from "../sqlite/batchRepository";
 import { generateFarmerAdvisory } from "../features/advisory/advisoryEngine";
-import { useAppStore } from "../features/ble/bleManager";
-import { THEME_COLORS } from "../utils/constants";
+import { useAppStore, useTheme } from "../features/ble/bleManager";
 
 export default function BatchDetailsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { language } = useAppStore();
+  const { theme } = useTheme();
   const [details, setDetails] = useState<CompleteBatchDetails | null>(null);
 
   useEffect(() => {
@@ -46,20 +48,26 @@ export default function BatchDetailsScreen() {
 
   if (!details) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <Header title="BATCH DETAILS" showBack={true} />
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading Batch Record...</Text>
+          <Text style={[styles.loadingText, { color: theme.textMuted }]}>
+            Loading Batch Record...
+          </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   const { batch, sensor, prediction } = details;
   const advisory = generateFarmerAdvisory(batch.decision, language);
   const reasons: string[] = JSON.parse(prediction.reasons_json || "[]");
-  const explainabilityPoints: Array<{ parameter: string; measuredValue: string; status: string; assessment: string }> =
-    JSON.parse(prediction.explainability_json || "[]");
+  const explainabilityPoints: Array<{
+    parameter: string;
+    measuredValue: string;
+    status: string;
+    assessment: string;
+  }> = JSON.parse(prediction.explainability_json || "[]");
 
   const handleVoicePlay = () => {
     try {
@@ -77,19 +85,36 @@ export default function BatchDetailsScreen() {
   };
 
   const handleShareCertificate = () => {
-    Alert.alert("QR Certificate Exported", `Verification Payload copied:\n${batch.qr_data}`);
+    Alert.alert("QR Certificate", `Batch Verification Payload:\n\n${batch.qr_data}`);
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header title={batch.id} showBack={true} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom, 20) + 30 }
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Safety Rule Override Notice if applicable */}
         {batch.rule_override && (
-          <View style={styles.overrideAlert}>
-            <Text style={styles.overrideTitle}>⚡ SAFETY RULE OVERRIDE RECORDED</Text>
-            <Text style={styles.overrideReason}>
+          <View
+            style={[
+              styles.overrideAlert,
+              {
+                backgroundColor: theme.unsafeBg,
+                borderColor: theme.unsafeBorder,
+                borderRadius: theme.radiusSm
+              }
+            ]}
+          >
+            <Text style={[styles.overrideTitle, { color: theme.unsafe }]}>
+              ?? SAFETY RULE OVERRIDE RECORDED
+            </Text>
+            <Text style={[styles.overrideReason, { color: theme.text }]}>
               {batch.rule_reason || "Agronomic safety threshold exceeded."}
             </Text>
           </View>
@@ -102,173 +127,277 @@ export default function BatchDetailsScreen() {
           mssiScore={batch.mssi_score}
         />
 
-        {/* Model Versioning & Provenance Metadata Card (Section 36 & 37) */}
-        <View style={styles.versionCard}>
-          <Text style={styles.versionCardTitle}>REPRODUCIBILITY & MODEL PROVENANCE</Text>
+        {/* Model Versioning & Provenance Metadata Card */}
+        <View
+          style={[
+            styles.versionCard,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+              borderRadius: theme.radiusMd
+            }
+          ]}
+        >
+          <Text style={[styles.versionCardTitle, { color: theme.text }]}>
+            MODEL REPRODUCIBILITY & AUDIT PROVENANCE
+          </Text>
           <View style={styles.versionRow}>
-            <Text style={styles.versionLabel}>Sensor Model:</Text>
-            <Text style={styles.versionVal}>{batch.sensor_model_version || "sensor_rf_v2.0"}</Text>
+            <Text style={[styles.versionLabel, { color: theme.textMuted }]}>Sensor Model:</Text>
+            <Text style={[styles.versionVal, { color: theme.text }]}>
+              {batch.sensor_model_version || "sensor_rf_v2.0"}
+            </Text>
           </View>
           <View style={styles.versionRow}>
-            <Text style={styles.versionLabel}>Vision Model:</Text>
-            <Text style={styles.versionVal}>{batch.vision_model_version || "mobilenetv3_silage_v2.0"}</Text>
+            <Text style={[styles.versionLabel, { color: theme.textMuted }]}>Vision Model:</Text>
+            <Text style={[styles.versionVal, { color: theme.text }]}>
+              {batch.vision_model_version || "mobilenetv3_silage_v2.0"}
+            </Text>
           </View>
           <View style={styles.versionRow}>
-            <Text style={styles.versionLabel}>Fusion Weights:</Text>
-            <Text style={styles.versionVal}>{batch.fusion_version || "mssi_v2.0"} (0.55/0.45)</Text>
+            <Text style={[styles.versionLabel, { color: theme.textMuted }]}>Fusion Weights:</Text>
+            <Text style={[styles.versionVal, { color: theme.text }]}>
+              {batch.fusion_version || "mssi_v2.1"} (0.55/0.45)
+            </Text>
           </View>
           <View style={styles.versionRow}>
-            <Text style={styles.versionLabel}>Safety Rules:</Text>
-            <Text style={styles.versionVal}>{batch.rule_version || "rules_v2.0"}</Text>
+            <Text style={[styles.versionLabel, { color: theme.textMuted }]}>Safety Rules:</Text>
+            <Text style={[styles.versionVal, { color: theme.text }]}>
+              {batch.rule_version || "rules_v2.0"}
+            </Text>
           </View>
           <View style={styles.versionRow}>
-            <Text style={styles.versionLabel}>Data Origin:</Text>
-            <Text style={[styles.versionVal, { color: batch.is_demo ? THEME_COLORS.caution : THEME_COLORS.safe }]}>
+            <Text style={[styles.versionLabel, { color: theme.textMuted }]}>Data Origin:</Text>
+            <Text
+              style={[
+                styles.versionVal,
+                { color: batch.is_demo ? theme.caution : theme.safe }
+              ]}
+            >
               {batch.is_demo ? "DEMO MODE (Simulated)" : "FIELD OBSERVED (Production)"}
             </Text>
           </View>
         </View>
 
-        {/* Silage Surface Visual Preview */}
-        <View style={styles.imageCard}>
-          <Text style={styles.cardHeaderTitle}>CAPTURED SILAGE SURFACE</Text>
+        {/* Explainability Chain */}
+        {explainabilityPoints.length > 0 && (
           <View
             style={[
-              styles.imageContainer,
-              batch.decision === "SAFE"
-                ? styles.imgSafe
-                : batch.decision === "CAUTION"
-                ? styles.imgCaution
-                : styles.imgUnsafe
+              styles.explainCard,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.cardBorder,
+                borderRadius: theme.radiusMd
+              }
             ]}
           >
-            <Text style={styles.imageWatermark}>
-              {batch.decision === "SAFE"
-                ? "✓ UNIFORM FERMENTED CHOP FIBER"
-                : batch.decision === "CAUTION"
-                ? "⚡ MODERATE CARAMELIZED BROWNING"
-                : "⚠️ DETECTED FUNGAL MYCELIUM / ASPERGILLUS"}
+            <Text style={[styles.cardHeaderTitle, { color: theme.text }]}>
+              EXPLAINABILITY DECISION CHAIN
             </Text>
-          </View>
-          <View style={styles.imageMetaRow}>
-            <Text style={styles.imageMetaText}>Crop: {batch.crop_type}</Text>
-            <Text style={styles.imageMetaText}>Depth: {batch.pit_depth_cm} cm</Text>
-          </View>
-        </View>
-
-        {/* MSSI Score Gauge */}
-        <View style={styles.mssiCard}>
-          <MssiScoreGauge score={batch.mssi_score} size={140} />
-          <View style={styles.mssiTextContainer}>
-            <Text style={styles.mssiHeader}>SAFETY INDEX BREAKDOWN</Text>
-            <Text style={styles.mssiSub}>
-              Sensor Safe Probability: {batch.decision === "SAFE" ? "96%" : batch.decision === "CAUTION" ? "52%" : "4%"}
-            </Text>
-            <Text style={styles.mssiSub}>
-              Vision Spore Density: {(prediction.mould_prob * 100).toFixed(0)}%
-            </Text>
-          </View>
-        </View>
-
-        {/* Traceable Explainability Chain if present */}
-        {explainabilityPoints.length > 0 && (
-          <View style={styles.reasonsBox}>
-            <Text style={styles.cardHeaderTitle}>🔍 EXPLAINABILITY REASONING CHAIN</Text>
             {explainabilityPoints.map((pt, i) => (
-              <View key={i} style={styles.explainItem}>
+              <View
+                key={i}
+                style={[styles.explainRow, { borderBottomColor: theme.cardBorder }]}
+              >
                 <View style={styles.explainHeader}>
-                  <Text style={styles.explainParam}>{pt.parameter}</Text>
-                  <Text style={[styles.explainStatus, { color: pt.status === "ALERT" ? THEME_COLORS.unsafe : pt.status === "BORDERLINE" ? THEME_COLORS.caution : THEME_COLORS.safe }]}>
+                  <Text style={[styles.explainParam, { color: theme.text }]}>{pt.parameter}</Text>
+                  <Text
+                    style={[
+                      styles.explainStatus,
+                      {
+                        color:
+                          pt.status === "ALERT"
+                            ? theme.unsafe
+                            : pt.status === "BORDERLINE"
+                            ? theme.caution
+                            : theme.safe
+                      }
+                    ]}
+                  >
                     {pt.measuredValue} ({pt.status})
                   </Text>
                 </View>
-                <Text style={styles.explainText}>{pt.assessment}</Text>
+                <Text style={[styles.explainText, { color: theme.textMuted }]}>
+                  {pt.assessment}
+                </Text>
               </View>
             ))}
           </View>
         )}
 
-        {/* Sensor Readings Breakdown */}
-        <View style={styles.sensorGridCard}>
-          <Text style={styles.cardHeaderTitle}>PROBE SENSOR TELEMETRY</Text>
+        {/* Sensor Readings Breakdown (Handles null values honestly) */}
+        <View
+          style={[
+            styles.sensorGridCard,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+              borderRadius: theme.radiusMd
+            }
+          ]}
+        >
+          <Text style={[styles.cardHeaderTitle, { color: theme.text }]}>
+            PROBE SENSOR TELEMETRY
+          </Text>
           <View style={styles.gridRow}>
-            <View style={styles.gridCell}>
-              <Text style={styles.cellLabel}>pH Value</Text>
-              <Text style={[styles.cellVal, { color: sensor.ph <= 4.2 ? THEME_COLORS.safe : THEME_COLORS.caution }]}>
-                {sensor.ph.toFixed(2)}
+            <View style={[styles.gridCell, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
+              <Text style={[styles.cellLabel, { color: theme.textMuted }]}>pH Value</Text>
+              <Text
+                style={[
+                  styles.cellVal,
+                  {
+                    color:
+                      sensor.ph === null
+                        ? theme.textMuted
+                        : sensor.ph <= 4.2
+                        ? theme.safe
+                        : theme.caution
+                  }
+                ]}
+              >
+                {sensor.ph !== null ? sensor.ph.toFixed(2) : "--"}
               </Text>
-              <Text style={styles.cellTarget}>Optimal: 3.8 – 4.2</Text>
+              <Text style={[styles.cellTarget, { color: theme.textMuted }]}>Optimal: 3.8 � 4.2</Text>
             </View>
 
-            <View style={styles.gridCell}>
-              <Text style={styles.cellLabel}>Moisture %</Text>
-              <Text style={styles.cellVal}>{sensor.moisture.toFixed(1)}%</Text>
-              <Text style={styles.cellTarget}>Optimal: 60 – 68%</Text>
+            <View style={[styles.gridCell, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
+              <Text style={[styles.cellLabel, { color: theme.textMuted }]}>Moisture %</Text>
+              <Text style={[styles.cellVal, { color: sensor.moisture !== null ? theme.accent : theme.textMuted }]}>
+                {sensor.moisture !== null ? `${sensor.moisture.toFixed(1)}%` : "--"}
+              </Text>
+              <Text style={[styles.cellTarget, { color: theme.textMuted }]}>Optimal: 60 � 68%</Text>
             </View>
           </View>
 
           <View style={styles.gridRow}>
-            <View style={styles.gridCell}>
-              <Text style={styles.cellLabel}>Core Temp</Text>
-              <Text style={styles.cellVal}>{sensor.temperature.toFixed(1)}°C</Text>
-              <Text style={styles.cellTarget}>Ambient: {sensor.ambient.toFixed(1)}°C</Text>
+            <View style={[styles.gridCell, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
+              <Text style={[styles.cellLabel, { color: theme.textMuted }]}>Core Temp</Text>
+              <Text style={[styles.cellVal, { color: sensor.temperature !== null ? theme.caution : theme.textMuted }]}>
+                {sensor.temperature !== null ? `${sensor.temperature.toFixed(1)}�C` : "--"}
+              </Text>
+              <Text style={[styles.cellTarget, { color: theme.textMuted }]}>
+                Ambient: {sensor.ambient !== null ? `${sensor.ambient.toFixed(1)}�C` : "--"}
+              </Text>
             </View>
 
-            <View style={styles.gridCell}>
-              <Text style={styles.cellLabel}>Delta T Rise</Text>
-              <Text style={[styles.cellVal, { color: sensor.delta_temp < 3 ? THEME_COLORS.safe : THEME_COLORS.unsafe }]}>
-                +{sensor.delta_temp.toFixed(1)}°C
+            <View style={[styles.gridCell, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
+              <Text style={[styles.cellLabel, { color: theme.textMuted }]}>Delta T Rise</Text>
+              <Text
+                style={[
+                  styles.cellVal,
+                  {
+                    color:
+                      sensor.delta_temp === null
+                        ? theme.textMuted
+                        : sensor.delta_temp < 3
+                        ? theme.safe
+                        : theme.unsafe
+                  }
+                ]}
+              >
+                {sensor.delta_temp !== null ? `+${sensor.delta_temp.toFixed(1)}�C` : "--"}
               </Text>
-              <Text style={styles.cellTarget}>Safe: &lt; 3.0°C</Text>
+              <Text style={[styles.cellTarget, { color: theme.textMuted }]}>Safe: &lt; 3.0�C</Text>
             </View>
           </View>
         </View>
 
         {/* Agronomic Explanations */}
-        <View style={styles.reasonsBox}>
-          <Text style={styles.cardHeaderTitle}>AGRONOMIC DIAGNOSIS</Text>
+        <View
+          style={[
+            styles.reasonsBox,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+              borderRadius: theme.radiusMd
+            }
+          ]}
+        >
+          <Text style={[styles.cardHeaderTitle, { color: theme.text }]}>
+            AGRONOMIC DIAGNOSIS
+          </Text>
           {reasons.map((r, i) => (
             <View key={i} style={styles.reasonLine}>
-              <Text style={styles.reasonDot}>•</Text>
-              <Text style={styles.reasonText}>{r}</Text>
+              <Text style={[styles.reasonDot, { color: theme.primary }]}>�</Text>
+              <Text style={[styles.reasonText, { color: theme.text }]}>{r}</Text>
             </View>
           ))}
         </View>
 
-        {/* Voice Advisory & Replay */}
-        <View style={styles.voiceCard}>
-          <View style={styles.voiceHeader}>
-            <Text style={styles.voiceTitle}>🎙️ FARMER ADVISORY ({language.toUpperCase()})</Text>
-            <TouchableOpacity style={styles.voiceBtn} onPress={handleVoicePlay}>
-              <Text style={styles.voiceBtnText}>🔊 Replay Audio</Text>
+        {/* Farmer Voice Advisory Banner */}
+        <View
+          style={[
+            styles.voiceCard,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+              borderRadius: theme.radiusMd
+            }
+          ]}
+        >
+          <View style={styles.voiceTopRow}>
+            <Text style={[styles.voiceTitle, { color: theme.text }]}>
+              ?? FARMER ADVISORY ({language.toUpperCase()})
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.voiceBtn,
+                {
+                  backgroundColor: theme.accent + "1A",
+                  borderColor: theme.accent,
+                  borderRadius: theme.radiusSm
+                }
+              ]}
+              onPress={handleVoicePlay}
+            >
+              <Text style={[styles.voiceBtnText, { color: theme.accent }]}>?? Replay Audio</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.voiceAdvisoryText}>{advisory.immediateAction}</Text>
+          <Text style={[styles.voiceAdvisoryText, { color: theme.textMuted }]}>
+            {advisory.immediateAction}
+          </Text>
         </View>
 
         {/* QR Certificate Payload */}
-        <View style={styles.qrCard}>
-          <Text style={styles.cardHeaderTitle}>VERIFIABLE QR PAYLOAD</Text>
-          <View style={styles.qrPayloadBox}>
-            <Text style={styles.qrPayloadText}>{batch.qr_data}</Text>
+        <View
+          style={[
+            styles.qrCard,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+              borderRadius: theme.radiusMd
+            }
+          ]}
+        >
+          <Text style={[styles.cardHeaderTitle, { color: theme.text }]}>
+            VERIFIABLE QR PAYLOAD
+          </Text>
+          <View
+            style={[
+              styles.qrPayloadBox,
+              { backgroundColor: theme.surface, borderColor: theme.cardBorder, borderRadius: theme.radiusSm }
+            ]}
+          >
+            <Text style={[styles.qrPayloadText, { color: theme.textMuted }]}>{batch.qr_data}</Text>
           </View>
-          <TouchableOpacity style={styles.shareBtn} onPress={handleShareCertificate}>
+          <TouchableOpacity
+            style={[styles.shareBtn, { backgroundColor: theme.primary, borderRadius: theme.radiusSm }]}
+            onPress={handleShareCertificate}
+          >
             <Text style={styles.shareBtnText}>SHARE / COPY CERTIFICATE</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1,
-    backgroundColor: THEME_COLORS.background
+    flex: 1
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 40
+    paddingHorizontal: 12,
+    paddingTop: 10
   },
   loadingContainer: {
     flex: 1,
@@ -276,289 +405,180 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   loadingText: {
-    color: "#94A3B8",
     fontSize: 14,
     fontWeight: "600"
   },
   cardHeaderTitle: {
-    color: "#94A3B8",
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "800",
     letterSpacing: 0.5,
-    marginBottom: 10
-  },
-  imageCard: {
-    backgroundColor: THEME_COLORS.card,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    padding: 16,
-    marginVertical: 10
-  },
-  imageContainer: {
-    height: 140,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-    overflow: "hidden"
-  },
-  imgSafe: { backgroundColor: "#164E35" },
-  imgCaution: { backgroundColor: "#5C3A1E" },
-  imgUnsafe: { backgroundColor: "#2E242C" },
-  imageWatermark: {
-    color: "rgba(255, 255, 255, 0.6)",
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-    textAlign: "center"
-  },
-  imageMetaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 10
-  },
-  imageMetaText: {
-    color: "#64748B",
-    fontSize: 12,
-    fontWeight: "600"
-  },
-  mssiCard: {
-    backgroundColor: THEME_COLORS.card,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 10
-  },
-  mssiTextContainer: {
-    flex: 1,
-    marginLeft: 16
-  },
-  mssiHeader: {
-    color: "#F8FAFC",
-    fontSize: 13,
-    fontWeight: "800"
-  },
-  mssiSub: {
-    color: "#94A3B8",
-    fontSize: 11,
-    fontWeight: "500",
-    marginTop: 4
-  },
-  sensorGridCard: {
-    backgroundColor: THEME_COLORS.card,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    padding: 16,
-    marginVertical: 10
-  },
-  gridRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 10
-  },
-  gridCell: {
-    width: "48%",
-    backgroundColor: "rgba(15, 23, 42, 0.6)",
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)"
-  },
-  cellLabel: {
-    color: "#94A3B8",
-    fontSize: 11,
-    fontWeight: "700"
-  },
-  cellVal: {
-    color: "#F8FAFC",
-    fontSize: 20,
-    fontWeight: "900",
-    marginVertical: 4
-  },
-  cellTarget: {
-    color: "#64748B",
-    fontSize: 10,
-    fontWeight: "600"
-  },
-  reasonsBox: {
-    backgroundColor: "rgba(19, 28, 46, 0.8)",
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    padding: 16,
-    marginVertical: 10
-  },
-  reasonLine: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 6
-  },
-  reasonDot: {
-    color: THEME_COLORS.primary,
-    fontSize: 16,
-    marginRight: 8,
-    lineHeight: 18
-  },
-  reasonText: {
-    color: "#E2E8F0",
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: "500",
-    flex: 1
-  },
-  voiceCard: {
-    backgroundColor: THEME_COLORS.card,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    padding: 16,
-    marginVertical: 10
-  },
-  voiceHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10
-  },
-  voiceTitle: {
-    color: "#38BDF8",
-    fontSize: 12,
-    fontWeight: "900",
-    letterSpacing: 0.5
-  },
-  voiceBtn: {
-    backgroundColor: "rgba(56, 189, 248, 0.15)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#0284C7"
-  },
-  voiceBtnText: {
-    color: "#38BDF8",
-    fontSize: 11,
-    fontWeight: "800"
-  },
-  voiceAdvisoryText: {
-    color: "#F1F5F9",
-    fontSize: 13,
-    lineHeight: 19,
-    fontWeight: "600"
-  },
-  qrCard: {
-    backgroundColor: THEME_COLORS.card,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    padding: 16,
-    marginVertical: 10
-  },
-  qrPayloadBox: {
-    backgroundColor: "#020617",
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#334155",
-    marginBottom: 12
-  },
-  qrPayloadText: {
-    color: "#94A3B8",
-    fontSize: 10,
-    fontFamily: "monospace"
-  },
-  shareBtn: {
-    backgroundColor: THEME_COLORS.primary,
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: "center"
-  },
-  shareBtnText: {
-    color: "#090D16",
-    fontSize: 13,
-    fontWeight: "900",
-    letterSpacing: 0.5
-  },
-  versionCard: {
-    backgroundColor: THEME_COLORS.card,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    padding: 16,
-    marginVertical: 10
-  },
-  versionCardTitle: {
-    color: "#94A3B8",
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-    marginBottom: 10
-  },
-  versionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 4
-  },
-  versionLabel: {
-    color: "#94A3B8",
-    fontSize: 12,
-    fontWeight: "600"
-  },
-  versionVal: {
-    color: "#F8FAFC",
-    fontSize: 12,
-    fontWeight: "800"
+    marginBottom: 8
   },
   overrideAlert: {
-    backgroundColor: "rgba(239, 68, 68, 0.15)",
     borderWidth: 1.5,
-    borderColor: "#EF4444",
     padding: 12,
-    borderRadius: 14,
-    marginVertical: 8
+    marginBottom: 10
   },
   overrideTitle: {
-    color: "#EF4444",
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "900",
     letterSpacing: 0.5
   },
   overrideReason: {
-    color: "#FEE2E2",
     fontSize: 12,
-    fontWeight: "700",
     marginTop: 2
   },
-  explainItem: {
-    backgroundColor: "rgba(30, 41, 59, 0.5)",
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 8,
+  versionCard: {
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.04)"
+    padding: 12,
+    marginVertical: 6
+  },
+  versionCardTitle: {
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+    marginBottom: 8
+  },
+  versionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginVertical: 3
+  },
+  versionLabel: {
+    fontSize: 11,
+    fontWeight: "600"
+  },
+  versionVal: {
+    fontSize: 11,
+    fontWeight: "800"
+  },
+  explainCard: {
+    borderWidth: 1,
+    padding: 12,
+    marginVertical: 6
+  },
+  explainRow: {
+    paddingVertical: 8,
+    borderBottomWidth: 1
   },
   explainHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4
+    alignItems: "center"
   },
   explainParam: {
-    color: "#F8FAFC",
     fontSize: 12,
-    fontWeight: "800"
+    fontWeight: "700"
   },
   explainStatus: {
     fontSize: 11,
     fontWeight: "800"
   },
   explainText: {
-    color: "#94A3B8",
     fontSize: 11,
+    marginTop: 3,
+    lineHeight: 15
+  },
+  sensorGridCard: {
+    borderWidth: 1,
+    padding: 12,
+    marginVertical: 6
+  },
+  gridRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginVertical: 3
+  },
+  gridCell: {
+    flex: 1,
+    marginHorizontal: 3,
+    padding: 8,
+    alignItems: "center"
+  },
+  cellLabel: {
+    fontSize: 10,
+    fontWeight: "700"
+  },
+  cellVal: {
+    fontSize: 16,
+    fontWeight: "900",
+    marginVertical: 3
+  },
+  cellTarget: {
+    fontSize: 9,
+    fontWeight: "500"
+  },
+  reasonsBox: {
+    borderWidth: 1,
+    padding: 12,
+    marginVertical: 6
+  },
+  reasonLine: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginVertical: 3
+  },
+  reasonDot: {
+    fontSize: 14,
+    marginRight: 6,
+    lineHeight: 18
+  },
+  reasonText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 17
+  },
+  voiceCard: {
+    borderWidth: 1,
+    padding: 12,
+    marginVertical: 6
+  },
+  voiceTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6
+  },
+  voiceTitle: {
+    fontSize: 12,
+    fontWeight: "900"
+  },
+  voiceBtn: {
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4
+  },
+  voiceBtnText: {
+    fontSize: 10,
+    fontWeight: "800"
+  },
+  voiceAdvisoryText: {
+    fontSize: 12,
     lineHeight: 16
+  },
+  qrCard: {
+    borderWidth: 1,
+    padding: 12,
+    marginVertical: 6
+  },
+  qrPayloadBox: {
+    borderWidth: 1,
+    padding: 10,
+    marginVertical: 8
+  },
+  qrPayloadText: {
+    fontSize: 10,
+    fontFamily: "monospace"
+  },
+  shareBtn: {
+    paddingVertical: 12,
+    alignItems: "center",
+    marginTop: 4
+  },
+  shareBtnText: {
+    color: "#090D16",
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 0.5
   }
 });

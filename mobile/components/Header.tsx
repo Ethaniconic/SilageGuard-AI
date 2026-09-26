@@ -1,13 +1,18 @@
 /**
- * SILAGEGUARD AI — Global Top Navigation Header
- * Features Offline Status Badge, Connected Probe Pill, and Back Navigation.
+ * SILAGEGUARD AI � Global Top Navigation Header
+ * Features:
+ * - Safe area inset padding to prevent notification bar / notch clipping
+ * - Dark / Light theme toggle switch button
+ * - Offline Status Badge
+ * - Connected Probe Pill with real battery status
+ * - Sharp industrial border radii
  */
 
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { useAppStore } from "../features/ble/bleManager";
-import { THEME_COLORS } from "../utils/constants";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAppStore, useTheme } from "../features/ble/bleManager";
 
 interface Props {
   title: string;
@@ -16,44 +21,96 @@ interface Props {
 
 export const Header: React.FC<Props> = ({ title, showBack = false }) => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { bleStatus, telemetry } = useAppStore();
+  const { theme, isDark, toggleTheme } = useTheme();
 
   const isConnected = bleStatus === "CONNECTED";
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        {
+          paddingTop: Math.max(insets.top, 16) + 8,
+          backgroundColor: theme.background,
+          borderBottomColor: theme.cardBorder
+        }
+      ]}
+    >
       <View style={styles.leftRow}>
         {showBack && (
           <TouchableOpacity
-            style={styles.backButton}
+            style={[
+              styles.backButton,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.cardBorder,
+                borderRadius: theme.radiusMd
+              }
+            ]}
             onPress={() => router.back()}
             activeOpacity={0.7}
           >
-            <Text style={styles.backArrow}>←</Text>
+            <Text style={[styles.backArrow, { color: theme.text }]}>?</Text>
           </TouchableOpacity>
         )}
         <View>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.brandSubtitle}>SILAGEGUARD AI • SIH26111</Text>
+          <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
+          <Text style={[styles.brandSubtitle, { color: theme.accent }]}>
+            SILAGEGUARD AI � SIH26111
+          </Text>
         </View>
       </View>
 
       <View style={styles.rightRow}>
+        {/* Theme Toggle Button (Light/Dark mode) */}
+        <TouchableOpacity
+          style={[
+            styles.themeToggle,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+              borderRadius: theme.radiusMd
+            }
+          ]}
+          onPress={toggleTheme}
+          activeOpacity={0.7}
+          accessibilityLabel="Toggle Dark / Light Theme"
+        >
+          <Text style={styles.themeIcon}>{isDark ? "??" : "??"}</Text>
+        </TouchableOpacity>
+
         {/* Offline Badge */}
-        <View style={styles.offlineBadge}>
-          <Text style={styles.offlineDot}>●</Text>
-          <Text style={styles.offlineText}>OFFLINE</Text>
+        <View
+          style={[
+            styles.offlineBadge,
+            {
+              backgroundColor: theme.safeBg,
+              borderColor: theme.safeBorder,
+              borderRadius: theme.radiusSm
+            }
+          ]}
+        >
+          <Text style={[styles.offlineDot, { color: theme.safe }]}>?</Text>
+          <Text style={[styles.offlineText, { color: theme.safe }]}>OFFLINE</Text>
         </View>
 
         {/* Probe Battery & Status */}
         <TouchableOpacity
-          style={[styles.probePill, isConnected ? styles.probeOnline : styles.probeOffline]}
+          style={[
+            styles.probePill,
+            { borderRadius: theme.radiusSm },
+            isConnected
+              ? { backgroundColor: theme.accent + "22", borderColor: theme.accent }
+              : { backgroundColor: theme.subtle, borderColor: theme.cardBorder }
+          ]}
           onPress={() => router.push("/ble" as any)}
           activeOpacity={0.8}
         >
-          <Text style={styles.probeIcon}>{isConnected ? "⚡" : "✕"}</Text>
-          <Text style={styles.probeText}>
-            {isConnected ? `${telemetry.battery}%` : "PROBE"}
+          <Text style={styles.probeIcon}>{isConnected ? "?" : "?"}</Text>
+          <Text style={[styles.probeText, { color: theme.text }]}>
+            {isConnected && telemetry.battery !== null ? `${telemetry.battery}%` : "PROBE"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -66,94 +123,82 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 14,
-    backgroundColor: THEME_COLORS.background,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.08)"
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1
   },
   leftRow: {
     flexDirection: "row",
-    alignItems: "center"
+    alignItems: "center",
+    flex: 1
   },
   backButton: {
-    marginRight: 12,
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: THEME_COLORS.card,
+    marginRight: 10,
+    width: 36,
+    height: 36,
     borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
     justifyContent: "center",
     alignItems: "center"
   },
   backArrow: {
-    color: "#F8FAFC",
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "900"
   },
   title: {
-    color: "#F8FAFC",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "900",
     letterSpacing: 0.3
   },
   brandSubtitle: {
-    color: "#38BDF8",
-    fontSize: 10,
-    fontWeight: "700",
+    fontSize: 9,
+    fontWeight: "800",
     letterSpacing: 0.5
   },
   rightRow: {
     flexDirection: "row",
     alignItems: "center"
   },
+  themeToggle: {
+    width: 34,
+    height: 34,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 6
+  },
+  themeIcon: {
+    fontSize: 14
+  },
   offlineBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(16, 185, 129, 0.15)",
     borderWidth: 1,
-    borderColor: "#059669",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: 8
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    marginRight: 6
   },
   offlineDot: {
-    color: THEME_COLORS.safe,
-    fontSize: 10,
-    marginRight: 4
+    fontSize: 8,
+    marginRight: 3
   },
   offlineText: {
-    color: "#A7F3D0",
-    fontSize: 10,
-    fontWeight: "800",
+    fontSize: 9,
+    fontWeight: "900",
     letterSpacing: 0.5
   },
   probePill: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderWidth: 1
   },
-  probeOnline: {
-    backgroundColor: "rgba(56, 189, 248, 0.15)",
-    borderColor: "#0284C7"
-  },
-  probeOffline: {
-    backgroundColor: "rgba(148, 163, 184, 0.15)",
-    borderColor: "#475569"
-  },
   probeIcon: {
-    fontSize: 12,
-    marginRight: 4
+    fontSize: 10,
+    marginRight: 3
   },
   probeText: {
-    color: "#F8FAFC",
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "800"
   }
 });

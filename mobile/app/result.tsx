@@ -1,35 +1,36 @@
 /**
- * SCREEN 6 ‚Äî SCAN RESULT & MULTIMODAL VERDICT
+ * SCREEN 6 ó SCAN RESULT & MULTIMODAL VERDICT
  * - Big traffic-light result (SAFE, CAUTION, UNSAFE)
  * - MSSI safety score & Confidence
- * - Sensor & Vision telemetry metrics breakdown
+ * - Sensor & Vision telemetry metrics breakdown (honestly displays "--" if probe was disconnected)
  * - Agronomic explanation reasons
  * - Multilingual actionable advisory card with voice playback
  * - Silage verification QR code
  * - Action buttons: New Scan, View SQLite History
+ * - Full viewport width & Sharp industrial corners
  */
 
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  SafeAreaView,
-  Alert
+  TouchableOpacity
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header } from "../components/Header";
 import { TrafficLightCard } from "../components/TrafficLightCard";
 import { AdvisoryCard } from "../components/AdvisoryCard";
-import { MssiScoreGauge } from "../components/MssiScoreGauge";
-import { useAppStore } from "../features/ble/bleManager";
+import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { generateSilageQRPayload } from "../utils/qrGenerator";
-import { THEME_COLORS } from "../utils/constants";
 
 export default function ResultScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
+
   const {
     latestFusionResult,
     latestAdvisory,
@@ -39,19 +40,54 @@ export default function ResultScreen() {
     clearScanImages
   } = useAppStore();
 
-  // Fallback defaults if accessed directly
   const decision = latestFusionResult?.decision || "SAFE";
-  const finalVerdict = latestFusionResult?.final_verdict || "SAFE TO FEED";
-  const confidence = latestFusionResult?.confidence || 94;
-  const confidenceLevel = latestFusionResult?.confidence_level || "HIGH";
-  const mssiScore = latestFusionResult?.mssiScore || 88;
+  const confidence = latestFusionResult?.confidence || 92;
+  const mssiScore = latestFusionResult?.mssiScore || 85;
   const ruleOverride = latestFusionResult?.rule_override || false;
   const ruleReason = latestFusionResult?.rule_reason || null;
+
+  const hasProbeData =
+    telemetry.ph !== null &&
+    telemetry.moisture !== null &&
+    telemetry.temp !== null &&
+    telemetry.ambient !== null;
+
+  const deltaTemp =
+    telemetry.temp !== null && telemetry.ambient !== null
+      ? telemetry.temp - telemetry.ambient
+      : null;
+
   const explainabilityChain = latestFusionResult?.explainability_chain || [
-    { parameter: "Silage pH", measuredValue: `${telemetry.ph.toFixed(2)} pH`, status: "NORMAL", assessment: "Within optimal preservation range." },
-    { parameter: "Core Heat Rise (ŒîT)", measuredValue: `+${(telemetry.temp - telemetry.ambient).toFixed(1)}¬∞C`, status: "NORMAL", assessment: "Core temperature in equilibrium with ambient." },
-    { parameter: "Estimated Moisture", measuredValue: `${telemetry.moisture.toFixed(1)}%`, status: "NORMAL", assessment: "Ideal moisture band for compaction." },
-    { parameter: "Visual Mould Pattern", measuredValue: `${((latestFusionResult?.breakdown?.mouldProbability ?? 0.04) * 100).toFixed(0)}% signal`, status: "NORMAL", assessment: "No abnormal mycelium or fungal colonies observed." }
+    {
+      parameter: "Silage pH Acidity",
+      measuredValue: hasProbeData ? `${telemetry.ph!.toFixed(2)} pH` : "No Probe Connected",
+      status: hasProbeData ? "NORMAL" : "UNAVAILABLE",
+      assessment: hasProbeData
+        ? "Within optimal lactic preservation range."
+        : "Probe telemetry was unavailable during scan; relying on Vision AI."
+    },
+    {
+      parameter: "Core Heat Rise (?T)",
+      measuredValue: deltaTemp !== null ? `+${deltaTemp.toFixed(1)}∞C` : "No Probe Connected",
+      status: deltaTemp !== null ? "NORMAL" : "UNAVAILABLE",
+      assessment: deltaTemp !== null
+        ? "Core temperature in thermal equilibrium."
+        : "Temperature sensor not connected."
+    },
+    {
+      parameter: "Estimated Moisture",
+      measuredValue: hasProbeData ? `${telemetry.moisture!.toFixed(1)}%` : "No Probe Connected",
+      status: hasProbeData ? "NORMAL" : "UNAVAILABLE",
+      assessment: hasProbeData
+        ? "Moisture within target fermentation band."
+        : "Moisture sensor not connected."
+    },
+    {
+      parameter: "Visual Mould Pattern",
+      measuredValue: `${((latestFusionResult?.breakdown?.mouldProbability ?? 0.04) * 100).toFixed(0)}% signal`,
+      status: "NORMAL",
+      assessment: "MobileNetV3 evaluation of bunker face surface photographs."
+    }
   ];
 
   const handleVoicePlay = (text: string) => {
@@ -75,138 +111,198 @@ export default function ResultScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Header title="SCREENING REPORT" showBack={false} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom, 20) + 40 }
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* SCIENTIFIC SCREENING DISCLAIMER BANNER */}
-        <View style={styles.disclaimerBanner}>
-          <Text style={styles.disclaimerIcon}>‚ö†Ô∏è</Text>
-          <Text style={styles.disclaimerText}>
-            <Text style={styles.disclaimerBold}>Rapid Screening Tool ‚Äî Not a laboratory replacement. </Text>
-            SILAGEGUARD AI detects fermentation indicators and visual anomalies. Confirmatory testing is recommended if toxicity or illness is suspected.
+        <View
+          style={[
+            styles.disclaimerBanner,
+            {
+              backgroundColor: theme.cautionBg,
+              borderColor: theme.cautionBorder,
+              borderRadius: theme.radiusSm
+            }
+          ]}
+        >
+          <Text style={styles.disclaimerIcon}>??</Text>
+          <Text style={[styles.disclaimerText, { color: theme.text }]}>
+            <Text style={[styles.disclaimerBold, { color: theme.caution }]}>
+              Rapid Screening Tool ó Not a laboratory replacement.{" "}
+            </Text>
+            SILAGEGUARD AI detects fermentation indicators and visual anomalies. Confirmatory testing
+            is recommended if clinical toxicity or animal refusal occurs.
           </Text>
         </View>
 
         {/* SAFETY RULE OVERRIDE ALERT (IF TRIGGERED) */}
         {ruleOverride && (
-          <View style={styles.overrideAlert}>
+          <View
+            style={[
+              styles.overrideAlert,
+              {
+                backgroundColor: theme.unsafeBg,
+                borderColor: theme.unsafeBorder,
+                borderRadius: theme.radiusSm
+              }
+            ]}
+          >
             <View style={styles.overrideHeader}>
-              <Text style={styles.overrideIcon}>‚ö°</Text>
-              <Text style={styles.overrideTitle}>SAFETY RULE OVERRIDE TRIGGERED</Text>
+              <Text style={styles.overrideIcon}>??</Text>
+              <Text style={[styles.overrideTitle, { color: theme.unsafe }]}>
+                SAFETY RULE OVERRIDE TRIGGERED
+              </Text>
             </View>
-            <Text style={styles.overrideReason}>
+            <Text style={[styles.overrideReason, { color: theme.text }]}>
               {ruleReason || "Agronomic safety threshold exceeded."}
-            </Text>
-            <Text style={styles.overrideSub}>
-              Agronomic safety rules supersede probabilistic ML scores when critical spoilage thresholds are breached.
             </Text>
           </View>
         )}
 
-        {/* BIG TRAFFIC LIGHT RESULT */}
-        <TrafficLightCard
-          decision={decision}
-          confidence={confidence}
-          mssiScore={mssiScore}
-        />
+        {/* PRIMARY TRAFFIC LIGHT VERDICT CARD */}
+        <TrafficLightCard decision={decision} confidence={confidence} mssiScore={mssiScore} />
 
-        {/* Confidence & Uncertainty Level Badge */}
-        <View style={styles.confidenceBar}>
-          <Text style={styles.confidenceBarLabel}>PREDICTION CONFIDENCE:</Text>
-          <View
-            style={[
-              styles.confidenceLevelBadge,
-              confidenceLevel === "HIGH"
-                ? styles.confHigh
-                : confidenceLevel === "MODERATE"
-                ? styles.confMod
-                : styles.confLow
-            ]}
-          >
-            <Text style={styles.confidenceLevelText}>
-              {confidenceLevel} CONFIDENCE ({confidence}%)
-            </Text>
-          </View>
-        </View>
-
-        {/* Radial MSSI Score Centerpiece */}
-        <View style={styles.gaugeContainer}>
-          <MssiScoreGauge score={mssiScore} size={140} />
-          <View style={styles.gaugeInfo}>
-            <Text style={styles.gaugeTitle}>MULTIMODAL SILAGE SAFETY INDEX</Text>
-            <Text style={styles.gaugeSub}>
-              Sensor Weight: 55% ‚Ä¢ Vision Weight: 45% (Prototype Heuristic)
-            </Text>
-            <Text style={styles.cropBadge}>
-              üåæ {cropType} ‚Ä¢ Depth: {pitDepthCm} cm
-            </Text>
-          </View>
-        </View>
-
-        {/* "WHY THIS RESULT?" DEDICATED EXPLAINABILITY SECTION (Section 24) */}
-        <View style={styles.whyBox}>
-          <View style={styles.whyHeaderRow}>
-            <Text style={styles.whyIcon}>üîç</Text>
-            <Text style={styles.whyTitle}>WHY THIS RESULT?</Text>
-          </View>
-          <Text style={styles.whySubtitle}>
-            Traceable evidence chain derived directly from real sensor and vision inference:
+        {/* EXPLAINABILITY REASON CHAIN */}
+        <View
+          style={[
+            styles.sectionCard,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+              borderRadius: theme.radiusMd
+            }
+          ]}
+        >
+          <Text style={[styles.cardTitle, { color: theme.text }]}>WHY THIS EVALUATION?</Text>
+          <Text style={[styles.cardSubtitle, { color: theme.textMuted }]}>
+            Diagnostic observations evaluated across multimodal inputs
           </Text>
 
-          {explainabilityChain.map((point, idx) => {
-            const isAlert = point.status === "ALERT";
-            const isBorderline = point.status === "BORDERLINE";
-            const statusColor = isAlert ? THEME_COLORS.unsafe : isBorderline ? THEME_COLORS.caution : THEME_COLORS.safe;
-
-            return (
-              <View key={idx} style={styles.whyItem}>
-                <View style={styles.whyItemTop}>
-                  <Text style={styles.whyParamName}>{point.parameter}</Text>
-                  <View style={[styles.whyStatusBadge, { borderColor: statusColor, backgroundColor: `${statusColor}18` }]}>
-                    <Text style={[styles.whyStatusText, { color: statusColor }]}>
-                      {point.measuredValue} ‚Ä¢ {point.status}
-                    </Text>
-                  </View>
-                </View>
-                <Text style={styles.whyAssessment}>{point.assessment}</Text>
+          {explainabilityChain.map((item, idx) => (
+            <View
+              key={idx}
+              style={[
+                styles.chainItem,
+                { borderBottomColor: theme.cardBorder }
+              ]}
+            >
+              <View style={styles.chainTop}>
+                <Text style={[styles.chainParam, { color: theme.text }]}>{item.parameter}</Text>
+                <Text
+                  style={[
+                    styles.chainValue,
+                    {
+                      color:
+                        item.status === "ALERT"
+                          ? theme.unsafe
+                          : item.status === "BORDERLINE"
+                          ? theme.caution
+                          : item.status === "NORMAL"
+                          ? theme.safe
+                          : theme.textMuted
+                    }
+                  ]}
+                >
+                  {item.measuredValue}
+                </Text>
               </View>
-            );
-          })}
+              <Text style={[styles.chainAssessment, { color: theme.textMuted }]}>
+                {item.assessment}
+              </Text>
+            </View>
+          ))}
         </View>
 
-        {/* Physical Sensor & Vision Metrics Grid */}
-        <View style={styles.metricsBox}>
-          <Text style={styles.boxTitle}>PHYSICAL SENSOR & VISION METRICS</Text>
+        {/* FIELD PARAMETERS BREAKDOWN GRID */}
+        <View
+          style={[
+            styles.sectionCard,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+              borderRadius: theme.radiusMd
+            }
+          ]}
+        >
+          <Text style={[styles.cardTitle, { color: theme.text }]}>FIELD SENSOR & VISION DATA</Text>
+          <Text style={[styles.cardSubtitle, { color: theme.textMuted }]}>
+            Captured measurements for this silage batch
+          </Text>
+
           <View style={styles.metricsGrid}>
-            <View style={styles.metricItem}>
-              <Text style={styles.metricLabel}>Silage pH</Text>
-              <Text style={[styles.metricVal, { color: telemetry.ph <= 4.2 ? THEME_COLORS.safe : telemetry.ph <= 4.8 ? THEME_COLORS.caution : THEME_COLORS.unsafe }]}>
-                {telemetry.ph.toFixed(2)}
+            <View style={[styles.metricItem, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
+              <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Silage pH</Text>
+              <Text
+                style={[
+                  styles.metricVal,
+                  {
+                    color:
+                      telemetry.ph === null
+                        ? theme.textMuted
+                        : telemetry.ph <= 4.2
+                        ? theme.safe
+                        : telemetry.ph <= 4.8
+                        ? theme.caution
+                        : theme.unsafe
+                  }
+                ]}
+              >
+                {telemetry.ph !== null ? telemetry.ph.toFixed(2) : "--"}
               </Text>
-              <Text style={styles.metricTarget}>Target: 3.8 - 4.2</Text>
+              <Text style={[styles.metricTarget, { color: theme.textMuted }]}>Target: 3.8 - 4.2</Text>
             </View>
 
-            <View style={styles.metricItem}>
-              <Text style={styles.metricLabel}>Estimated Moisture</Text>
-              <Text style={styles.metricVal}>{telemetry.moisture.toFixed(1)}%</Text>
-              <Text style={styles.metricTarget}>Target: 60 - 68%</Text>
-            </View>
-
-            <View style={styles.metricItem}>
-              <Text style={styles.metricLabel}>Thermal Rise (ŒîT)</Text>
-              <Text style={[styles.metricVal, { color: (telemetry.temp - telemetry.ambient) <= 3.0 ? THEME_COLORS.safe : THEME_COLORS.unsafe }]}>
-                +{(telemetry.temp - telemetry.ambient).toFixed(1)}¬∞C
+            <View style={[styles.metricItem, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
+              <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Estimated Moisture</Text>
+              <Text style={[styles.metricVal, { color: telemetry.moisture !== null ? theme.accent : theme.textMuted }]}>
+                {telemetry.moisture !== null ? `${telemetry.moisture.toFixed(1)}%` : "--"}
               </Text>
-              <Text style={styles.metricTarget}>Target: &lt; 3.0¬∞C</Text>
+              <Text style={[styles.metricTarget, { color: theme.textMuted }]}>Target: 60 - 68%</Text>
             </View>
 
-            <View style={styles.metricItem}>
-              <Text style={styles.metricLabel}>Visual Mould Signal</Text>
-              <Text style={[styles.metricVal, { color: (latestFusionResult?.breakdown?.mouldProbability ?? 0.05) > 0.4 ? THEME_COLORS.unsafe : THEME_COLORS.safe }]}>
+            <View style={[styles.metricItem, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
+              <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Thermal Rise (?T)</Text>
+              <Text
+                style={[
+                  styles.metricVal,
+                  {
+                    color:
+                      deltaTemp === null
+                        ? theme.textMuted
+                        : deltaTemp <= 3.0
+                        ? theme.safe
+                        : theme.unsafe
+                  }
+                ]}
+              >
+                {deltaTemp !== null ? `+${deltaTemp.toFixed(1)}∞C` : "--"}
+              </Text>
+              <Text style={[styles.metricTarget, { color: theme.textMuted }]}>Target: &lt; 3.0∞C</Text>
+            </View>
+
+            <View style={[styles.metricItem, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
+              <Text style={[styles.metricLabel, { color: theme.textMuted }]}>Visual Mould Signal</Text>
+              <Text
+                style={[
+                  styles.metricVal,
+                  {
+                    color:
+                      (latestFusionResult?.breakdown?.mouldProbability ?? 0.05) > 0.4
+                        ? theme.unsafe
+                        : theme.safe
+                  }
+                ]}
+              >
                 {((latestFusionResult?.breakdown?.mouldProbability ?? 0.05) * 100).toFixed(0)}%
               </Text>
-              <Text style={styles.metricTarget}>Surface Anomaly Proxy</Text>
+              <Text style={[styles.metricTarget, { color: theme.textMuted }]}>Surface Anomaly Proxy</Text>
             </View>
           </View>
         </View>
@@ -217,34 +313,47 @@ export default function ResultScreen() {
         )}
 
         {/* QR Verification Card */}
-        <View style={styles.qrCard}>
+        <View
+          style={[
+            styles.qrCard,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+              borderRadius: theme.radiusMd
+            }
+          ]}
+        >
           <View style={styles.qrHeader}>
-            <Text style={styles.qrIcon}>üì±</Text>
+            <Text style={styles.qrIcon}>??</Text>
             <View style={styles.qrHeaderText}>
-              <Text style={styles.qrTitle}>DIGITAL BATCH CERTIFICATE</Text>
-              <Text style={styles.qrSub}>
+              <Text style={[styles.qrTitle, { color: theme.text }]}>DIGITAL BATCH CERTIFICATE</Text>
+              <Text style={[styles.qrSub, { color: theme.textMuted }]}>
                 Verifiable QR for Dairy Co-operatives & Milk Unions
               </Text>
             </View>
           </View>
 
-          {/* QR Code Matrix Display */}
           <View style={styles.qrContainer}>
-            <View style={styles.qrMockBox}>
-              <Text style={styles.qrMockCode}>‚ñ† ‚ñ† ‚ñ† ‚ñ† ‚ñ† ‚ñ† ‚ñ† ‚ñ† ‚ñ† ‚ñ† ‚ñ† ‚ñ†</Text>
-              <Text style={styles.qrMockCode}>‚ñ†   ‚ñ†   ‚ñ†   ‚ñ†   ‚ñ†   ‚ñ†</Text>
-              <Text style={styles.qrMockCode}>‚ñ† ‚ñ†   SILAGEGUARD  ‚ñ† ‚ñ†</Text>
-              <Text style={styles.qrMockCode}>‚ñ†   ‚ñ†   {decision}   ‚ñ†   ‚ñ†</Text>
-              <Text style={styles.qrMockCode}>‚ñ† ‚ñ† ‚ñ† ‚ñ† ‚ñ† ‚ñ† ‚ñ† ‚ñ† ‚ñ† ‚ñ† ‚ñ† ‚ñ†</Text>
+            <View
+              style={[
+                styles.qrMockBox,
+                { backgroundColor: theme.surface, borderColor: theme.primary, borderRadius: theme.radiusSm }
+              ]}
+            >
+              <Text style={[styles.qrMockCode, { color: theme.primary }]}>¶ ¶ ¶ ¶ ¶ ¶ ¶ ¶ ¶ ¶ ¶ ¶</Text>
+              <Text style={[styles.qrMockCode, { color: theme.primary }]}>¶   ¶   ¶   ¶   ¶   ¶</Text>
+              <Text style={[styles.qrMockCode, { color: theme.text }]}>¶ ¶   SILAGEGUARD  ¶ ¶</Text>
+              <Text style={[styles.qrMockCode, { color: theme.accent }]}>¶   ¶   {decision}   ¶   ¶</Text>
+              <Text style={[styles.qrMockCode, { color: theme.primary }]}>¶ ¶ ¶ ¶ ¶ ¶ ¶ ¶ ¶ ¶ ¶ ¶</Text>
             </View>
-            <Text style={styles.qrHash}>
+            <Text style={[styles.qrHash, { color: theme.textMuted }]}>
               {generateSilageQRPayload({
                 batchId: "BATCH-CURR",
                 decision,
                 mssiScore,
-                ph: telemetry.ph,
-                moisture: telemetry.moisture,
-                temp: telemetry.temp,
+                ph: telemetry.ph ?? 0,
+                moisture: telemetry.moisture ?? 0,
+                temp: telemetry.temp ?? 0,
                 cropType,
                 timestamp: new Date().toISOString()
               })}
@@ -255,15 +364,28 @@ export default function ResultScreen() {
         {/* Action Buttons */}
         <View style={styles.actionsRow}>
           <TouchableOpacity
-            style={styles.historyBtn}
+            style={[
+              styles.historyBtn,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.cardBorder,
+                borderRadius: theme.radiusSm
+              }
+            ]}
             onPress={() => router.push("/history" as any)}
             activeOpacity={0.8}
           >
-            <Text style={styles.historyBtnText}>VIEW PAST BATCHES</Text>
+            <Text style={[styles.historyBtnText, { color: theme.text }]}>VIEW PAST BATCHES</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.newScanBtn}
+            style={[
+              styles.newScanBtn,
+              {
+                backgroundColor: theme.primary,
+                borderRadius: theme.radiusSm
+              }
+            ]}
             onPress={handleScanAnother}
             activeOpacity={0.85}
           >
@@ -271,51 +393,42 @@ export default function ResultScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: THEME_COLORS.background
+  container: {
+    flex: 1
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 40
+    paddingHorizontal: 12,
+    paddingTop: 10
   },
   disclaimerBanner: {
     flexDirection: "row",
-    backgroundColor: "rgba(245, 158, 11, 0.12)",
     borderWidth: 1,
-    borderColor: "rgba(245, 158, 11, 0.35)",
-    padding: 12,
-    borderRadius: 14,
-    marginBottom: 12,
+    padding: 10,
+    marginBottom: 10,
     alignItems: "flex-start"
   },
   disclaimerIcon: {
-    fontSize: 16,
-    marginRight: 8,
+    fontSize: 14,
+    marginRight: 6,
     marginTop: 1
   },
   disclaimerText: {
     flex: 1,
-    color: "#FDE68A",
     fontSize: 11,
-    lineHeight: 16
+    lineHeight: 15
   },
   disclaimerBold: {
-    fontWeight: "800",
-    color: "#FBBF24"
+    fontWeight: "800"
   },
   overrideAlert: {
-    backgroundColor: "rgba(239, 68, 68, 0.15)",
     borderWidth: 1.5,
-    borderColor: "#EF4444",
-    padding: 14,
-    borderRadius: 16,
-    marginBottom: 12
+    padding: 12,
+    marginBottom: 10
   },
   overrideHeader: {
     flexDirection: "row",
@@ -327,290 +440,119 @@ const styles = StyleSheet.create({
     marginRight: 6
   },
   overrideTitle: {
-    color: "#EF4444",
     fontSize: 12,
     fontWeight: "900",
     letterSpacing: 0.5
   },
   overrideReason: {
-    color: "#FEE2E2",
-    fontSize: 13,
-    fontWeight: "700",
-    marginTop: 2
+    fontSize: 12,
+    fontWeight: "600"
   },
-  overrideSub: {
-    color: "#FCA5A5",
-    fontSize: 10,
-    marginTop: 4,
-    lineHeight: 14
-  },
-  confidenceBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: THEME_COLORS.card,
+  sectionCard: {
     borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 14,
-    marginBottom: 10
+    padding: 14,
+    marginVertical: 6
   },
-  confidenceBarLabel: {
-    color: "#94A3B8",
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 0.5
-  },
-  confidenceLevelBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1
-  },
-  confHigh: {
-    backgroundColor: "rgba(16, 185, 129, 0.15)",
-    borderColor: THEME_COLORS.safe
-  },
-  confMod: {
-    backgroundColor: "rgba(245, 158, 11, 0.15)",
-    borderColor: THEME_COLORS.caution
-  },
-  confLow: {
-    backgroundColor: "rgba(239, 68, 68, 0.15)",
-    borderColor: THEME_COLORS.unsafe
-  },
-  confidenceLevelText: {
-    color: "#F8FAFC",
-    fontSize: 10,
-    fontWeight: "900"
-  },
-  whyBox: {
-    backgroundColor: "rgba(15, 23, 42, 0.8)",
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    padding: 16,
-    marginVertical: 10
-  },
-  whyHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4
-  },
-  whyIcon: {
-    fontSize: 18,
-    marginRight: 8
-  },
-  whyTitle: {
-    color: "#38BDF8",
+  cardTitle: {
     fontSize: 13,
     fontWeight: "900",
     letterSpacing: 0.5
   },
-  whySubtitle: {
-    color: "#64748B",
-    fontSize: 11,
-    marginBottom: 12
+  cardSubtitle: {
+    fontSize: 10,
+    marginTop: 2,
+    marginBottom: 8
   },
-  whyItem: {
-    backgroundColor: "rgba(30, 41, 59, 0.5)",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.04)"
+  chainItem: {
+    paddingVertical: 8,
+    borderBottomWidth: 1
   },
-  whyItemTop: {
+  chainTop: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4
+    alignItems: "center"
   },
-  whyParamName: {
-    color: "#F8FAFC",
+  chainParam: {
+    fontSize: 12,
+    fontWeight: "700"
+  },
+  chainValue: {
     fontSize: 12,
     fontWeight: "800"
   },
-  whyStatusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1
-  },
-  whyStatusText: {
-    fontSize: 10,
-    fontWeight: "800"
-  },
-  whyAssessment: {
-    color: "#94A3B8",
+  chainAssessment: {
     fontSize: 11,
-    lineHeight: 16,
-    marginTop: 2
-  },
-  gaugeContainer: {
-    backgroundColor: THEME_COLORS.card,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    padding: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 10
-  },
-  gaugeInfo: {
-    flex: 1,
-    marginLeft: 16
-  },
-  gaugeTitle: {
-    color: "#F8FAFC",
-    fontSize: 13,
-    fontWeight: "900",
-    letterSpacing: 0.5
-  },
-  gaugeSub: {
-    color: "#94A3B8",
-    fontSize: 11,
-    fontWeight: "600",
-    marginTop: 4
-  },
-  cropBadge: {
-    color: "#38BDF8",
-    fontSize: 11,
-    fontWeight: "700",
-    marginTop: 8,
-    backgroundColor: "rgba(56, 189, 248, 0.1)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    alignSelf: "flex-start"
-  },
-  metricsBox: {
-    backgroundColor: THEME_COLORS.card,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    padding: 16,
-    marginVertical: 10
-  },
-  boxTitle: {
-    color: "#94A3B8",
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-    marginBottom: 12
+    marginTop: 2,
+    lineHeight: 15
   },
   metricsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between"
+    justifyContent: "space-between",
+    marginTop: 6
   },
   metricItem: {
     width: "48%",
-    backgroundColor: "rgba(15, 23, 42, 0.6)",
-    padding: 12,
-    borderRadius: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.05)"
+    padding: 10,
+    marginVertical: 4
   },
   metricLabel: {
-    color: "#94A3B8",
-    fontSize: 11,
-    fontWeight: "700"
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase"
   },
   metricVal: {
-    color: "#F8FAFC",
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "900",
     marginVertical: 4
   },
   metricTarget: {
-    color: "#64748B",
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "600"
   },
-  reasonsCard: {
-    backgroundColor: "rgba(19, 28, 46, 0.8)",
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    padding: 16,
-    marginVertical: 10
-  },
-  reasonsTitle: {
-    color: "#38BDF8",
-    fontSize: 12,
-    fontWeight: "900",
-    letterSpacing: 0.5,
-    marginBottom: 10
-  },
-  reasonRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 8
-  },
-  reasonBullet: {
-    color: THEME_COLORS.primary,
-    fontSize: 16,
-    marginRight: 8,
-    lineHeight: 18
-  },
-  reasonText: {
-    color: "#E2E8F0",
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: "500",
-    flex: 1
-  },
   qrCard: {
-    backgroundColor: THEME_COLORS.card,
-    borderRadius: 20,
     borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    padding: 18,
-    marginVertical: 12
+    padding: 14,
+    marginVertical: 8
   },
   qrHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 14
+    marginBottom: 10
   },
   qrIcon: {
-    fontSize: 24,
-    marginRight: 10
+    fontSize: 18,
+    marginRight: 8
   },
   qrHeaderText: {
     flex: 1
   },
   qrTitle: {
-    color: "#F8FAFC",
-    fontSize: 14,
-    fontWeight: "800"
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 0.5
   },
   qrSub: {
-    color: "#94A3B8",
-    fontSize: 11,
+    fontSize: 10,
     marginTop: 2
   },
   qrContainer: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-    alignItems: "center"
-  },
-  qrMockBox: {
     alignItems: "center",
     paddingVertical: 10
   },
+  qrMockBox: {
+    borderWidth: 1,
+    padding: 14,
+    alignItems: "center",
+    justifyContent: "center"
+  },
   qrMockCode: {
-    color: "#0F172A",
-    fontWeight: "900",
-    letterSpacing: 2,
-    fontSize: 12
+    fontFamily: "monospace",
+    fontSize: 10,
+    lineHeight: 13,
+    letterSpacing: 2
   },
   qrHash: {
-    color: "#475569",
     fontSize: 9,
     fontFamily: "monospace",
     marginTop: 10,
@@ -619,35 +561,28 @@ const styles = StyleSheet.create({
   actionsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 14
+    marginVertical: 12
   },
   historyBtn: {
     flex: 1,
-    backgroundColor: THEME_COLORS.card,
     borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    paddingVertical: 16,
-    borderRadius: 16,
+    paddingVertical: 14,
     alignItems: "center",
-    marginRight: 8
+    marginRight: 6
   },
   historyBtnText: {
-    color: "#94A3B8",
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "800"
   },
   newScanBtn: {
     flex: 1,
-    backgroundColor: THEME_COLORS.primary,
-    paddingVertical: 16,
-    borderRadius: 16,
+    paddingVertical: 14,
     alignItems: "center",
-    marginLeft: 8
+    marginLeft: 6
   },
   newScanBtnText: {
     color: "#090D16",
-    fontSize: 13,
-    fontWeight: "900",
-    letterSpacing: 0.5
+    fontSize: 12,
+    fontWeight: "900"
   }
 });

@@ -1,13 +1,13 @@
 /**
- * SILAGEGUARD AI — Actionable Farmer Advisory Card
+ * SILAGEGUARD AI � Actionable Farmer Advisory Card
  * Displays structured agronomic guidance (Problem, Reason, Immediate Action, Prevention)
- * with Voice TTS narration trigger.
+ * with Voice TTS narration trigger, theme support, and clean industrial corners.
  */
 
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { FarmerAdvisory } from "../features/advisory/advisoryEngine";
-import { THEME_COLORS } from "../utils/constants";
+import { useTheme } from "../features/ble/bleManager";
 
 interface Props {
   advisory: FarmerAdvisory;
@@ -15,6 +15,7 @@ interface Props {
 }
 
 export const AdvisoryCard: React.FC<Props> = ({ advisory, onPlayVoice }) => {
+  const { theme } = useTheme();
   const [isPlaying, setIsPlaying] = useState(false);
 
   const handleVoicePress = () => {
@@ -27,48 +28,92 @@ export const AdvisoryCard: React.FC<Props> = ({ advisory, onPlayVoice }) => {
 
   const isSafe = advisory.decision === "SAFE";
   const isCaution = advisory.decision === "CAUTION";
-  const headerColor = isSafe ? THEME_COLORS.safe : isCaution ? THEME_COLORS.caution : THEME_COLORS.unsafe;
+  const headerColor = isSafe ? theme.safe : isCaution ? theme.caution : theme.unsafe;
 
   return (
-    <View style={styles.card}>
-      <View style={styles.header}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.card,
+          borderColor: theme.cardBorder,
+          borderRadius: theme.radiusMd
+        }
+      ]}
+    >
+      <View style={[styles.header, { borderBottomColor: theme.cardBorder }]}>
         <View style={styles.titleArea}>
           <Text style={[styles.title, { color: headerColor }]}>{advisory.title}</Text>
         </View>
 
         <TouchableOpacity
-          style={[styles.voiceButton, isPlaying && styles.voiceButtonActive]}
+          style={[
+            styles.voiceButton,
+            {
+              backgroundColor: theme.accent + "1A",
+              borderColor: theme.accent,
+              borderRadius: theme.radiusSm
+            },
+            isPlaying && { backgroundColor: theme.accent }
+          ]}
           onPress={handleVoicePress}
           activeOpacity={0.8}
         >
-          <Text style={styles.voiceButtonText}>
-            {isPlaying ? "🔊 Playing..." : "🔊 Read Out Loud"}
+          <Text
+            style={[
+              styles.voiceButtonText,
+              { color: isPlaying ? "#FFFFFF" : theme.accent }
+            ]}
+          >
+            {isPlaying ? "?? Playing..." : "?? Read Out"}
           </Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>⚠️ IDENTIFIED ISSUE</Text>
-        <Text style={styles.sectionContent}>{advisory.problem}</Text>
+        <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>
+          ?? IDENTIFIED ISSUE
+        </Text>
+        <Text style={[styles.sectionContent, { color: theme.text }]}>
+          {advisory.problem}
+        </Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>🔬 AGRONOMIC CAUSE</Text>
-        <Text style={styles.sectionContent}>{advisory.reason}</Text>
+        <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>
+          ?? AGRONOMIC CAUSE
+        </Text>
+        <Text style={[styles.sectionContent, { color: theme.text }]}>
+          {advisory.reason}
+        </Text>
       </View>
 
-      <View style={[styles.section, styles.actionHighlight]}>
-        <Text style={[styles.sectionLabel, { color: THEME_COLORS.primary }]}>
-          ⚡ IMMEDIATE ACTION REQUIRED
+      <View
+        style={[
+          styles.section,
+          styles.actionHighlight,
+          {
+            backgroundColor: theme.safeBg,
+            borderLeftColor: theme.primary,
+            borderRadius: theme.radiusSm
+          }
+        ]}
+      >
+        <Text style={[styles.sectionLabel, { color: theme.primary }]}>
+          ? IMMEDIATE ACTION REQUIRED
         </Text>
-        <Text style={[styles.sectionContent, styles.actionText]}>
+        <Text style={[styles.sectionContent, styles.actionText, { color: theme.text }]}>
           {advisory.immediateAction}
         </Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>🛡️ FUTURE HARVEST / PIT PREVENTION</Text>
-        <Text style={styles.sectionContent}>{advisory.futurePrevention}</Text>
+        <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>
+          ??? FUTURE HARVEST / PIT PREVENTION
+        </Text>
+        <Text style={[styles.sectionContent, { color: theme.text }]}>
+          {advisory.futurePrevention}
+        </Text>
       </View>
     </View>
   );
@@ -76,73 +121,56 @@ export const AdvisoryCard: React.FC<Props> = ({ advisory, onPlayVoice }) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: THEME_COLORS.card,
-    borderRadius: 20,
     borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    padding: 18,
-    marginVertical: 12
+    padding: 14,
+    marginVertical: 8
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.08)"
+    marginBottom: 12,
+    paddingBottom: 10,
+    borderBottomWidth: 1
   },
   titleArea: {
     flex: 1,
     marginRight: 8
   },
   title: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "900",
-    lineHeight: 22
+    lineHeight: 20
   },
   voiceButton: {
-    backgroundColor: "rgba(56, 189, 248, 0.15)",
     borderWidth: 1,
-    borderColor: "#0284C7",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20
-  },
-  voiceButtonActive: {
-    backgroundColor: "#0284C7"
+    paddingHorizontal: 10,
+    paddingVertical: 6
   },
   voiceButtonText: {
-    color: "#38BDF8",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "800"
   },
   section: {
-    marginVertical: 6
+    marginVertical: 4
   },
   sectionLabel: {
-    color: "#94A3B8",
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "800",
     letterSpacing: 0.5,
-    marginBottom: 3
+    marginBottom: 2
   },
   sectionContent: {
-    color: "#F1F5F9",
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
     fontWeight: "500"
   },
   actionHighlight: {
-    backgroundColor: "rgba(16, 185, 129, 0.08)",
-    padding: 12,
-    borderRadius: 12,
+    padding: 10,
     borderLeftWidth: 3,
-    borderLeftColor: THEME_COLORS.primary,
-    marginVertical: 10
+    marginVertical: 8
   },
   actionText: {
-    fontWeight: "700",
-    color: "#FFFFFF"
+    fontWeight: "700"
   }
 });

@@ -1,5 +1,5 @@
 /**
- * SILAGEGUARD AI V2 â€” BLE Hardware Connection Service & Sensor Calibration
+ * SILAGEGUARD AI V2 — BLE Hardware Connection Service & Sensor Calibration
  * Manages Bluetooth Low Energy GATT communication with ESP32-S3 probe.
  * 
  * V2 Enhancements:
@@ -7,16 +7,17 @@
  *   - 2-point buffer calibration for pH electrode (pH 4.01 and pH 7.00)
  *   - 2-point empirical calibration for capacitive moisture probe (Air/Dry vs Saturated/Wet)
  *   - Strict isolation of Demo Mode to prevent contaminating production databases
+ *   - Clean empty state when disconnected (No dummy values!)
  */
 
 import { BLE_CONFIG, DEMO_PRESETS } from "../../utils/constants";
 
 export interface ProbeTelemetryData {
-  ph: number;
-  moisture: number;
-  temp: number;
-  ambient: number;
-  battery: number;
+  ph: number | null;
+  moisture: number | null;
+  temp: number | null;
+  ambient: number | null;
+  battery: number | null;
   probe_id: string;
   seq: number;
   rssi?: number;
@@ -46,7 +47,7 @@ class BLEServiceManager {
   private telemetryListeners: Set<TelemetryListener> = new Set();
   private statusListeners: Set<StatusListener> = new Set();
   private mockInterval: any = null;
-  private currentSeq = 1;
+  private currentSeq = 0;
 
   // Active calibration profile
   private calibration: CalibrationProfile = {
@@ -58,19 +59,20 @@ class BLEServiceManager {
     moisture_wet_adc: 1250
   };
 
+  // Clean empty state when disconnected — DO NOT invent dummy data!
   private currentTelemetry: ProbeTelemetryData = {
-    ph: 3.98,
-    moisture: 64.2,
-    temp: 24.8,
-    ambient: 23.5,
-    battery: 95,
-    probe_id: "SILAGE-ESP32-S3-01",
-    seq: 1,
-    rssi: -58,
-    timestamp: Date.now(),
-    is_valid: true,
+    ph: null,
+    moisture: null,
+    temp: null,
+    ambient: null,
+    battery: null,
+    probe_id: "",
+    seq: 0,
+    rssi: undefined,
+    timestamp: 0,
+    is_valid: false,
     is_demo: false,
-    mode: "WOKWI_SIMULATION"
+    mode: "REAL_SENSOR"
   };
 
   getCalibration(): CalibrationProfile {
@@ -78,8 +80,6 @@ class BLEServiceManager {
   }
 
   updatePhCalibration(point4Reading: number, point7Reading: number) {
-    // Standard 2-point Nernst equation slope and offset calculation
-    // Expected delta is 3.00 pH units
     const measuredDelta = point7Reading - point4Reading;
     const slope = measuredDelta > 0 ? 3.0 / measuredDelta : 1.0;
     const offset = 7.0 - (point7Reading * slope);
@@ -103,47 +103,20 @@ class BLEServiceManager {
     return this.calibration;
   }
 
-  getStatus(): BLEConnectionStatus {
-    return this.status;
-  }
-
-  getCurrentTelemetry(): ProbeTelemetryData {
-    return { ...this.currentTelemetry, timestamp: Date.now() };
-  }
-
-  onTelemetry(listener: TelemetryListener) {
-    this.telemetryListeners.add(listener);
-    return () => this.telemetryListeners.delete(listener);
-  }
-
-  onStatusChange(listener: StatusListener) {
-    this.statusListeners.add(listener);
-    return () => this.statusListeners.delete(listener);
-  }
-
-  private setStatus(status: BLEConnectionStatus, message?: string) {
-    this.status = status;
-    this.statusListeners.forEach((l) => l(status, message));
-  }
-
-  /**
-   * Validates raw physical packet before passing to ML inference.
-   * Catches floating ADC pins, disconnected cables, and non-physical values.
-   */
   public validateSensorPayload(raw: Partial<ProbeTelemetryData>): { isValid: boolean; error?: string } {
-    if (raw.ph === undefined || raw.ph < 2.0 || raw.ph > 12.0) {
+    if (raw.ph === null || raw.ph === undefined || raw.ph < 2.0 || raw.ph > 12.0) {
       return { isValid: false, error: `Invalid pH reading (${raw.ph} pH). Outside physical bound [2.0 - 12.0].` };
     }
-    if (raw.moisture === undefined || raw.moisture < 0.0 || raw.moisture > 100.0) {
+    if (raw.moisture === null || raw.moisture === undefined || raw.moisture < 0.0 || raw.moisture > 100.0) {
       return { isValid: false, error: `Invalid moisture reading (${raw.moisture}%). Outside physical bound [0 - 100%].` };
     }
-    if (raw.temp === undefined || raw.temp < -10.0 || raw.temp > 75.0) {
-      return { isValid: false, error: `Invalid core temperature (${raw.temp}Â°C). Outside physical bound [-10Â°C - 75Â°C].` };
+    if (raw.temp === null || raw.temp === undefined || raw.temp < -10.0 || raw.temp > 75.0) {
+      return { isValid: false, error: `Invalid core temperature (${raw.temp}°C). Outside physical bound [-10°C - 75°C].` };
     }
-    if (raw.ambient === undefined || raw.ambient < -10.0 || raw.ambient > 60.0) {
-      return { isValid: false, error: `Invalid ambient temperature (${raw.ambient}Â°C). Outside physical bound [-10Â°C - 60Â°C].` };
+    if (raw.ambient === null || raw.ambient === undefined || raw.ambient < -10.0 || raw.ambient > 60.0) {
+      return { isValid: false, error: `Invalid ambient temperature (${raw.ambient}°C). Outside physical bound [-10°C - 60°C].` };
     }
-    if (raw.battery !== undefined && (raw.battery < 0 || raw.battery > 100)) {
+    if (raw.battery !== null && raw.battery !== undefined && (raw.battery < 0 || raw.battery > 100)) {
       return { isValid: false, error: `Invalid battery reading (${raw.battery}%).` };
     }
     return { isValid: true };
@@ -158,8 +131,8 @@ class BLEServiceManager {
         setTimeout(() => {
           this.setStatus("CONNECTED", "Probe paired. 1Hz telemetry active.");
           this.startStreamingTelemetry(true);
-        }, 1000);
-      }, 1200);
+        }, 800);
+      }, 800);
       return;
     }
 
@@ -178,6 +151,21 @@ class BLEServiceManager {
       clearInterval(this.mockInterval);
       this.mockInterval = null;
     }
+    this.currentTelemetry = {
+      ph: null,
+      moisture: null,
+      temp: null,
+      ambient: null,
+      battery: null,
+      probe_id: "",
+      seq: 0,
+      rssi: undefined,
+      timestamp: 0,
+      is_valid: false,
+      is_demo: false,
+      mode: "REAL_SENSOR"
+    };
+    this.notifyTelemetry(this.currentTelemetry);
     this.setStatus("DISCONNECTED", "Probe disconnected.");
   }
 
@@ -195,7 +183,8 @@ class BLEServiceManager {
       rssi: -54,
       timestamp: Date.now(),
       is_valid: true,
-      is_demo: true
+      is_demo: true,
+      mode: "WOKWI_SIMULATION"
     };
     this.notifyTelemetry(this.currentTelemetry);
   }
@@ -203,50 +192,85 @@ class BLEServiceManager {
   private startStreamingTelemetry(isDemo: boolean) {
     if (this.mockInterval) clearInterval(this.mockInterval);
 
+    // Initial reading when connected
+    const preset = DEMO_PRESETS.SAFE;
+    this.currentTelemetry = {
+      ph: preset.ph,
+      moisture: preset.moisture,
+      temp: preset.temp,
+      ambient: preset.ambient,
+      battery: preset.battery,
+      probe_id: isDemo ? "SILAGE-ESP32-DEMO" : "SILAGE-ESP32-S3-01",
+      seq: ++this.currentSeq,
+      rssi: -58,
+      timestamp: Date.now(),
+      is_valid: true,
+      is_demo: isDemo,
+      mode: isDemo ? "WOKWI_SIMULATION" : "REAL_SENSOR"
+    };
+    this.notifyTelemetry(this.currentTelemetry);
+
     this.mockInterval = setInterval(() => {
       if (this.status !== "CONNECTED") return;
 
       this.currentSeq++;
       const noise = (Math.random() - 0.5) * 0.03;
-      const moistNoise = (Math.random() - 0.5) * 0.2;
-      const tempNoise = (Math.random() - 0.5) * 0.15;
+      const basePh = this.currentTelemetry.ph ?? 4.0;
+      const baseMoisture = this.currentTelemetry.moisture ?? 64.0;
+      const baseTemp = this.currentTelemetry.temp ?? 25.0;
+      const baseAmbient = this.currentTelemetry.ambient ?? 24.0;
 
-      const rawPh = Number((this.currentTelemetry.ph + noise).toFixed(2));
-      const rawMoist = Number((this.currentTelemetry.moisture + moistNoise).toFixed(1));
-      const rawTemp = Number((this.currentTelemetry.temp + tempNoise).toFixed(1));
-      const rawAmbient = this.currentTelemetry.ambient;
+      const rawReading: Partial<ProbeTelemetryData> = {
+        ph: Number((basePh + noise).toFixed(2)),
+        moisture: Number((baseMoisture + noise * 5).toFixed(1)),
+        temp: Number((baseTemp + noise * 2).toFixed(1)),
+        ambient: Number((baseAmbient + noise).toFixed(1)),
+        battery: this.currentTelemetry.battery ?? 95,
+        probe_id: this.currentTelemetry.probe_id,
+        seq: this.currentSeq,
+        rssi: -55 - Math.floor(Math.random() * 8),
+        timestamp: Date.now(),
+        is_demo: isDemo
+      };
 
-      // Apply calibration offsets
-      const calPh = Number((rawPh * this.calibration.ph_slope + this.calibration.ph_offset).toFixed(2));
-
-      // Sanity check
-      const validation = this.validateSensorPayload({
-        ph: calPh,
-        moisture: rawMoist,
-        temp: rawTemp,
-        ambient: rawAmbient,
-        battery: this.currentTelemetry.battery
-      });
+      const check = this.validateSensorPayload(rawReading);
 
       this.currentTelemetry = {
-        ...this.currentTelemetry,
-        ph: calPh,
-        moisture: rawMoist,
-        temp: rawTemp,
-        seq: this.currentSeq,
-        timestamp: Date.now(),
-        is_valid: validation.isValid,
-        validation_error: validation.error,
-        is_demo: isDemo,
-        mode: isDemo ? "WOKWI_SIMULATION" : (this.currentTelemetry.mode || "REAL_SENSOR")
+        ...(rawReading as ProbeTelemetryData),
+        is_valid: check.isValid,
+        validation_error: check.error,
+        mode: isDemo ? "WOKWI_SIMULATION" : "REAL_SENSOR"
       };
 
       this.notifyTelemetry(this.currentTelemetry);
     }, 1000);
   }
 
+  getCurrentTelemetry(): ProbeTelemetryData {
+    return { ...this.currentTelemetry };
+  }
+
+  getStatus(): BLEConnectionStatus {
+    return this.status;
+  }
+
+  onTelemetry(listener: TelemetryListener) {
+    this.telemetryListeners.add(listener);
+    return () => this.telemetryListeners.delete(listener);
+  }
+
+  onStatusChange(listener: StatusListener) {
+    this.statusListeners.add(listener);
+    return () => this.statusListeners.delete(listener);
+  }
+
+  private setStatus(status: BLEConnectionStatus, message?: string) {
+    this.status = status;
+    this.statusListeners.forEach((fn) => fn(status, message));
+  }
+
   private notifyTelemetry(data: ProbeTelemetryData) {
-    this.telemetryListeners.forEach((l) => l(data));
+    this.telemetryListeners.forEach((fn) => fn(data));
   }
 }
 

@@ -1,24 +1,24 @@
 /**
- * SCREEN 5 — AI MULTIMODAL INFERENCE PIPELINE
+ * SCREEN 5 � AI MULTIMODAL INFERENCE PIPELINE
  * Executes real on-device AI in sequential animated stages:
- *  1. Sensor Inference: Random Forest evaluation on probe telemetry
+ *  1. Sensor Inference: Random Forest evaluation on probe telemetry (or Vision-only bypass if disconnected)
  *  2. Vision Inference: MobileNetV3-Small INT8 model evaluation
  *  3. Multimodal Fusion: MSSI score calculation & rule overrides
  *  4. Advisory Synthesis: Multi-lingual farmer advisory generation
  */
 
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, SafeAreaView, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header } from "../components/Header";
-import { useAppStore } from "../features/ble/bleManager";
+import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { runSensorInference } from "../ai/sensorInference";
 import { runVisionInference } from "../ai/visionInference";
 import { computeMultimodalFusion } from "../features/fusion/multimodalFusionEngine";
 import { generateFarmerAdvisory } from "../features/advisory/advisoryEngine";
 import { batchRepository } from "../sqlite/batchRepository";
 import { generateSilageQRPayload } from "../utils/qrGenerator";
-import { THEME_COLORS } from "../utils/constants";
 
 interface PipelineStage {
   id: string;
@@ -30,6 +30,9 @@ interface PipelineStage {
 
 export default function ProcessingScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
+
   const {
     telemetry,
     scanImages,
@@ -37,14 +40,24 @@ export default function ProcessingScreen() {
     pitDepthCm,
     language,
     demoPreset,
+    bleStatus,
     setLatestResult
   } = useAppStore();
+
+  const isProbeConnected =
+    bleStatus === "CONNECTED" &&
+    telemetry.ph !== null &&
+    telemetry.moisture !== null &&
+    telemetry.temp !== null &&
+    telemetry.ambient !== null;
 
   const [stages, setStages] = useState<PipelineStage[]>([
     {
       id: "sensor",
       name: "1. Sensor AI Model",
-      subtitle: "Random Forest (25 Trees) evaluating pH & thermal rise",
+      subtitle: isProbeConnected
+        ? "Random Forest (25 Trees) evaluating pH & thermal rise"
+        : "Probe Disconnected � Bypassing (Vision-Only Screening)",
       status: "running"
     },
     {
@@ -55,8 +68,10 @@ export default function ProcessingScreen() {
     },
     {
       id: "fusion",
-      name: "3. Multimodal Fusion Engine",
-      subtitle: "Calculating MSSI (0.55 Sensor + 0.45 Vision) + Rule Overrides",
+      name: "3. Multimodal Evidence Fusion",
+      subtitle: isProbeConnected
+        ? "Calculating MSSI (0.55 Sensor + 0.45 Vision) + Rules"
+        : "Calculating Vision-Only MSSI Index + Safety Rules",
       status: "pending"
     },
     {
@@ -70,34 +85,46 @@ export default function ProcessingScreen() {
   useEffect(() => {
     async function executeAIPipeline() {
       // --- STAGE 1: Sensor AI ---
-      await new Promise((r) => setTimeout(r, 600));
-      const sensorRes = runSensorInference({
-        ph: telemetry.ph,
-        moisture: telemetry.moisture,
-        temperature: telemetry.temp,
-        ambient: telemetry.ambient
-      });
+      await new Promise((r) => setTimeout(r, 500));
+      let sensorRes: any = null;
+
+      if (isProbeConnected) {
+        sensorRes = runSensorInference({
+          ph: telemetry.ph!,
+          moisture: telemetry.moisture!,
+          temperature: telemetry.temp!,
+          ambient: telemetry.ambient!
+        });
+      }
 
       setStages((prev) =>
         prev.map((s, idx) =>
-          idx === 0 ? { ...s, status: "completed", durationMs: sensorRes.latencyMs } : idx === 1 ? { ...s, status: "running" } : s
+          idx === 0
+            ? { ...s, status: "completed", durationMs: sensorRes ? sensorRes.latencyMs : 5 }
+            : idx === 1
+            ? { ...s, status: "running" }
+            : s
         )
       );
 
       // --- STAGE 2: Vision AI ---
-      await new Promise((r) => setTimeout(r, 700));
+      await new Promise((r) => setTimeout(r, 600));
       const forcedQ =
         demoPreset === "UNSAFE" ? "unsafe" : demoPreset === "CAUTION" ? "caution" : "safe";
       const visionRes = await runVisionInference(scanImages, forcedQ);
 
       setStages((prev) =>
         prev.map((s, idx) =>
-          idx === 1 ? { ...s, status: "completed", durationMs: visionRes.latencyMs } : idx === 2 ? { ...s, status: "running" } : s
+          idx === 1
+            ? { ...s, status: "completed", durationMs: visionRes.latencyMs }
+            : idx === 2
+            ? { ...s, status: "running" }
+            : s
         )
       );
 
       // --- STAGE 3: Multimodal Fusion ---
-      await new Promise((r) => setTimeout(r, 600));
+      await new Promise((r) => setTimeout(r, 500));
       const fusionRes = computeMultimodalFusion({
         sensorResult: sensorRes,
         visionResult: visionRes
@@ -119,16 +146,16 @@ export default function ProcessingScreen() {
 
       const { isDemoMode } = useAppStore.getState();
 
-      // Save to SQLite
+      // Save to SQLite (Honest storage: null for disconnected sensors)
       const batchId = `BATCH-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
       const timestamp = new Date().toISOString();
       const qrData = generateSilageQRPayload({
         batchId,
         decision: fusionRes.decision,
         mssiScore: fusionRes.mssiScore,
-        ph: telemetry.ph,
-        moisture: telemetry.moisture,
-        temp: telemetry.temp,
+        ph: telemetry.ph ?? 0,
+        moisture: telemetry.moisture ?? 0,
+        temp: telemetry.temp ?? 0,
         cropType,
         timestamp
       });
@@ -161,13 +188,19 @@ export default function ProcessingScreen() {
           moisture: telemetry.moisture,
           temperature: telemetry.temp,
           ambient: telemetry.ambient,
-          delta_temp: Number((telemetry.temp - telemetry.ambient).toFixed(2)),
-          temp_rise: Number(Math.max(0, telemetry.temp - telemetry.ambient).toFixed(2))
+          delta_temp:
+            telemetry.temp !== null && telemetry.ambient !== null
+              ? Number((telemetry.temp - telemetry.ambient).toFixed(2))
+              : null,
+          temp_rise:
+            telemetry.temp !== null && telemetry.ambient !== null
+              ? Number(Math.max(0, telemetry.temp - telemetry.ambient).toFixed(2))
+              : null
         },
         {
           id: `PR-${batchId}`,
           batch_id: batchId,
-          sensor_decision: sensorRes.prediction,
+          sensor_decision: sensorRes ? sensorRes.prediction : "DISCONNECTED",
           vision_decision: visionRes.prediction,
           mould_prob: visionRes.mouldProbability,
           reasons_json: JSON.stringify(fusionRes.explanations),
@@ -178,7 +211,7 @@ export default function ProcessingScreen() {
       // Store in Zustand for immediate results view
       setLatestResult(fusionRes, advisory);
 
-      // Auto-navigate to Result
+      // Route to Results
       setTimeout(() => {
         router.replace("/result" as any);
       }, 700);
@@ -188,176 +221,214 @@ export default function ProcessingScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Header title="AI INFERENCE PIPELINE" showBack={false} />
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <Header title="EDGE INFERENCE" showBack={false} />
 
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.pipelineTitle}>RUNNING ON-DEVICE INFERENCE</Text>
-          <Text style={styles.pipelineSub}>
-            Zero Cloud Latency • 100% Offline Edge Processing
+      <View style={[styles.content, { paddingBottom: Math.max(insets.bottom, 20) + 20 }]}>
+        <View style={styles.topSection}>
+          <Text style={[styles.title, { color: theme.text }]}>RUNNING SILAGEGUARD AI</Text>
+          <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+            Executing Edge AI models 100% locally on device
           </Text>
         </View>
 
-        {/* Pipeline Stage Cards */}
-        <View style={styles.stageList}>
-          {stages.map((stg) => {
-            const isCompleted = stg.status === "completed";
-            const isRunning = stg.status === "running";
+        {/* Pipeline Animated Stage Cards */}
+        <View style={styles.stagesContainer}>
+          {stages.map((stage) => {
+            const isCompleted = stage.status === "completed";
+            const isRunning = stage.status === "running";
 
             return (
               <View
-                key={stg.id}
+                key={stage.id}
                 style={[
                   styles.stageCard,
-                  isCompleted && styles.cardCompleted,
-                  isRunning && styles.cardRunning
+                  {
+                    backgroundColor: theme.card,
+                    borderColor: isCompleted
+                      ? theme.safeBorder
+                      : isRunning
+                      ? theme.accent
+                      : theme.cardBorder,
+                    borderRadius: theme.radiusMd
+                  }
                 ]}
               >
-                <View style={styles.stageStatusIcon}>
-                  {isCompleted ? (
-                    <Text style={styles.checkIcon}>✓</Text>
-                  ) : isRunning ? (
-                    <ActivityIndicator size="small" color={THEME_COLORS.primary} />
-                  ) : (
-                    <View style={styles.pendingDot} />
-                  )}
-                </View>
-
-                <View style={styles.stageText}>
-                  <View style={styles.stageTitleRow}>
-                    <Text style={[styles.stageName, isCompleted && styles.textCompleted]}>
-                      {stg.name}
-                    </Text>
-                    {stg.durationMs !== undefined && (
-                      <Text style={styles.latencyBadge}>{stg.durationMs}ms</Text>
+                <View style={styles.stageLeft}>
+                  <View
+                    style={[
+                      styles.statusIndicator,
+                      { borderRadius: theme.radiusSm },
+                      isCompleted
+                        ? { backgroundColor: theme.safe }
+                        : isRunning
+                        ? { backgroundColor: theme.accent }
+                        : { backgroundColor: theme.cardBorder }
+                    ]}
+                  >
+                    {isCompleted ? (
+                      <Text style={styles.checkMark}>?</Text>
+                    ) : isRunning ? (
+                      <ActivityIndicator size="small" color="#090D16" />
+                    ) : (
+                      <View style={styles.pendingDot} />
                     )}
                   </View>
-                  <Text style={styles.stageSubtitle}>{stg.subtitle}</Text>
+
+                  <View style={styles.stageTextContainer}>
+                    <Text
+                      style={[
+                        styles.stageName,
+                        { color: isCompleted || isRunning ? theme.text : theme.textMuted }
+                      ]}
+                    >
+                      {stage.name}
+                    </Text>
+                    <Text style={[styles.stageSubtitle, { color: theme.textMuted }]}>
+                      {stage.subtitle}
+                    </Text>
+                  </View>
                 </View>
+
+                {isCompleted && stage.durationMs !== undefined && (
+                  <View
+                    style={[
+                      styles.latencyBadge,
+                      { backgroundColor: theme.surface, borderRadius: theme.radiusSm }
+                    ]}
+                  >
+                    <Text style={[styles.latencyText, { color: theme.safe }]}>
+                      {stage.durationMs}ms
+                    </Text>
+                  </View>
+                )}
               </View>
             );
           })}
         </View>
 
-        <View style={styles.bottomInfo}>
-          <Text style={styles.infoText}>
-            🔒 All sensor and vision neural calculations execute privately inside your phone.
-          </Text>
+        {/* Zero-cloud edge guarantee note */}
+        <View
+          style={[
+            styles.edgeGuaranteeCard,
+            {
+              backgroundColor: theme.surface,
+              borderColor: theme.cardBorder,
+              borderRadius: theme.radiusSm
+            }
+          ]}
+        >
+          <Text style={styles.edgeShieldIcon}>??</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.edgeGuaranteeTitle, { color: theme.text }]}>
+              ZERO CLOUD INFERENCE GUARANTEE
+            </Text>
+            <Text style={[styles.edgeGuaranteeSub, { color: theme.textMuted }]}>
+              No sensor packets or pictures sent over internet. Fully operational offline.
+            </Text>
+          </View>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: THEME_COLORS.background
-  },
   container: {
+    flex: 1
+  },
+  content: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: 12,
+    paddingTop: 16,
     justifyContent: "space-between"
   },
-  header: {
+  topSection: {
     alignItems: "center",
-    marginTop: 20
+    marginBottom: 16
   },
-  pipelineTitle: {
-    color: "#F8FAFC",
+  title: {
     fontSize: 20,
     fontWeight: "900",
     letterSpacing: 0.5
   },
-  pipelineSub: {
-    color: "#38BDF8",
+  subtitle: {
     fontSize: 12,
-    fontWeight: "700",
-    marginTop: 6
+    fontWeight: "500",
+    marginTop: 4
   },
-  stageList: {
-    marginVertical: 30
+  stagesContainer: {
+    flex: 1,
+    justifyContent: "center"
   },
   stageCard: {
-    backgroundColor: THEME_COLORS.card,
-    borderRadius: 18,
     borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 8
-  },
-  cardCompleted: {
-    borderColor: THEME_COLORS.primary,
-    backgroundColor: "rgba(16, 185, 129, 0.08)"
-  },
-  cardRunning: {
-    borderColor: "#38BDF8",
-    backgroundColor: "rgba(56, 189, 248, 0.08)"
-  },
-  stageStatusIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#1E293B",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 14
-  },
-  checkIcon: {
-    color: THEME_COLORS.primary,
-    fontSize: 18,
-    fontWeight: "900"
-  },
-  pendingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#475569"
-  },
-  stageText: {
-    flex: 1
-  },
-  stageTitleRow: {
+    padding: 14,
+    marginVertical: 6,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center"
   },
+  stageLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1
+  },
+  statusIndicator: {
+    width: 28,
+    height: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12
+  },
+  checkMark: {
+    color: "#090D16",
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  pendingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#64748B"
+  },
+  stageTextContainer: {
+    flex: 1
+  },
   stageName: {
-    color: "#F8FAFC",
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "800"
   },
-  textCompleted: {
-    color: THEME_COLORS.primary
+  stageSubtitle: {
+    fontSize: 10,
+    marginTop: 2,
+    fontWeight: "500"
   },
   latencyBadge: {
-    color: "#64748B",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginLeft: 6
+  },
+  latencyText: {
     fontSize: 10,
-    fontWeight: "700",
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6
+    fontWeight: "800"
   },
-  stageSubtitle: {
-    color: "#94A3B8",
-    fontSize: 12,
-    fontWeight: "500",
-    marginTop: 3
-  },
-  bottomInfo: {
-    backgroundColor: "rgba(30, 41, 59, 0.5)",
-    padding: 14,
-    borderRadius: 14,
+  edgeGuaranteeCard: {
+    borderWidth: 1,
+    padding: 12,
+    flexDirection: "row",
     alignItems: "center"
   },
-  infoText: {
-    color: "#64748B",
+  edgeShieldIcon: {
+    fontSize: 20,
+    marginRight: 10
+  },
+  edgeGuaranteeTitle: {
     fontSize: 11,
-    fontWeight: "600",
-    textAlign: "center"
+    fontWeight: "800"
+  },
+  edgeGuaranteeSub: {
+    fontSize: 10,
+    marginTop: 2
   }
 });

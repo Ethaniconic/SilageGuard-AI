@@ -1,11 +1,11 @@
 /**
- * SILAGEGUARD AI â€” Metric Statistic Card
- * Clean agricultural dashboard tile for scan counts, quality ratios, and battery levels.
+ * SILAGEGUARD AI — Metric Statistic Card
+ * Clean agricultural dashboard tile with theme support and sharp modern corners.
  */
 
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { THEME_COLORS } from "../utils/constants";
+import { useTheme } from "../features/ble/bleManager";
 
 interface Props {
   label: string;
@@ -20,56 +20,64 @@ export const StatCard: React.FC<Props> = ({
   value,
   subtext,
   icon,
-  accentColor = THEME_COLORS.primary
+  accentColor
 }) => {
+  const { theme } = useTheme();
+  const activeColor = accentColor || theme.primary;
+
   return (
-    <View style={styles.card}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.card,
+          borderColor: theme.cardBorder,
+          borderRadius: theme.radiusMd
+        }
+      ]}
+    >
       <View style={styles.topRow}>
         <Text style={styles.icon}>{icon}</Text>
-        <Text style={styles.label}>{label}</Text>
+        <Text style={[styles.label, { color: theme.textMuted }]}>{label}</Text>
       </View>
 
-      <Text style={[styles.value, { color: accentColor }]}>{value}</Text>
-      {subtext && <Text style={styles.subtext}>{subtext}</Text>}
+      <Text style={[styles.value, { color: activeColor }]}>{value}</Text>
+      {subtext && <Text style={[styles.subtext, { color: theme.textMuted }]}>{subtext}</Text>}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: THEME_COLORS.card,
-    borderRadius: 16,
     borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    padding: 14,
+    padding: 12,
     flex: 1,
-    marginHorizontal: 4,
-    marginVertical: 6,
-    minWidth: 135
+    marginHorizontal: 3,
+    marginVertical: 4,
+    minWidth: 130
   },
   topRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 6
+    marginBottom: 4
   },
   icon: {
-    fontSize: 16,
+    fontSize: 14,
     marginRight: 6
   },
   label: {
-    color: THEME_COLORS.textMuted,
-    fontSize: 11,
-    fontWeight: "700",
-    textTransform: "uppercase"
+    fontSize: 10,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.3
   },
   value: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "900",
     letterSpacing: -0.5
   },
   subtext: {
-    color: "#64748B",
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "600",
     marginTop: 2
   }

@@ -1,33 +1,36 @@
 /**
- * SCREEN 3 — BLE PROBE CONNECTION & LIVE SENSOR TELEMETRY STREAM
- * - Scans and pairs with ESP32-S3 Silage Probe (UUID: 4fafc201-1fb5-459e-8fcc-c5c9c331914b)
- * - Shows signal strength (RSSI) and connection state
- * - Live 1 Hz sensor stream: pH, Moisture, Core Temp, Ambient Temp, Delta T, Battery
- * - Built-in Simulation Presets (Safe, Caution, Unsafe) for judge testing
+ * SCREEN 3 � BLE PROBE TELEMETRY & HARDWARE CONTROL
+ * Connects to ESP32-S3 Agricultural Probe via BLE GATT (UUID: 4fafc201...)
+ * Displays live sensor telemetry gauges with agronomic status bands.
+ * Clean empty state when disconnected (No dummy values!)
  */
 
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   ActivityIndicator
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header } from "../components/Header";
 import { SensorGauge } from "../components/SensorGauge";
-import { useAppStore } from "../features/ble/bleManager";
-import { THEME_COLORS, DEMO_PRESETS } from "../utils/constants";
+import { useAppStore, useTheme } from "../features/ble/bleManager";
 
 export default function BleScreen() {
+  const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
+
   const {
     bleStatus,
     statusMessage,
     telemetry,
     connectProbe,
     disconnectProbe,
+    isDemoMode,
+    setDemoMode,
     demoPreset,
     setDemoPreset
   } = useAppStore();
@@ -35,108 +38,219 @@ export default function BleScreen() {
   const isConnected = bleStatus === "CONNECTED";
   const isScanning = bleStatus === "SCANNING" || bleStatus === "CONNECTING";
 
-  const deltaTemp = Number((telemetry.temp - telemetry.ambient).toFixed(1));
+  const deltaTemp =
+    telemetry.temp !== null && telemetry.ambient !== null
+      ? Number((telemetry.temp - telemetry.ambient).toFixed(1))
+      : null;
 
   // Determine agronomic status badges for gauges
   const phStatus =
-    telemetry.ph >= 3.8 && telemetry.ph <= 4.2
+    telemetry.ph === null
+      ? "disconnected"
+      : telemetry.ph >= 3.8 && telemetry.ph <= 4.2
       ? "safe"
       : telemetry.ph <= 4.8
       ? "caution"
       : "unsafe";
 
   const moistStatus =
-    telemetry.moisture >= 60.0 && telemetry.moisture <= 68.0
+    telemetry.moisture === null
+      ? "disconnected"
+      : telemetry.moisture >= 60.0 && telemetry.moisture <= 68.0
       ? "safe"
       : telemetry.moisture <= 72.0
       ? "caution"
       : "unsafe";
 
   const tempStatus =
-    deltaTemp <= 3.0 ? "safe" : deltaTemp <= 8.0 ? "caution" : "unsafe";
+    deltaTemp === null
+      ? "disconnected"
+      : deltaTemp <= 3.0
+      ? "safe"
+      : deltaTemp <= 8.0
+      ? "caution"
+      : "unsafe";
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <Header title="ESP32-S3 PROBE" showBack={true} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom, 20) + 30 }
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Device Status Card */}
-        <View style={styles.deviceCard}>
+        <View
+          style={[
+            styles.deviceCard,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+              borderRadius: theme.radiusMd
+            }
+          ]}
+        >
           <View style={styles.deviceHeader}>
             <View style={styles.deviceInfo}>
-              <View style={styles.deviceIconBadge}>
-                <Text style={styles.deviceIconText}>📡</Text>
+              <View
+                style={[
+                  styles.deviceIconBadge,
+                  { backgroundColor: theme.primary + "1A", borderRadius: theme.radiusSm }
+                ]}
+              >
+                <Text style={styles.deviceIconText}>??</Text>
               </View>
               <View>
-                <Text style={styles.deviceName}>SilageGuard-Probe</Text>
-                <Text style={styles.deviceSub}>
+                <Text style={[styles.deviceName, { color: theme.text }]}>SilageGuard-Probe</Text>
+                <Text style={[styles.deviceSub, { color: theme.textMuted }]}>
                   UUID: 4fafc201-1fb5-459e-8fcc-c5c9c331914b
                 </Text>
-                <View style={[styles.modeBadge, telemetry.mode === "REAL_SENSOR" ? styles.modeReal : styles.modeSim]}>
-                  <Text style={styles.modeText}>
-                    {telemetry.mode === "REAL_SENSOR" ? "🟢 REAL SENSOR MODE" : "🔵 WOKWI SIMULATION MODE"}
+                <View
+                  style={[
+                    styles.modeBadge,
+                    { borderRadius: theme.radiusSm },
+                    telemetry.mode === "REAL_SENSOR"
+                      ? { backgroundColor: theme.safeBg, borderColor: theme.safeBorder }
+                      : { backgroundColor: theme.cautionBg, borderColor: theme.cautionBorder }
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.modeText,
+                      { color: telemetry.mode === "REAL_SENSOR" ? theme.safe : theme.caution }
+                    ]}
+                  >
+                    {telemetry.mode === "REAL_SENSOR"
+                      ? "?? REAL SENSOR MODE"
+                      : "?? WOKWI SIMULATION MODE"}
                   </Text>
                 </View>
               </View>
             </View>
 
-            <View style={styles.rssiBadge}>
-              <Text style={styles.rssiIcon}>📶</Text>
-              <Text style={styles.rssiText}>{telemetry.rssi || -58} dBm</Text>
+            <View
+              style={[
+                styles.statusIndicator,
+                {
+                  backgroundColor: isConnected
+                    ? theme.safeBg
+                    : isScanning
+                    ? theme.cautionBg
+                    : theme.surface,
+                  borderRadius: theme.radiusSm
+                }
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusIndicatorText,
+                  {
+                    color: isConnected
+                      ? theme.safe
+                      : isScanning
+                      ? theme.caution
+                      : theme.textMuted
+                  }
+                ]}
+              >
+                {bleStatus}
+              </Text>
             </View>
           </View>
 
-          <Text style={styles.statusDescription}>{statusMessage}</Text>
-
-          {/* Connect / Disconnect Action */}
+          {/* Connect / Disconnect Action Button */}
           <TouchableOpacity
             style={[
               styles.actionButton,
-              isConnected ? styles.disconnectBtn : styles.connectBtn,
-              isScanning && styles.scanningBtn
+              { borderRadius: theme.radiusSm },
+              isConnected
+                ? { backgroundColor: theme.unsafe }
+                : { backgroundColor: theme.primary }
             ]}
-            onPress={isConnected ? disconnectProbe : connectProbe}
+            onPress={isConnected ? disconnectProbe : () => connectProbe()}
             disabled={isScanning}
             activeOpacity={0.8}
           >
             {isScanning ? (
-              <ActivityIndicator color="#090D16" size="small" />
+              <ActivityIndicator color="#090D16" />
             ) : (
-              <Text style={styles.actionBtnText}>
-                {isConnected ? "DISCONNECT PROBE" : "PAIR & CONNECT ESP32-S3"}
+              <Text style={styles.actionButtonText}>
+                {isConnected ? "DISCONNECT PROBE" : "PAIR & CONNECT VIA BLE"}
               </Text>
             )}
           </TouchableOpacity>
+
+          <Text style={[styles.statusMsg, { color: theme.textMuted }]}>{statusMessage}</Text>
         </View>
 
-        {/* Demo Mode Preset Switcher */}
-        <View style={styles.simulationCard}>
-          <Text style={styles.simTitle}>🎯 HARDWARE DEMO STREAM INJECTOR</Text>
-          <Text style={styles.simSubtitle}>
-            Simulate realistic agronomic sensor telemetry kinetics instantly:
-          </Text>
+        {/* Demo Preset Selector */}
+        <View
+          style={[
+            styles.demoSection,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+              borderRadius: theme.radiusMd
+            }
+          ]}
+        >
+          <View style={styles.demoHeaderRow}>
+            <Text style={[styles.demoTitle, { color: theme.text }]}>
+              SIMULATION / DEMO BENCHMARK PRESETS
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.demoTogglePill,
+                { borderRadius: theme.radiusSm },
+                isDemoMode
+                  ? { backgroundColor: theme.accent, borderColor: theme.accent }
+                  : { backgroundColor: theme.surface, borderColor: theme.cardBorder }
+              ]}
+              onPress={() => setDemoMode(!isDemoMode)}
+            >
+              <Text
+                style={[
+                  styles.demoToggleText,
+                  { color: isDemoMode ? "#FFFFFF" : theme.textMuted }
+                ]}
+              >
+                {isDemoMode ? "DEMO ACTIVE" : "REAL HARDWARE"}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-          <View style={styles.presetRow}>
+          <View style={styles.presetsRow}>
             {(["SAFE", "CAUTION", "UNSAFE"] as const).map((preset) => {
-              const isSelected = demoPreset === preset;
-              const accent =
+              const isActive = demoPreset === preset;
+              const color =
                 preset === "SAFE"
-                  ? THEME_COLORS.safe
+                  ? theme.safe
                   : preset === "CAUTION"
-                  ? THEME_COLORS.caution
-                  : THEME_COLORS.unsafe;
+                  ? theme.caution
+                  : theme.unsafe;
 
               return (
                 <TouchableOpacity
                   key={preset}
                   style={[
                     styles.presetBtn,
-                    isSelected && { borderColor: accent, backgroundColor: "rgba(255, 255, 255, 0.08)" }
+                    {
+                      borderRadius: theme.radiusSm,
+                      backgroundColor: isActive ? color + "22" : theme.surface,
+                      borderColor: isActive ? color : theme.cardBorder
+                    }
                   ]}
                   onPress={() => setDemoPreset(preset)}
-                  activeOpacity={0.8}
                 >
-                  <Text style={[styles.presetBtnText, isSelected && { color: accent }]}>
+                  <Text
+                    style={[
+                      styles.presetBtnText,
+                      { color: isActive ? color : theme.textMuted }
+                    ]}
+                  >
                     {preset}
                   </Text>
                 </TouchableOpacity>
@@ -145,33 +259,38 @@ export default function BleScreen() {
           </View>
         </View>
 
-        {/* Live Telemetry Display */}
-        <View style={styles.telemetrySection}>
-          <View style={styles.telemetryHeader}>
-            <Text style={styles.telemetryTitle}>LIVE SENSOR STREAM (1 Hz)</Text>
-            <View style={styles.livePulse}>
-              <View style={styles.liveDot} />
-              <Text style={styles.liveText}>STREAMING</Text>
-            </View>
-          </View>
+        {/* Live Gauges Section */}
+        <View
+          style={[
+            styles.gaugesContainer,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+              borderRadius: theme.radiusMd
+            }
+          ]}
+        >
+          <Text style={[styles.gaugesSectionTitle, { color: theme.text }]}>
+            LIVE SENSOR STREAM
+          </Text>
 
-          <View style={styles.gaugeGrid}>
+          <View style={styles.gaugesGrid}>
             <View style={styles.gaugeRow}>
               <SensorGauge
-                label="Acidity (pH)"
+                label="pH Acidity"
                 value={telemetry.ph}
                 unit="pH"
-                targetRange="3.8 – 4.2"
+                targetRange="3.8 � 4.2"
                 status={phStatus}
-                iconText="🧪"
+                iconText="??"
               />
               <SensorGauge
                 label="Moisture"
                 value={telemetry.moisture}
                 unit="%"
-                targetRange="60 – 68%"
+                targetRange="60 � 68%"
                 status={moistStatus}
-                iconText="💧"
+                iconText="??"
               />
             </View>
 
@@ -179,67 +298,70 @@ export default function BleScreen() {
               <SensorGauge
                 label="Core Temp"
                 value={telemetry.temp}
-                unit="°C"
-                targetRange="< 30°C"
+                unit="�C"
+                targetRange="< 30�C"
                 status={tempStatus}
-                iconText="🌡️"
+                iconText="???"
               />
               <SensorGauge
                 label="Ambient Temp"
                 value={telemetry.ambient}
-                unit="°C"
+                unit="�C"
                 targetRange="Ref"
-                status="safe"
-                iconText="☀️"
+                status={isConnected ? "safe" : "disconnected"}
+                iconText="???"
               />
             </View>
 
             <View style={styles.gaugeRow}>
               <SensorGauge
-                label="Delta Temp (ΔT)"
+                label="Delta Temp (?T)"
                 value={deltaTemp}
-                unit="°C Rise"
-                targetRange="< 3.0°C"
+                unit="�C Rise"
+                targetRange="< 3.0�C"
                 status={tempStatus}
-                iconText="🔥"
+                iconText="??"
               />
               <SensorGauge
                 label="Probe Battery"
                 value={telemetry.battery}
                 unit="%"
                 targetRange="> 20%"
-                status={telemetry.battery > 20 ? "safe" : "unsafe"}
-                iconText="🔋"
+                status={
+                  telemetry.battery === null
+                    ? "disconnected"
+                    : telemetry.battery > 20
+                    ? "safe"
+                    : "unsafe"
+                }
+                iconText="??"
               />
             </View>
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1,
-    backgroundColor: THEME_COLORS.background
+    flex: 1
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 40
+    paddingHorizontal: 12,
+    paddingTop: 10
   },
   deviceCard: {
-    backgroundColor: THEME_COLORS.card,
-    borderRadius: 20,
     borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    padding: 18,
-    marginBottom: 16
+    padding: 14,
+    marginBottom: 10
   },
   deviceHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center"
+    alignItems: "flex-start",
+    marginBottom: 12
   },
   deviceInfo: {
     flexDirection: "row",
@@ -249,176 +371,111 @@ const styles = StyleSheet.create({
   deviceIconBadge: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(56, 189, 248, 0.15)",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12
+    marginRight: 10
   },
   deviceIconText: {
     fontSize: 22
   },
   deviceName: {
-    color: "#F8FAFC",
-    fontSize: 16,
-    fontWeight: "800"
+    fontSize: 14,
+    fontWeight: "900"
   },
   deviceSub: {
-    color: "#64748B",
-    fontSize: 10,
-    fontWeight: "600",
+    fontSize: 9,
+    fontFamily: "monospace",
     marginTop: 2
   },
   modeBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 8,
+    borderWidth: 1,
+    paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 8,
-    marginTop: 4
-  },
-  modeReal: {
-    backgroundColor: "rgba(16, 185, 129, 0.2)",
-    borderWidth: 1,
-    borderColor: THEME_COLORS.safe
-  },
-  modeSim: {
-    backgroundColor: "rgba(56, 189, 248, 0.15)",
-    borderWidth: 1,
-    borderColor: "#38BDF8"
+    marginTop: 4,
+    alignSelf: "flex-start"
   },
   modeText: {
     fontSize: 9,
-    fontWeight: "800",
-    color: "#F8FAFC",
-    letterSpacing: 0.5
+    fontWeight: "800"
   },
-  rssiBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(15, 23, 42, 0.8)",
+  statusIndicator: {
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#334155"
+    paddingVertical: 4
   },
-  rssiIcon: {
-    fontSize: 11,
-    marginRight: 4
-  },
-  rssiText: {
-    color: "#94A3B8",
-    fontSize: 11,
-    fontWeight: "700"
-  },
-  statusDescription: {
-    color: "#94A3B8",
-    fontSize: 13,
-    fontWeight: "500",
-    marginVertical: 14
+  statusIndicatorText: {
+    fontSize: 10,
+    fontWeight: "800"
   },
   actionButton: {
-    borderRadius: 14,
-    paddingVertical: 14,
+    paddingVertical: 12,
     alignItems: "center",
-    justifyContent: "center"
+    marginVertical: 4
   },
-  connectBtn: {
-    backgroundColor: THEME_COLORS.primary
-  },
-  disconnectBtn: {
-    backgroundColor: "#EF4444"
-  },
-  scanningBtn: {
-    backgroundColor: "#64748B"
-  },
-  actionBtnText: {
+  actionButtonText: {
     color: "#090D16",
-    fontSize: 14,
-    fontWeight: "900",
-    letterSpacing: 0.5
-  },
-  simulationCard: {
-    backgroundColor: "rgba(19, 28, 46, 0.8)",
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#1E293B",
-    padding: 16,
-    marginBottom: 16
-  },
-  simTitle: {
-    color: "#38BDF8",
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 0.5
-  },
-  simSubtitle: {
-    color: "#94A3B8",
     fontSize: 12,
-    marginTop: 4,
-    marginBottom: 12
+    fontWeight: "900",
+    letterSpacing: 0.5
   },
-  presetRow: {
+  statusMsg: {
+    fontSize: 10,
+    marginTop: 6,
+    textAlign: "center"
+  },
+  demoSection: {
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 10
+  },
+  demoHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10
+  },
+  demoTitle: {
+    fontSize: 11,
+    fontWeight: "900"
+  },
+  demoTogglePill: {
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4
+  },
+  demoToggleText: {
+    fontSize: 9,
+    fontWeight: "800"
+  },
+  presetsRow: {
     flexDirection: "row",
     justifyContent: "space-between"
   },
   presetBtn: {
     flex: 1,
-    backgroundColor: THEME_COLORS.card,
-    borderRadius: 12,
+    marginHorizontal: 3,
     borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    paddingVertical: 10,
-    marginHorizontal: 4,
+    paddingVertical: 8,
     alignItems: "center"
   },
   presetBtnText: {
-    color: "#94A3B8",
+    fontSize: 11,
+    fontWeight: "900"
+  },
+  gaugesContainer: {
+    borderWidth: 1,
+    padding: 12
+  },
+  gaugesSectionTitle: {
     fontSize: 12,
-    fontWeight: "800"
+    fontWeight: "900",
+    letterSpacing: 0.5,
+    marginBottom: 8
   },
-  telemetrySection: {
-    marginTop: 8
-  },
-  telemetryHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-    paddingHorizontal: 4
-  },
-  telemetryTitle: {
-    color: "#F8FAFC",
-    fontSize: 13,
-    fontWeight: "800",
-    letterSpacing: 0.5
-  },
-  livePulse: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(16, 185, 129, 0.15)",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: THEME_COLORS.safe,
-    marginRight: 6
-  },
-  liveText: {
-    color: THEME_COLORS.safe,
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0.5
-  },
-  gaugeGrid: {
-    marginHorizontal: -4
+  gaugesGrid: {
+    width: "100%"
   },
   gaugeRow: {
     flexDirection: "row",
-    marginBottom: 4
+    justifyContent: "space-between"
   }
 });

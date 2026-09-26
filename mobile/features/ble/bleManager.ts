@@ -1,6 +1,6 @@
 /**
- * SILAGEGUARD AI â€” Global App State (Zustand Store)
- * Synchronizes BLE Telemetry, Scan Pipeline, Language Selection, and Offline DB.
+ * SILAGEGUARD AI — Global App State (Zustand Store)
+ * Synchronizes BLE Telemetry, Scan Pipeline, Language Selection, Theme, and Offline DB.
  */
 
 import { create } from "zustand";
@@ -8,8 +8,14 @@ import { bleService, BLEConnectionStatus, ProbeTelemetryData } from "./bleServic
 import { LanguageCode } from "../../utils/constants";
 import { FusionResult } from "../fusion/multimodalFusionEngine";
 import { FarmerAdvisory } from "../advisory/advisoryEngine";
+import { getTheme, ThemeColors } from "../../utils/theme";
 
 interface AppState {
+  // Theme & Appearance
+  isDarkMode: boolean;
+  toggleTheme: () => void;
+  setTheme: (isDark: boolean) => void;
+
   // BLE & Telemetry
   bleStatus: BLEConnectionStatus;
   statusMessage: string;
@@ -52,6 +58,12 @@ export const useAppStore = create<AppState>((set, get) => {
   });
 
   return {
+    // Theme
+    isDarkMode: true,
+    toggleTheme: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
+    setTheme: (isDarkMode: boolean) => set({ isDarkMode }),
+
+    // Hardware BLE
     bleStatus: "DISCONNECTED",
     statusMessage: "Probe not connected. Click to pair.",
     telemetry: bleService.getCurrentTelemetry(),
@@ -68,7 +80,7 @@ export const useAppStore = create<AppState>((set, get) => {
     language: "en",
     setLanguage: (language) => set({ language }),
 
-    isDemoMode: true,
+    isDemoMode: false,
     setDemoMode: (isDemoMode) => set({ isDemoMode }),
 
     demoPreset: "SAFE",
@@ -102,3 +114,16 @@ export const useAppStore = create<AppState>((set, get) => {
       set({ latestFusionResult, latestAdvisory })
   };
 });
+
+/**
+ * Convenient React Hook to read active theme colors and toggle action
+ */
+export function useTheme(): { theme: ThemeColors; isDark: boolean; toggleTheme: () => void } {
+  const isDarkMode = useAppStore((state) => state.isDarkMode);
+  const toggleTheme = useAppStore((state) => state.toggleTheme);
+  return {
+    theme: getTheme(isDarkMode),
+    isDark: isDarkMode,
+    toggleTheme
+  };
+}

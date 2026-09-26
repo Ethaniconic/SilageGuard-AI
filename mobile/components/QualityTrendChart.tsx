@@ -1,26 +1,59 @@
 /**
- * SILAGEGUARD AI â€” Quality Trend Line Chart
+ * SILAGEGUARD AI — Quality Trend Line Chart
  * Visualizes the 7-scan Multimodal Silage Safety Index (MSSI) trajectory.
+ * Renders an honest empty state when no historical scans exist.
  */
 
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Svg, { Path, Circle, Defs, LinearGradient, Stop, Line } from "react-native-svg";
-import { THEME_COLORS } from "../utils/constants";
+import { useTheme } from "../features/ble/bleManager";
 
 interface Props {
-  dataPoints: number[]; // e.g. [94, 91, 88, 85, 78, 62, 70]
+  dataPoints: number[];
   labels?: string[];
 }
 
 export const QualityTrendChart: React.FC<Props> = ({
-  dataPoints = [94, 92, 89, 85, 76, 68, 88],
-  labels = ["M", "T", "W", "T", "F", "S", "Sun"]
+  dataPoints = [],
+  labels = []
 }) => {
-  const chartHeight = 120;
+  const { theme } = useTheme();
+
+  const chartHeight = 110;
   const chartWidth = 320;
-  const paddingX = 24;
-  const paddingY = 20;
+  const paddingX = 20;
+  const paddingY = 16;
+
+  // Empty state handling — DO NOT show fake graph if empty!
+  if (!dataPoints || dataPoints.length === 0) {
+    return (
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: theme.card,
+            borderColor: theme.cardBorder,
+            borderRadius: theme.radiusMd
+          }
+        ]}
+      >
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: theme.text }]}>QUALITY TREND TRAJECTORY</Text>
+          <Text style={[styles.subtitle, { color: theme.textMuted }]}>MSSI Index History</Text>
+        </View>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyIcon}>??</Text>
+          <Text style={[styles.emptyText, { color: theme.textMuted }]}>
+            No historical scans recorded yet.
+          </Text>
+          <Text style={[styles.emptySubtext, { color: theme.textMuted }]}>
+            Your silage quality trend line will build up here after your first scan.
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   const widthAvailable = chartWidth - paddingX * 2;
   const heightAvailable = chartHeight - paddingY * 2;
@@ -29,7 +62,8 @@ export const QualityTrendChart: React.FC<Props> = ({
   const maxVal = 100;
 
   const points = dataPoints.map((val, idx) => {
-    const x = paddingX + (idx / (dataPoints.length - 1)) * widthAvailable;
+    const divisor = Math.max(1, dataPoints.length - 1);
+    const x = paddingX + (idx / divisor) * widthAvailable;
     const y = paddingY + heightAvailable - ((val - minVal) / (maxVal - minVal)) * heightAvailable;
     return { x, y, val };
   });
@@ -41,70 +75,63 @@ export const QualityTrendChart: React.FC<Props> = ({
   const areaD = `${pathD} L ${points[points.length - 1].x} ${chartHeight - paddingY} L ${points[0].x} ${chartHeight - paddingY} Z`;
 
   return (
-    <View style={styles.card}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.card,
+          borderColor: theme.cardBorder,
+          borderRadius: theme.radiusMd
+        }
+      ]}
+    >
       <View style={styles.header}>
-        <Text style={styles.title}>QUALITY TREND TRAJECTORY</Text>
-        <Text style={styles.subtitle}>7-Scan MSSI Index</Text>
+        <Text style={[styles.title, { color: theme.text }]}>QUALITY TREND TRAJECTORY</Text>
+        <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+          {dataPoints.length}-Scan MSSI History
+        </Text>
       </View>
 
       <View style={styles.svgContainer}>
         <Svg width="100%" height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`}>
           <Defs>
             <LinearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor={THEME_COLORS.primary} stopOpacity="0.4" />
-              <Stop offset="1" stopColor={THEME_COLORS.primary} stopOpacity="0.0" />
+              <Stop offset="0" stopColor={theme.primary} stopOpacity="0.4" />
+              <Stop offset="1" stopColor={theme.primary} stopOpacity="0.0" />
             </LinearGradient>
           </Defs>
 
           {/* Safe threshold guide line (MSSI = 75) */}
           <Line
             x1={paddingX}
-            y1={paddingY + heightAvailable - (75 / 100) * heightAvailable}
+            y1={paddingY + heightAvailable * 0.25}
             x2={chartWidth - paddingX}
-            y2={paddingY + heightAvailable - (75 / 100) * heightAvailable}
-            stroke="rgba(16, 185, 129, 0.3)"
+            y2={paddingY + heightAvailable * 0.25}
+            stroke={theme.safe}
             strokeDasharray="4 4"
             strokeWidth="1"
+            opacity="0.4"
           />
 
-          {/* Caution threshold guide line (MSSI = 45) */}
-          <Line
-            x1={paddingX}
-            y1={paddingY + heightAvailable - (45 / 100) * heightAvailable}
-            x2={chartWidth - paddingX}
-            y2={paddingY + heightAvailable - (45 / 100) * heightAvailable}
-            stroke="rgba(239, 68, 68, 0.3)"
-            strokeDasharray="4 4"
-            strokeWidth="1"
-          />
-
-          {/* Area fill */}
+          {/* Shaded Area */}
           <Path d={areaD} fill="url(#trendGradient)" />
 
-          {/* Line */}
-          <Path d={pathD} fill="none" stroke={THEME_COLORS.primary} strokeWidth="3" strokeLinecap="round" />
+          {/* Trajectory Stroke */}
+          <Path d={pathD} stroke={theme.primary} strokeWidth="3" fill="none" strokeLinecap="round" />
 
-          {/* Data Circles */}
-          {points.map((p, i) => (
+          {/* Data Nodes */}
+          {points.map((p, idx) => (
             <Circle
-              key={i}
+              key={idx}
               cx={p.x}
               cy={p.y}
-              r={i === points.length - 1 ? "5" : "3.5"}
-              fill={i === points.length - 1 ? "#38BDF8" : THEME_COLORS.primary}
-              stroke="#090D16"
+              r="4"
+              fill={p.val >= 75 ? theme.safe : p.val >= 45 ? theme.caution : theme.unsafe}
+              stroke={theme.card}
               strokeWidth="2"
             />
           ))}
         </Svg>
-      </View>
-
-      <View style={styles.labelsRow}>
-        {labels.map((lbl, idx) => (
-          <Text key={idx} style={styles.dayLabel}>
-            {lbl}
-          </Text>
-        ))}
       </View>
     </View>
   );
@@ -112,42 +139,48 @@ export const QualityTrendChart: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: THEME_COLORS.card,
-    borderRadius: 20,
     borderWidth: 1,
-    borderColor: THEME_COLORS.cardBorder,
-    padding: 16,
-    marginVertical: 12
+    padding: 14,
+    marginVertical: 8
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "baseline",
+    alignItems: "center",
     marginBottom: 8
   },
   title: {
-    color: "#F8FAFC",
-    fontSize: 13,
-    fontWeight: "800",
+    fontSize: 11,
+    fontWeight: "900",
     letterSpacing: 0.5
   },
   subtitle: {
-    color: THEME_COLORS.primary,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "700"
   },
   svgContainer: {
-    alignItems: "center"
-  },
-  labelsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
+    alignItems: "center",
     marginTop: 4
   },
-  dayLabel: {
-    color: "#64748B",
-    fontSize: 11,
-    fontWeight: "700"
+  emptyContainer: {
+    paddingVertical: 18,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  emptyIcon: {
+    fontSize: 24,
+    marginBottom: 6
+  },
+  emptyText: {
+    fontSize: 12,
+    fontWeight: "700",
+    textAlign: "center"
+  },
+  emptySubtext: {
+    fontSize: 10,
+    fontWeight: "500",
+    textAlign: "center",
+    marginTop: 3,
+    paddingHorizontal: 16
   }
 });
