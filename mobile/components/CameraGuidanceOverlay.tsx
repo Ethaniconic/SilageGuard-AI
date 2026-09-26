@@ -79,7 +79,7 @@ const boxSize = Math.min(width * 0.78, 300);
 
 const styles = StyleSheet.create({
   overlayContainer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 50

@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     overflow: "hidden"
   },
   simulatedSilageSurface: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: "center",
     alignItems: "center"
   },
