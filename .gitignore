@@ -1,0 +1,38 @@
+# SILAGEGUARD AI — Integrated workspace
+# Generated artefacts and local state for the integration.
+# This folder is standalone; the original repository is not referenced.
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / Expo
+node_modules/
+.expo/
+dist/
+web-build/
+*.tsbuildinfo
+
+# Local databases & secrets
+*.db
+*.sqlite
+*.sqlite3
+keys/*.pem
+.env.local
+.env.*.local
+
+# Model build outputs
+models/vision/gradcam_outputs/
+models/vision/runs/
+models/sensor/runs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

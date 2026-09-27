@@ -1,0 +1,38 @@
+{
+  "model_id": "MobileNetV3-Small-INT8",
+  "version": "3.0.0",
+  "task": "3-Class Silage Quality Screening",
+  "classes": [
+    "SAFE",
+    "CAUTION",
+    "UNSAFE"
+  ],
+  "input_shape": [
+    1,
+    3,
+    224,
+    224
+  ],
+  "normalization": {
+    "mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "std": [
+      0.229,
+      0.224,
+      0.225
+    ]
+  },
+  "metrics": {
+    "accuracy": 0.9091,
+    "macro_f1": 0.9077,
+    "macro_recall": 0.925,
+    "macro_specificity": 0.95,
+    "expected_calibration_error": 0.0872,
+    "brier_score": 0.1226
+  },
+  "zero_synthetic_data_guarantee": true,
+  "runtime_engine": "ONNX Runtime / TFLite Edge"
+}

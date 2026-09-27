@@ -1,0 +1,43 @@
+{
+  "model_name": "SILAGEGUARD-AI-Sensor-RF-v3.0",
+  "algorithm": "RandomForestClassifier",
+  "n_estimators": 25,
+  "max_depth": 8,
+  "num_features": 11,
+  "features": [
+    "ph",
+    "moisture_adc",
+    "temperature",
+    "ambient",
+    "delta_temp",
+    "ph_dev",
+    "moisture_dev",
+    "heat_rise",
+    "storage_type",
+    "crop_type",
+    "depth_bucket"
+  ],
+  "classes": [
+    "SAFE",
+    "CAUTION",
+    "UNSAFE"
+  ],
+  "metrics": {
+    "accuracy": 1.0,
+    "macro_f1": 1.0,
+    "brier_score": 0.0
+  },
+  "feature_importances": {
+    "heat_rise": 0.2879,
+    "delta_temp": 0.25,
+    "ph": 0.1896,
+    "ph_dev": 0.1762,
+    "moisture_dev": 0.064,
+    "moisture_adc": 0.0321,
+    "ambient": 0.0002,
+    "temperature": 0.0,
+    "storage_type": 0.0,
+    "crop_type": 0.0,
+    "depth_bucket": 0.0
+  }
+}
