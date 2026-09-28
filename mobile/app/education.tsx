@@ -16,6 +16,7 @@ import {
 import { Header } from "../components/Header";
 import { BottomSheet } from "../components/BottomSheet";
 import { useAppStore } from "../store/useAppStore";
+import { useTheme } from "../features/ble/bleManager";
 import { RADIUS, SPACING } from "../theme";
 
 interface GuideCard {
@@ -138,7 +139,8 @@ const GUIDES: GuideCard[] = [
 ];
 
 export default function EducationScreen() {
-  const { theme, largeTypography } = useAppStore();
+  const { theme } = useTheme();
+  const { largeTypography } = useAppStore();
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [activeGuide, setActiveGuide] = useState<GuideCard | null>(null);
 

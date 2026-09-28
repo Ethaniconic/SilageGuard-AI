@@ -29,6 +29,8 @@ export interface AppState {
   voiceSpeed: number;
   hapticsEnabled: boolean;
   theme: ThemeColors;
+  isDark: boolean;
+  toggleTheme: () => void;
   setThemeMode: (mode: ThemeMode) => void;
   setHighContrast: (enabled: boolean) => void;
   setLargeTypography: (enabled: boolean) => void;
@@ -103,10 +105,26 @@ export const useAppStore = create<AppState>((set, get) => ({
   voiceSpeed: 1.0,
   hapticsEnabled: true,
   theme: getTheme("dark", false),
+  isDark: true,
+
+  toggleTheme: () => {
+    const currentMode = get().themeMode;
+    const newMode: ThemeMode = currentMode === "light" ? "dark" : "light";
+    const highContrast = get().highContrast;
+    set({
+      themeMode: newMode,
+      isDark: newMode !== "light",
+      theme: getTheme(newMode, highContrast),
+    });
+  },
 
   setThemeMode: (mode: ThemeMode) => {
     const highContrast = get().highContrast;
-    set({ themeMode: mode, theme: getTheme(mode, highContrast) });
+    set({
+      themeMode: mode,
+      isDark: mode !== "light",
+      theme: getTheme(mode, highContrast),
+    });
   },
 
   setHighContrast: (enabled: boolean) => {

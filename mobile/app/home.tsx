@@ -24,6 +24,7 @@ import { PrimaryButton, SecondaryButton } from "../components/Buttons";
 import { StatusCard } from "../components/StatusCard";
 import { EmptyState } from "../components/EmptyState";
 import { useAppStore } from "../store/useAppStore";
+import { useTheme } from "../features/ble/bleManager";
 import { batchRepository } from "../sqlite/batchRepository";
 import { safeNavigate } from "../utils/navigation";
 import { SPACING, RADIUS } from "../theme";
@@ -32,8 +33,8 @@ export default function HomeScreen() {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
   const {
-    theme,
     largeTypography,
     isOnline,
     isBleConnected,

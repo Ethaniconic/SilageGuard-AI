@@ -14,10 +14,10 @@ import { initDatabase } from "../sqlite/database";
 import { syncManager } from "../services/sync/syncManager";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { Toast } from "../components/Toast";
-import { useAppStore } from "../store/useAppStore";
+import { useTheme } from "../features/ble/bleManager";
 
 export default function RootLayout() {
-  const { theme } = useAppStore();
+  const { theme, isDark } = useTheme();
 
   useEffect(() => {
     initDatabase();

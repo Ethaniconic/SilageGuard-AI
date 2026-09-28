@@ -19,13 +19,14 @@ import { Header } from "../components/Header";
 import { StatusCard } from "../components/StatusCard";
 import { PrimaryButton, SecondaryButton } from "../components/Buttons";
 import { useAppStore } from "../store/useAppStore";
+import { useTheme } from "../features/ble/bleManager";
 import { batchRepository } from "../sqlite/batchRepository";
 import { RADIUS, SPACING } from "../theme";
 
 export default function CalibrationScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const {
-    theme,
     largeTypography,
     calibrationProfile,
     updateCalibrationProfile,

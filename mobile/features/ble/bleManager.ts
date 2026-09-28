@@ -8,7 +8,8 @@ import { bleService, BLEConnectionStatus, ProbeTelemetryData } from "./bleServic
 import { LanguageCode } from "../../utils/constants";
 import { FusionResult } from "../fusion/multimodalFusionEngine";
 import { FarmerAdvisory } from "../advisory/advisoryEngine";
-import { getTheme, ThemeColors } from "../../utils/theme";
+import { useAppStore as useGlobalStore } from "../../store/useAppStore";
+import { ThemeColors } from "../../constants/colors";
 
 interface AppState {
   // Theme & Appearance
@@ -60,8 +61,23 @@ export const useAppStore = create<AppState>((set, get) => {
   return {
     // Theme
     isDarkMode: true,
-    toggleTheme: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
-    setTheme: (isDarkMode: boolean) => set({ isDarkMode }),
+    toggleTheme: () => {
+      const nextDark = !get().isDarkMode;
+      set({ isDarkMode: nextDark });
+      try {
+        useGlobalStore.getState().setThemeMode(nextDark ? "dark" : "light");
+      } catch (e) {
+        // no-op
+      }
+    },
+    setTheme: (isDarkMode: boolean) => {
+      set({ isDarkMode });
+      try {
+        useGlobalStore.getState().setThemeMode(isDarkMode ? "dark" : "light");
+      } catch (e) {
+        // no-op
+      }
+    },
 
     // Hardware BLE
     bleStatus: "DISCONNECTED",
@@ -119,11 +135,17 @@ export const useAppStore = create<AppState>((set, get) => {
  * Convenient React Hook to read active theme colors and toggle action
  */
 export function useTheme(): { theme: ThemeColors; isDark: boolean; toggleTheme: () => void } {
-  const isDarkMode = useAppStore((state) => state.isDarkMode);
-  const toggleTheme = useAppStore((state) => state.toggleTheme);
+  const globalTheme = useGlobalStore((state) => state.theme);
+  const isDark = useGlobalStore((state) => state.isDark);
+
+  const toggleTheme = () => {
+    useGlobalStore.getState().toggleTheme();
+    useAppStore.getState().setTheme(!isDark ? true : false);
+  };
+
   return {
-    theme: getTheme(isDarkMode),
-    isDark: isDarkMode,
+    theme: globalTheme,
+    isDark,
     toggleTheme
   };
 }
