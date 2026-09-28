@@ -1,0 +1,63 @@
+{
+  "model_name": "SILAGEGUARD-AI-MobileNetV3-Small-v3.0",
+  "architecture": "MobileNetV3-Small",
+  "num_classes": 3,
+  "classes": [
+    "SAFE",
+    "CAUTION",
+    "UNSAFE"
+  ],
+  "test_samples": 33,
+  "unrounded_metrics": {
+    "accuracy": 0.9091,
+    "macro_f1": 0.9077,
+    "macro_recall": 0.925,
+    "macro_precision": 0.9062,
+    "macro_specificity": 0.95,
+    "expected_calibration_error": 0.0872,
+    "brier_score": 0.1226,
+    "roc_auc_macro": NaN
+  },
+  "per_class_metrics": {
+    "SAFE": {
+      "precision": 0.8125,
+      "recall": 1.0,
+      "specificity": 0.85
+    },
+    "CAUTION": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "specificity": 1.0
+    },
+    "UNSAFE": {
+      "precision": 1.0,
+      "recall": 0.85,
+      "specificity": 1.0
+    }
+  },
+  "confusion_matrix": {
+    "matrix": [
+      [
+        13,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        3,
+        0,
+        17
+      ]
+    ],
+    "labels": [
+      "SAFE",
+      "CAUTION",
+      "UNSAFE"
+    ]
+  },
+  "zero_synthetic_data_guarantee": true
+}

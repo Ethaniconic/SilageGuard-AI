@@ -1,3 +1,5 @@
+# SILAGEGUARD AI — Integrated Workspace .gitignore
+
 # Python
 __pycache__/
 *.py[cod]
@@ -7,6 +9,7 @@ __pycache__/
 env/
 venv/
 ENV/
+.venv/
 build/
 develop-eggs/
 dist/
@@ -22,6 +25,9 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -32,11 +38,29 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+web-build/
+*.tsbuildinfo
+
+# Local databases & secrets
+*.db
+*.sqlite
+*.sqlite3
+keys/*.pem
+.env.local
+.env.*.local
+backend/live_err.log
+backend/live_out.log
+
+# Model build outputs
+models/vision/gradcam_outputs/
+models/vision/runs/
+models/sensor/runs/
 
 # PlatformIO & Embedded
 .pio/
-.vscode/
 
-# OS
+# OS & Editor
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,62 @@
+{
+  "test_set_size": 29,
+  "total_errors": 2,
+  "false_positives_count": 1,
+  "false_negatives_count": 1,
+  "low_confidence_count": 1,
+  "false_positive_cases": [
+    {
+      "image_id": "IMG-REAL-0002",
+      "group_id": "GRP-source_001_silage-01",
+      "dataset_id": "DS-REAL-COMMONS-SILAGE-01",
+      "local_path": "E:\\silageguard-ai\\datasets\\processed\\vision\\test\\NO_MOLD\\IMG-REAL-0002.jpg",
+      "true_label": "NO_MOLD",
+      "pred_label": "VISIBLE_MOLD",
+      "confidence": 0.951438844203949,
+      "mould_prob": 0.951438844203949,
+      "probs": {
+        "NO_MOLD": 0.048561107367277145,
+        "VISIBLE_MOLD": 0.951438844203949
+      }
+    }
+  ],
+  "false_negative_cases": [
+    {
+      "image_id": "IMG-REAL-0077",
+      "group_id": "GRP-source_002_mold-02",
+      "dataset_id": "DS-REAL-COMMONS-ASPERGILLUS-04",
+      "local_path": "E:\\silageguard-ai\\datasets\\processed\\vision\\test\\VISIBLE_MOLD\\IMG-REAL-0077.jpg",
+      "true_label": "VISIBLE_MOLD",
+      "pred_label": "NO_MOLD",
+      "confidence": 0.8234366178512573,
+      "mould_prob": 0.17656339704990387,
+      "probs": {
+        "NO_MOLD": 0.8234366178512573,
+        "VISIBLE_MOLD": 0.17656339704990387
+      }
+    }
+  ],
+  "low_confidence_cases": [
+    {
+      "image_id": "IMG-REAL-0078",
+      "group_id": "GRP-source_002_mold-02",
+      "dataset_id": "DS-REAL-COMMONS-ASPERGILLUS-04",
+      "local_path": "E:\\silageguard-ai\\datasets\\processed\\vision\\test\\VISIBLE_MOLD\\IMG-REAL-0078.jpg",
+      "true_label": "VISIBLE_MOLD",
+      "pred_label": "VISIBLE_MOLD",
+      "confidence": 0.525524914264679,
+      "mould_prob": 0.525524914264679,
+      "probs": {
+        "NO_MOLD": 0.4744751453399658,
+        "VISIBLE_MOLD": 0.525524914264679
+      }
+    }
+  ],
+  "primary_causes": [
+    "Dark caramelized fermentation spots on corn silage surface visually mimicking dark fungal colonies (False Positive)",
+    "Fine white superficial cob pith or salt efflorescence mimicking early mycelium (False Positive)",
+    "Diffused lighting or slight motion blur obscuring microscopic fungal sporulation (False Negative)",
+    "Transition zones with mild surface dehydration exhibiting ambiguous visual texture (Low Confidence)"
+  ],
+  "mitigation_in_silageguard": "Multi-frame capture (3 photos from crust, face, and depth) averages out single-spot false positives. Multimodal fusion combines visual screening with physical pH and temperature rise to prevent standalone false alerts."
+}

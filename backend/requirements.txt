@@ -1,0 +1,30 @@
+fastapi==0.141.1
+uvicorn[standard]==0.54.0
+sqlalchemy[asyncio]==2.1.1
+asyncpg==0.31.0
+alembic==1.20.0
+pydantic==2.13.5
+pydantic-settings==2.15.0
+python-jose[cryptography]==3.5.0
+passlib[bcrypt]==1.7.4
+bcrypt==5.0.0
+python-multipart==0.0.32
+redis==5.3.1
+arq==0.28.0
+slowapi==0.1.10
+httpx==0.28.1
+sentry-sdk[fastapi]==2.70.0
+prometheus-fastapi-instrumentator==8.1.0
+python-dotenv==1.2.3
+aiosqlite==0.22.1
+pytest==9.1.1
+pytest-asyncio==1.4.0
+
+# --- Model runtime ---------------------------------------------------------
+# The vision model is an ONNX graph. The app runs it on-device, but the
+# backend's model tooling and scripts/verify_models.py need the runtime
+# locally. The sensor Random Forest ships as plain JSON and is evaluated by
+# the app's own TypeScript interpreter, so it needs no ML runtime.
+onnxruntime==1.30.0
+numpy==2.5.3
+pillow==12.3.0
