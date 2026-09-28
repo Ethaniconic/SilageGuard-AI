@@ -82,9 +82,10 @@ function toPayload(details: CompleteBatchDetails): BackendBatchPayload {
 
 /** Collect every locally stored batch (newest first). */
 async function collectLocalBatches(excludeDemo: boolean): Promise<BackendBatchPayload[]> {
-  const all = await batchRepository.getAllBatches(excludeDemo);
+  const all = await batchRepository.getAllBatches(500);
+  const filtered = excludeDemo ? all.filter((b) => !b.is_demo) : all;
   const payloads: BackendBatchPayload[] = [];
-  for (const record of all) {
+  for (const record of filtered) {
     const details = await batchRepository.getBatchById(record.id);
     if (details) payloads.push(toPayload(details));
   }

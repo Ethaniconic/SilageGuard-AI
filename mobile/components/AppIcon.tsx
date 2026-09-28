@@ -86,6 +86,8 @@ export type IconName =
   | "home"
   | "analytics"
   | "info"
+  | "help"
+  | "file"
   | "sliders"
   | "layers";
 

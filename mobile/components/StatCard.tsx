@@ -12,8 +12,10 @@ interface Props {
   label: string;
   value: string | number;
   subtext?: string;
+  subtitle?: string;
   iconName?: IconName;
   icon?: string;
+  status?: "safe" | "caution" | "unsafe" | "neutral";
   accentColor?: string;
 }
 
@@ -21,12 +23,21 @@ export const StatCard: React.FC<Props> = ({
   label,
   value,
   subtext,
+  subtitle,
   iconName,
   icon,
-  accentColor
+  status,
+  accentColor,
 }) => {
   const { theme } = useTheme();
-  const activeColor = accentColor || theme.primary;
+
+  let activeColor = accentColor || theme.primary;
+  if (status === "safe") activeColor = theme.safe;
+  else if (status === "caution") activeColor = theme.caution;
+  else if (status === "unsafe") activeColor = theme.unsafe;
+  else if (status === "neutral") activeColor = theme.textMuted;
+
+  const resolvedSubtext = subtitle || subtext;
 
   return (
     <View
@@ -35,14 +46,18 @@ export const StatCard: React.FC<Props> = ({
         {
           backgroundColor: theme.card,
           borderColor: theme.cardBorder,
-          borderRadius: theme.radiusMd
-        }
+          borderRadius: theme.radiusMd,
+        },
       ]}
     >
       <View style={styles.topRow}>
         {iconName ? (
           <View style={styles.iconWrapper}>
             <AppIcon name={iconName} size={13} color={activeColor} />
+          </View>
+        ) : icon && ["camera", "scan", "probe", "bluetooth", "battery", "sun", "moon", "history", "settings", "analytics", "info", "help", "file", "shield"].includes(icon) ? (
+          <View style={styles.iconWrapper}>
+            <AppIcon name={icon as IconName} size={13} color={activeColor} />
           </View>
         ) : icon ? (
           <Text style={styles.iconText}>{icon}</Text>
@@ -51,46 +66,49 @@ export const StatCard: React.FC<Props> = ({
       </View>
 
       <Text style={[styles.value, { color: activeColor }]}>{value}</Text>
-      {subtext && <Text style={[styles.subtext, { color: theme.textMuted }]}>{subtext}</Text>}
+      {resolvedSubtext && (
+        <Text style={[styles.subtext, { color: theme.textMuted }]}>
+          {resolvedSubtext}
+        </Text>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    borderWidth: 1,
-    padding: 12,
     flex: 1,
-    marginHorizontal: 3,
-    marginVertical: 4,
-    minWidth: 130
+    borderWidth: 1,
+    padding: 14,
+    minWidth: 140,
+    justifyContent: "space-between",
   },
   topRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 6
+    marginBottom: 8,
   },
   iconWrapper: {
-    marginRight: 6
+    marginRight: 6,
   },
   iconText: {
     fontSize: 14,
-    marginRight: 6
+    marginRight: 6,
   },
   label: {
-    fontSize: 10,
-    fontWeight: "800",
+    fontSize: 11,
+    fontWeight: "700",
     textTransform: "uppercase",
-    letterSpacing: 0.3
+    letterSpacing: 0.5,
   },
   value: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "900",
-    letterSpacing: -0.5
+    letterSpacing: -0.5,
   },
   subtext: {
     fontSize: 10,
-    fontWeight: "600",
-    marginTop: 2
-  }
-});
+    marginTop: 4,
+    fontWeight: "500",
+  },
+});

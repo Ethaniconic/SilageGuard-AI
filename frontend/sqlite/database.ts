@@ -1,16 +1,9 @@
 /**
- * SILAGEGUARD AI V3 — SQLite Database Specification & Schema Architecture
+ * SILAGEGUARD AI V4 — Relational SQLite Database Architecture
+ * Offline-first local relational persistence with cascade deletes,
+ * foreign keys, WAL mode, and sync queue for backend eventual consistency.
  * 
- * Offline-first local relational persistence for:
- *   1. batches (metadata, decision, mssi, image, qr)
- *   2. sensor_readings (ph, moisture, temp, ambient, delta_temp, heat_rise)
- *   3. vision_predictions (class probabilities, mold %, frames)
- *   4. fusion_results (multimodal score, modality state, rule overrides, explainability)
- *   5. calibration (air, water, buffer pH 7 & 4, slope, offset)
- *   6. settings (theme, language, voice speed, demo mode toggle)
- *   7. analytics_cache (precomputed weekly/monthly aggregates)
- * 
- * ⚠️ ABSOLUTE RULE 2:
+ * ⚠️ ABSOLUTE RULE 4:
  * Fresh install starts completely EMPTY. ZERO synthetic or fake seed data.
  */
 
@@ -84,63 +77,87 @@ export interface FusionResultRecord {
   created_at?: string;
 }
 
+export interface BatchMediaRecord {
+  id: string;
+  batch_id: string;
+  capture_angle: "SURFACE" | "SIDE" | "DEEP_POCKET";
+  image_uri: string;
+  blur_score: number;
+  exposure_score: number;
+  tilt_angle: number;
+  iqa_passed: boolean;
+  created_at?: string;
+}
+
 export interface CalibrationRecord {
   id: string;
   probe_id: string;
-  air_adc: number;
-  water_adc: number;
-  ph7_voltage: number;
-  ph4_voltage: number;
-  slope: number;
-  offset: number;
+  ph_buffer_4: number;
+  ph_buffer_7: number;
+  ph_slope: number;
+  ph_offset: number;
+  moisture_air_adc: number;
+  moisture_water_adc: number;
+  temp_offset: number;
   calibrated_at: string;
+  expires_at: string;
+  health_status: "HEALTHY" | "RECALIBRATION_RECOMMENDED" | "EXPIRED";
 }
 
-export interface SettingRecord {
-  key: string;
-  value: string;
-  updated_at?: string;
-}
-
-export interface AnalyticsCacheRecord {
+export interface SyncQueueRecord {
   id: string;
-  metric_key: string;
-  timeframe: string;
+  batch_id: string;
+  endpoint: string;
   payload_json: string;
+  status: "PENDING" | "UPLOADING" | "SYNCED" | "FAILED";
+  retry_count: number;
+  last_error?: string | null;
+  created_at: string;
   updated_at: string;
 }
 
-// In-Memory store for Web & Testing
+export interface DeviceInfoRecord {
+  device_id: string;
+  name: string;
+  mac_address: string;
+  firmware_version: string;
+  battery_level: number;
+  last_connected_at: string;
+  is_physical: boolean;
+}
+
+export interface ModelVersionRecord {
+  model_name: string;
+  version: string;
+  checksum: string;
+  quantization: string;
+  updated_at: string;
+}
+
+export interface UserPreferenceRecord {
+  key: string;
+  value: string;
+  updated_at: string;
+}
+
+// In-Memory store for Web & Testing — EMPTY ON FRESH INSTALL (RULE 4)
 class InMemoryStore {
   batches: BatchRecord[] = [];
   sensorReadings: SensorReadingRecord[] = [];
   visionPredictions: VisionPredictionRecord[] = [];
   fusionResults: FusionResultRecord[] = [];
-  calibrations: CalibrationRecord[] = [
-    {
-      id: "CAL-DEFAULT",
-      probe_id: "SG-PROBE-01",
-      air_adc: 3200,
-      water_adc: 1450,
-      ph7_voltage: 2.50,
-      ph4_voltage: 3.05,
-      slope: -5.70,
-      offset: 0.00,
-      calibrated_at: new Date().toISOString()
-    }
-  ];
-  settings: Record<string, string> = {
+  batchMedia: BatchMediaRecord[] = [];
+  calibrations: CalibrationRecord[] = [];
+  syncQueue: SyncQueueRecord[] = [];
+  deviceInfo: DeviceInfoRecord[] = [];
+  modelVersions: ModelVersionRecord[] = [];
+  userPreferences: Record<string, string> = {
+    theme_mode: "dark",
     language: "en",
-    demo_mode: "false",
-    dark_mode: "true",
+    high_contrast: "false",
+    large_typography: "false",
     voice_speed: "1.0",
-    voice_volume: "1.0",
-    ph_slope: "-5.70",
-    ph_offset: "0.00",
-    air_adc: "3200",
-    water_adc: "1450"
   };
-  analyticsCache: AnalyticsCacheRecord[] = [];
 }
 
 export const dbInstance = new InMemoryStore();
@@ -151,10 +168,11 @@ export async function initDatabase(): Promise<boolean> {
   try {
     if (Platform.OS !== "web") {
       try {
-        nativeDb = await openDatabaseAsync("silageguard_v3.db");
+        nativeDb = await openDatabaseAsync("silageguard_v4.db");
         
         await nativeDb.execAsync(`
           PRAGMA journal_mode = WAL;
+          PRAGMA foreign_keys = ON;
 
           CREATE TABLE IF NOT EXISTS batches (
             id TEXT PRIMARY KEY NOT NULL,
@@ -226,16 +244,69 @@ export async function initDatabase(): Promise<boolean> {
             FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE
           );
 
+          CREATE TABLE IF NOT EXISTS batch_media (
+            id TEXT PRIMARY KEY NOT NULL,
+            batch_id TEXT NOT NULL,
+            capture_angle TEXT NOT NULL,
+            image_uri TEXT NOT NULL,
+            blur_score REAL DEFAULT 0,
+            exposure_score REAL DEFAULT 0,
+            tilt_angle REAL DEFAULT 0,
+            iqa_passed INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE
+          );
+
           CREATE TABLE IF NOT EXISTS calibration (
             id TEXT PRIMARY KEY NOT NULL,
             probe_id TEXT NOT NULL,
-            air_adc REAL NOT NULL,
-            water_adc REAL NOT NULL,
-            ph7_voltage REAL NOT NULL,
-            ph4_voltage REAL NOT NULL,
-            slope REAL NOT NULL,
-            offset REAL NOT NULL,
-            calibrated_at TEXT NOT NULL
+            ph_buffer_4 REAL NOT NULL,
+            ph_buffer_7 REAL NOT NULL,
+            ph_slope REAL NOT NULL,
+            ph_offset REAL NOT NULL,
+            moisture_air_adc REAL NOT NULL,
+            moisture_water_adc REAL NOT NULL,
+            temp_offset REAL NOT NULL,
+            calibrated_at TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            health_status TEXT DEFAULT 'HEALTHY'
+          );
+
+          CREATE TABLE IF NOT EXISTS sync_queue (
+            id TEXT PRIMARY KEY NOT NULL,
+            batch_id TEXT NOT NULL,
+            endpoint TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            status TEXT DEFAULT 'PENDING',
+            retry_count INTEGER DEFAULT 0,
+            last_error TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE
+          );
+
+          CREATE TABLE IF NOT EXISTS device_info (
+            device_id TEXT PRIMARY KEY NOT NULL,
+            name TEXT NOT NULL,
+            mac_address TEXT,
+            firmware_version TEXT,
+            battery_level INTEGER DEFAULT 100,
+            last_connected_at TEXT,
+            is_physical INTEGER DEFAULT 1
+          );
+
+          CREATE TABLE IF NOT EXISTS model_versions (
+            model_name TEXT PRIMARY KEY NOT NULL,
+            version TEXT NOT NULL,
+            checksum TEXT,
+            quantization TEXT DEFAULT 'INT8',
+            updated_at TEXT DEFAULT (datetime('now'))
+          );
+
+          CREATE TABLE IF NOT EXISTS user_preferences (
+            key TEXT PRIMARY KEY NOT NULL,
+            value TEXT NOT NULL,
+            updated_at TEXT DEFAULT (datetime('now'))
           );
 
           CREATE TABLE IF NOT EXISTS settings (
@@ -252,23 +323,25 @@ export async function initDatabase(): Promise<boolean> {
             updated_at TEXT DEFAULT (datetime('now'))
           );
 
-          CREATE INDEX IF NOT EXISTS idx_batches_timestamp ON batches(timestamp);
+          -- Performance Indexes
+          CREATE INDEX IF NOT EXISTS idx_batches_created_at ON batches(created_at DESC);
           CREATE INDEX IF NOT EXISTS idx_batches_decision ON batches(decision);
-          CREATE INDEX IF NOT EXISTS idx_sensor_batch ON sensor_readings(batch_id);
-          CREATE INDEX IF NOT EXISTS idx_vision_batch ON vision_predictions(batch_id);
-          CREATE INDEX IF NOT EXISTS idx_fusion_batch ON fusion_results(batch_id);
+          CREATE INDEX IF NOT EXISTS idx_batches_crop ON batches(crop_type);
+          CREATE INDEX IF NOT EXISTS idx_sync_queue_status ON sync_queue(status);
+          CREATE INDEX IF NOT EXISTS idx_batch_media_batch ON batch_media(batch_id);
         `);
-      } catch (nativeErr) {
-        console.warn("Native SQLite init fallback (using resilient memory store):", nativeErr);
+        console.log("[SilageGuard SQLite] V4 schema initialized successfully with WAL & indexes.");
+      } catch (e) {
+        console.warn("[SilageGuard SQLite] Native DB error, operating in memory-driver:", e);
       }
     }
     return true;
-  } catch (e) {
-    console.error("Database initialization error:", e);
-    return true;
+  } catch (err) {
+    console.error("[SilageGuard SQLite] Initialization fault:", err);
+    return false;
   }
 }
 
-export function getNativeDb() {
+export function getNativeDb(): any {
   return nativeDb;
 }

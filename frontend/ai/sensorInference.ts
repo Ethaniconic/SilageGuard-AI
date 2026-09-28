@@ -1,10 +1,12 @@
 /**
- * SILAGEGUARD AI V3 — On-Device Sensor AI Inference Engine
+ * SILAGEGUARD AI V4 — On-Device Sensor AI Inference Engine
  * Pure TypeScript execution of 11-feature trained Random Forest Classifier.
  * Zero cloud dependency. Sub-millisecond execution (< 5 ms) on mobile CPU.
+ * Strict confidence calibration and confidence bands.
  */
 
 import rfModelJson from "../assets/models/sensor_rf_model.json";
+import { ConfidenceBand } from "../types/sensor";
 
 export interface SensorTelemetryInput {
   ph: number | null;
@@ -26,6 +28,7 @@ export interface SensorExplainabilityFactor {
 export interface SensorInferenceResult {
   prediction: "SAFE" | "CAUTION" | "UNSAFE";
   confidence: number;
+  confidenceBand: ConfidenceBand;
   probabilities: {
     safe: number;
     caution: number;
@@ -86,10 +89,13 @@ export function runSensorInference(telemetry: SensorTelemetryInput): SensorInfer
   const startTime = Date.now();
 
   const isPhMissing = !hasPh;
-  const ph = hasPh ? telemetry.ph! : OPTIMAL_PH;
-  const moisture = hasMoisture ? telemetry.moisture! : OPTIMAL_MOISTURE;
-  const temp = hasTemp ? telemetry.temperature! : 25.0;
-  const ambient = telemetry.ambient !== null && telemetry.ambient !== undefined ? telemetry.ambient : 24.0;
+  // Feature sanity validation
+  const ph = hasPh ? Math.max(2.5, Math.min(10.0, telemetry.ph!)) : OPTIMAL_PH;
+  const moisture = hasMoisture ? Math.max(20.0, Math.min(95.0, telemetry.moisture!)) : OPTIMAL_MOISTURE;
+  const temp = hasTemp ? Math.max(-5.0, Math.min(80.0, telemetry.temperature!)) : 25.0;
+  const ambient = telemetry.ambient !== null && telemetry.ambient !== undefined
+    ? Math.max(-5.0, Math.min(60.0, telemetry.ambient))
+    : 24.0;
 
   const moisture_adc = moistureToAdc(moisture);
   const delta_temp = Number((temp - ambient).toFixed(2));
@@ -112,7 +118,7 @@ export function runSensorInference(telemetry: SensorTelemetryInput): SensorInfer
     heat_rise,
     storage_type,
     crop_type,
-    depth_bucket
+    depth_bucket,
   ];
 
   const classProbSums = [0, 0, 0];
@@ -142,7 +148,14 @@ export function runSensorInference(telemetry: SensorTelemetryInput): SensorInfer
   }
 
   const nTrees = forest.trees.length;
-  const probs = classProbSums.map((sum) => sum / nTrees);
+  let probs = classProbSums.map((sum) => sum / nTrees);
+
+  // Confidence calibration: missing pH applies a mild uncertainty discount
+  if (isPhMissing) {
+    // Flatten probability distribution slightly to reflect missing electrode
+    const smoothing = 0.08;
+    probs = probs.map((p) => (1 - smoothing) * p + smoothing / 3);
+  }
 
   let maxIdx = 0;
   let maxProb = probs[0];
@@ -154,7 +167,20 @@ export function runSensorInference(telemetry: SensorTelemetryInput): SensorInfer
   }
 
   const prediction = (forest.classes[maxIdx] || "SAFE") as "SAFE" | "CAUTION" | "UNSAFE";
-  const confidence = Math.round(maxProb * 100);
+  const rawConfidence = Math.round(maxProb * 100);
+  const confidence = isPhMissing ? Math.min(rawConfidence, 85) : rawConfidence;
+
+  // Determine Confidence Band
+  let confidenceBand: ConfidenceBand = "MEDIUM";
+  if (confidence >= 88) {
+    confidenceBand = "VERY_HIGH";
+  } else if (confidence >= 75) {
+    confidenceBand = "HIGH";
+  } else if (confidence >= 60) {
+    confidenceBand = "MEDIUM";
+  } else {
+    confidenceBand = "LOW";
+  }
 
   // Compute explainability factors
   const explainability: SensorExplainabilityFactor[] = [];
@@ -164,21 +190,21 @@ export function runSensorInference(telemetry: SensorTelemetryInput): SensorInfer
       factor: "pH Electrode Unmeasured",
       contributionPercent: 5,
       rationale: "Physical pH probe not connected. Core moisture and thermal readings prioritized from physical hardware.",
-      severity: "INFO"
+      severity: "INFO",
     });
   } else if (ph > 4.6) {
     explainability.push({
       factor: `High pH Acidity (${ph.toFixed(2)})`,
       contributionPercent: Math.min(Math.round(((ph - 4.0) / 1.5) * 45), 45),
       rationale: "Elevated pH indicates incomplete lactic acidification and clostridial risk.",
-      severity: "CRITICAL"
+      severity: "CRITICAL",
     });
   } else if (ph <= 4.2) {
     explainability.push({
       factor: `Optimal Lactic pH (${ph.toFixed(2)})`,
       contributionPercent: -15,
       rationale: "Lactic preservation threshold met; actively inhibits spoilage bacteria.",
-      severity: "INFO"
+      severity: "INFO",
     });
   }
 
@@ -187,14 +213,14 @@ export function runSensorInference(telemetry: SensorTelemetryInput): SensorInfer
       factor: `Core Heat Rise (+${delta_temp.toFixed(1)}°C)`,
       contributionPercent: Math.min(Math.round((delta_temp / 8.0) * 38), 38),
       rationale: "Aerobic microbial respiration is actively generating heat and degrading sugars.",
-      severity: delta_temp > 8.0 ? "CRITICAL" : "WARNING"
+      severity: delta_temp > 8.0 ? "CRITICAL" : "WARNING",
     });
   } else {
     explainability.push({
       factor: `Thermal Stability (+${delta_temp.toFixed(1)}°C)`,
       contributionPercent: -10,
       rationale: "Core temperature is in equilibrium with ambient surroundings.",
-      severity: "INFO"
+      severity: "INFO",
     });
   }
 
@@ -203,14 +229,14 @@ export function runSensorInference(telemetry: SensorTelemetryInput): SensorInfer
       factor: `Moisture Imbalance (${moisture.toFixed(1)}%)`,
       contributionPercent: 18,
       rationale: "Moisture deviation from 60-68% safe window increases effluent or fungal risk.",
-      severity: "WARNING"
+      severity: "WARNING",
     });
   } else {
     explainability.push({
       factor: `Optimal Bunker Moisture (${moisture.toFixed(1)}%)`,
       contributionPercent: -8,
       rationale: "Ideal moisture band for compaction and anaerobic fermentation.",
-      severity: "INFO"
+      severity: "INFO",
     });
   }
 
@@ -221,10 +247,11 @@ export function runSensorInference(telemetry: SensorTelemetryInput): SensorInfer
   return {
     prediction,
     confidence,
+    confidenceBand,
     probabilities: {
       safe: Number(probs[0].toFixed(4)),
       caution: Number(probs[1].toFixed(4)),
-      unsafe: Number(probs[2].toFixed(4))
+      unsafe: Number(probs[2].toFixed(4)),
     },
     features: {
       ph,
@@ -237,9 +264,9 @@ export function runSensorInference(telemetry: SensorTelemetryInput): SensorInfer
       heat_rise,
       storage_type,
       crop_type,
-      depth_bucket
+      depth_bucket,
     },
     explainability,
-    latencyMs
+    latencyMs,
   };
 }

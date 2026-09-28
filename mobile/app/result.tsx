@@ -393,6 +393,59 @@ export default function ResultScreen() {
           </View>
         </View>
 
+        {/* Explainability & PDF Buttons */}
+        <TouchableOpacity
+          style={[
+            styles.explainBtn,
+            {
+              backgroundColor: theme.surface,
+              borderColor: theme.accent,
+              borderRadius: theme.radiusSm,
+            },
+          ]}
+          onPress={() => router.push("/explainability" as any)}
+          activeOpacity={0.8}
+        >
+          <AppIcon name="shield" size={16} color={theme.accent} />
+          <Text style={[styles.explainBtnText, { color: theme.accent }]}>
+            WHY THIS RESULT? (AI EXPLAINABILITY & PROVENANCE)
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.pdfBtn,
+            {
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+              borderRadius: theme.radiusSm,
+            },
+          ]}
+          onPress={() => {
+            const { shareOrPrintReport } = require("../utils/pdfGenerator");
+            shareOrPrintReport({
+              batch: {
+                id: `SG-${Date.now().toString().slice(-6)}`,
+                timestamp: new Date().toISOString(),
+                crop_type: cropType,
+                mssi_score: mssiScore,
+                decision,
+                confidence,
+                summary_reason: latestFusionResult?.summaryReason || "Rapid AI screening evaluation completed.",
+              },
+              fusion: latestFusionResult || undefined,
+              telemetry,
+              advisory: latestAdvisory,
+            });
+          }}
+          activeOpacity={0.8}
+        >
+          <AppIcon name="share" size={16} color={theme.text} />
+          <Text style={[styles.pdfBtnText, { color: theme.text }]}>
+            DOWNLOAD / PRINT AUDITABLE PDF REPORT
+          </Text>
+        </TouchableOpacity>
+
         {/* Action Buttons */}
         <View style={styles.actionsRow}>
           <TouchableOpacity
@@ -593,6 +646,33 @@ const styles = StyleSheet.create({
     fontFamily: "monospace",
     marginTop: 10,
     textAlign: "center"
+  },
+  explainBtn: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1.5,
+    paddingVertical: 14,
+    marginBottom: 8,
+  },
+  explainBtnText: {
+    fontSize: 12,
+    fontWeight: "800",
+    marginLeft: 8,
+    letterSpacing: 0.3,
+  },
+  pdfBtn: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    paddingVertical: 14,
+    marginBottom: 8,
+  },
+  pdfBtnText: {
+    fontSize: 12,
+    fontWeight: "700",
+    marginLeft: 8,
   },
   actionsRow: {
     flexDirection: "row",

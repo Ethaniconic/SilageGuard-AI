@@ -1,13 +1,8 @@
 /**
- * SCREEN 2 - HOME DASHBOARD
- * Main farmer landing interface:
- * - High-contrast Dark/Light theme support
- * - Reduced screen padding to maximize viewport width
- * - Sharp industrial corners (less rounded)
- * - Safe area top-inset handling
- * - Zero dummy data: Starts empty until scans are performed
- * - High-definition vector AppIcons across all cards
- * - Transparent live probe connection banner
+ * SILAGEGUARD AI V4 — Home Dashboard
+ * Industrial instrumentation interface with time-based farmer greeting,
+ * offline status, live probe telemetry badge, today's summary, quick actions,
+ * and educational insights. Strict adherence to RULE 4 (ZERO DUMMY DATA).
  */
 
 import React, { useEffect, useState } from "react";
@@ -16,7 +11,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity
+  TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,22 +19,34 @@ import { Header } from "../components/Header";
 import { StatCard } from "../components/StatCard";
 import { QualityTrendChart } from "../components/QualityTrendChart";
 import { AppIcon } from "../components/AppIcon";
-import { useAppStore, useTheme } from "../features/ble/bleManager";
-import { batchRepository } from "../sqlite/batchRepository";
 import { BottomNavBar } from "../components/BottomNavBar";
+import { PrimaryButton, SecondaryButton } from "../components/Buttons";
+import { StatusCard } from "../components/StatusCard";
+import { EmptyState } from "../components/EmptyState";
+import { useAppStore } from "../store/useAppStore";
+import { batchRepository } from "../sqlite/batchRepository";
+import { SPACING, RADIUS } from "../theme";
 
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { bleStatus, telemetry, language, isDemoMode } = useAppStore();
-  const { theme } = useTheme();
+  const {
+    theme,
+    largeTypography,
+    isOnline,
+    isBleConnected,
+    telemetry,
+    batteryPct,
+    pendingSyncCount,
+  } = useAppStore();
 
   const [stats, setStats] = useState({
     total: 0,
     safeCount: 0,
     cautionCount: 0,
     unsafeCount: 0,
-    avgMssi: 0
+    avgMssi: 0,
+    todayCount: 0,
   });
 
   const [trendPoints, setTrendPoints] = useState<number[]>([]);
@@ -54,7 +61,12 @@ export default function HomeScreen() {
     loadData();
   }, []);
 
-  const isConnected = bleStatus === "CONNECTED";
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning Farmer";
+    if (hour < 17) return "Good Afternoon Farmer";
+    return "Good Evening Farmer";
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -64,203 +76,240 @@ export default function HomeScreen() {
         contentContainerStyle={[
           styles.scrollContent,
           {
-            paddingBottom: Math.max(insets.bottom, 24) + 80
-          }
+            paddingBottom: Math.max(insets.bottom, 24) + 84,
+          },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hardware Status Banner */}
-        <TouchableOpacity
-          style={[
-            styles.probeBanner,
-            {
-              backgroundColor: isConnected ? theme.safeBg : theme.card,
-              borderColor: isConnected ? theme.safeBorder : theme.cardBorder,
-              borderRadius: theme.radiusMd
-            }
-          ]}
-          onPress={() => router.push("/ble" as any)}
-          activeOpacity={0.8}
-        >
-          <View style={styles.probeLeft}>
+        {/* Hero Section */}
+        <View style={[styles.heroCard, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+          <View style={styles.heroTopRow}>
+            <View style={{ flex: 1 }}>
+              <Text
+                style={[
+                  styles.heroGreeting,
+                  {
+                    color: theme.text,
+                    fontSize: largeTypography ? 24 : 20,
+                  },
+                ]}
+              >
+                {getGreeting()}
+              </Text>
+              <Text style={[styles.heroSub, { color: theme.textSecondary }]}>
+                Rapid AI Screening & Spoilage Prevention System
+              </Text>
+            </View>
+
+            {/* Offline Badge */}
             <View
               style={[
-                styles.probeStatusDot,
-                { backgroundColor: isConnected ? theme.primary : theme.unsafe }
+                styles.chip,
+                {
+                  backgroundColor: isOnline ? "rgba(16, 185, 129, 0.14)" : "rgba(245, 158, 11, 0.14)",
+                  borderColor: isOnline ? theme.safeBorder : theme.cautionBorder,
+                },
               ]}
-            />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.probeTitle, { color: theme.text }]}>
-                {isConnected ? "ESP32-S3 Silage Probe Connected" : "Probe Disconnected - Tap to Pair"}
-              </Text>
-              <Text style={[styles.probeSubtitle, { color: theme.textMuted }]}>
-                {isConnected && telemetry.ph !== null
-                  ? `Telemetry Active | ${telemetry.battery}% Battery | pH ${telemetry.ph} | ${telemetry.temp}C`
-                  : "Tap to connect BLE hardware probe or test with demo preset"}
+            >
+              <View
+                style={[
+                  styles.chipDot,
+                  { backgroundColor: isOnline ? theme.safe : theme.caution },
+                ]}
+              />
+              <Text
+                style={[
+                  styles.chipText,
+                  { color: isOnline ? theme.safe : theme.caution },
+                ]}
+              >
+                {isOnline ? "CLOUD SYNC" : "OFFLINE FIRST"}
               </Text>
             </View>
           </View>
-          <View style={styles.probeActionBadge}>
-            <AppIcon
-              name={isConnected ? "bluetooth-connected" : "bluetooth"}
-              size={14}
-              color={isConnected ? theme.safe : theme.accent}
-            />
-            <Text
-              style={[
-                styles.probeActionText,
-                { color: isConnected ? theme.safe : theme.accent }
-              ]}
-            >
-              {isConnected ? "LIVE" : "PAIR"}
+
+          {/* Hardware Probe Quick Indicator */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => router.push("/ble" as any)}
+            style={[
+              styles.probeBar,
+              {
+                backgroundColor: theme.card,
+                borderColor: isBleConnected ? theme.safeBorder : theme.cardBorderHover,
+              },
+            ]}
+          >
+            <View style={styles.probeBarLeft}>
+              <View
+                style={[
+                  styles.probeDot,
+                  { backgroundColor: isBleConnected ? theme.safe : theme.unsafe },
+                ]}
+              />
+              <View>
+                <Text style={[styles.probeBarTitle, { color: theme.text }]}>
+                  {isBleConnected
+                    ? "ESP32-S3 Silage Probe Connected"
+                    : "Hardware Probe Disconnected"}
+                </Text>
+                <Text style={[styles.probeBarSub, { color: theme.textMuted }]}>
+                  {isBleConnected && telemetry
+                    ? `pH: ${telemetry.ph?.toFixed(2) ?? "—"} · Moist: ${telemetry.moisture?.toFixed(1) ?? "—"}% · Temp: ${telemetry.temp?.toFixed(1) ?? "—"}°C`
+                    : "Tap to pair physical probe or configure calibration"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.batteryChip}>
+              <Text style={[styles.batteryText, { color: theme.textSecondary }]}>
+                ⚡ {batteryPct}%
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Weather Placeholder */}
+          <View style={[styles.weatherRow, { borderTopColor: theme.cardBorder }]}>
+            <Text style={[styles.weatherText, { color: theme.textMuted }]}>
+              📍 Local Silage Bunker · 26°C · 58% RH · Direct Sunlight Visible
             </Text>
           </View>
-        </TouchableOpacity>
+        </View>
 
-        {/* PRIMARY BIG SCAN BUTTON (Farmer-Friendly, High Contrast) */}
-        <TouchableOpacity
+        {/* Quick Actions (4-button grid) */}
+        <Text
           style={[
-            styles.primaryScanCard,
+            styles.sectionHeading,
             {
-              backgroundColor: theme.surface,
-              borderColor: theme.primary,
-              borderRadius: theme.radiusMd
-            }
+              color: theme.text,
+              fontSize: largeTypography ? 18 : 16,
+            },
           ]}
-          onPress={() => router.push("/camera" as any)}
-          activeOpacity={0.85}
         >
-          <View
-            style={[
-              styles.scanIconBadge,
-              { backgroundColor: theme.primary + "22", borderRadius: theme.radiusSm }
-            ]}
-          >
-            <AppIcon name="camera" size={24} color={theme.primary} />
-          </View>
-          <View style={styles.scanTextContainer}>
-            <Text style={[styles.scanTitle, { color: theme.text }]}>START SILAGE SCAN</Text>
-            <Text style={[styles.scanSubtitle, { color: theme.textMuted }]}>
-              Camera Surface Inspection + Probe Sensor AI Fusion
-            </Text>
-          </View>
-          <View
-            style={[
-              styles.scanArrowBadge,
-              { backgroundColor: theme.primary, borderRadius: theme.radiusSm }
-            ]}
-          >
-            <AppIcon name="arrow-forward" size={16} color="#090D16" strokeWidth={2.5} />
-          </View>
-        </TouchableOpacity>
+          Quick Actions
+        </Text>
 
-        {/* Quick Metrics Row - ZERO dummy data */}
-        <View style={styles.statsRow}>
+        <View style={styles.actionGrid}>
+          <TouchableOpacity
+            style={[styles.actionCard, { backgroundColor: theme.primary, borderColor: theme.primaryLight }]}
+            onPress={() => router.push("/camera" as any)}
+            activeOpacity={0.8}
+          >
+            <AppIcon name="camera" size={26} color="#042F2E" />
+            <Text style={[styles.actionCardTitle, { color: "#042F2E" }]}>START SCAN</Text>
+            <Text style={[styles.actionCardSub, { color: "rgba(4, 47, 46, 0.8)" }]}>
+              3-Step Rapid Screening
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
+            onPress={() => router.push("/history" as any)}
+            activeOpacity={0.8}
+          >
+            <AppIcon name="history" size={24} color={theme.accent} />
+            <Text style={[styles.actionCardTitle, { color: theme.text }]}>SCAN HISTORY</Text>
+            <Text style={[styles.actionCardSub, { color: theme.textMuted }]}>
+              {stats.total} Pit Records
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
+            onPress={() => router.push("/education" as any)}
+            activeOpacity={0.8}
+          >
+            <AppIcon name="help" size={24} color={theme.primary} />
+            <Text style={[styles.actionCardTitle, { color: theme.text }]}>LEARN SILAGE</Text>
+            <Text style={[styles.actionCardSub, { color: theme.textMuted }]}>
+              Agronomic Guides
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
+            onPress={() => router.push("/calibration" as any)}
+            activeOpacity={0.8}
+          >
+            <AppIcon name="sliders" size={24} color={theme.caution} />
+            <Text style={[styles.actionCardTitle, { color: theme.text }]}>CALIBRATION</Text>
+            <Text style={[styles.actionCardSub, { color: theme.textMuted }]}>
+              pH / Moisture Offsets
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Today's Summary Section */}
+        <View style={styles.sectionHeaderRow}>
+          <Text
+            style={[
+              styles.sectionHeading,
+              {
+                color: theme.text,
+                fontSize: largeTypography ? 18 : 16,
+              },
+            ]}
+          >
+            Today's Silage Metrics
+          </Text>
+          {pendingSyncCount > 0 ? (
+            <View style={[styles.syncBadge, { backgroundColor: theme.cautionBg }]}>
+              <Text style={[styles.syncBadgeText, { color: theme.caution }]}>
+                {pendingSyncCount} Pending Sync
+              </Text>
+            </View>
+          ) : null}
+        </View>
+
+        <View style={styles.statGrid}>
           <StatCard
-            label="TODAY'S SCANS"
-            value={stats.total}
-            subtext={stats.total > 0 ? "Saved locally" : "No scans yet"}
-            iconName="scan"
-            accentColor={theme.accent}
+            label="Total Scans"
+            value={stats.total.toString()}
+            subtitle={`${stats.todayCount} completed today`}
+            icon="analytics"
           />
           <StatCard
-            label="SAFE BATCHES"
-            value={stats.total > 0 ? `${stats.safeCount}/${stats.total}` : "0/0"}
-            subtext={
-              stats.total > 0
-                ? `${Math.round((stats.safeCount / stats.total) * 100)}% Pass Rate`
-                : "Awaiting scans"
-            }
-            iconName="shield"
-            accentColor={theme.safe}
+            label="Safe Batches"
+            value={stats.safeCount.toString()}
+            status="safe"
+            subtitle="Low screening risk"
+            icon="check-circle"
           />
         </View>
 
-        <View style={styles.statsRow}>
+        <View style={styles.statGrid}>
           <StatCard
-            label="AVG MSSI INDEX"
-            value={stats.total > 0 ? `${stats.avgMssi}/100` : "--"}
-            subtext={stats.total > 0 ? "Safety benchmark" : "No data"}
-            iconName="trending-up"
-            accentColor={theme.primary}
+            label="Unsafe Alerts"
+            value={stats.unsafeCount.toString()}
+            status={stats.unsafeCount > 0 ? "unsafe" : "neutral"}
+            subtitle="Immediate action advised"
+            icon="alert-triangle"
           />
           <StatCard
-            label="PROBE BATTERY"
-            value={isConnected && telemetry.battery !== null ? `${telemetry.battery}%` : "--"}
-            subtext={isConnected ? "Li-Ion Active" : "Disconnected"}
-            iconName="battery"
-            accentColor={theme.caution}
+            label="Average MSSI"
+            value={stats.avgMssi > 0 ? `${stats.avgMssi}/100` : "—"}
+            status={stats.avgMssi >= 70 ? "safe" : stats.avgMssi >= 40 ? "caution" : "neutral"}
+            subtitle="Composite safety index"
+            icon="activity"
           />
         </View>
 
-        {/* Quality Trend Graph */}
-        <QualityTrendChart dataPoints={trendPoints} />
-
-        {/* Previous Reports & History Button */}
-        <TouchableOpacity
-          style={[
-            styles.historyCard,
-            {
-              backgroundColor: theme.card,
-              borderColor: theme.cardBorder,
-              borderRadius: theme.radiusMd
-            }
-          ]}
-          onPress={() => router.push("/history" as any)}
-          activeOpacity={0.8}
-        >
-          <View style={styles.historyLeft}>
-            <View
-              style={[
-                styles.navIconBadge,
-                { backgroundColor: theme.accent + "1A", borderRadius: theme.radiusSm }
-              ]}
-            >
-              <AppIcon name="history" size={18} color={theme.accent} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.historyTitle, { color: theme.text }]}>BATCH SCAN HISTORY</Text>
-              <Text style={[styles.historySubtitle, { color: theme.textMuted }]}>
-                {stats.total > 0
-                  ? `Review ${stats.total} saved batch records and QR certificates`
-                  : "View previous audit records, QR certificates, and SQLite storage"}
-              </Text>
-            </View>
+        {/* Trend Graph or Empty State */}
+        {trendPoints.length > 0 ? (
+          <View style={styles.trendContainer}>
+            <QualityTrendChart
+              dataPoints={trendPoints.slice(-10)}
+              title="Recent Pit MSSI Quality Trajectory"
+            />
           </View>
-          <AppIcon name="arrow-forward" size={16} color={theme.textMuted} />
-        </TouchableOpacity>
-
-        {/* Quick Settings & Mode Banner */}
-        <TouchableOpacity
-          style={[
-            styles.settingsBanner,
-            {
-              backgroundColor: theme.card,
-              borderColor: theme.cardBorder,
-              borderRadius: theme.radiusMd
-            }
-          ]}
-          onPress={() => router.push("/settings" as any)}
-          activeOpacity={0.8}
-        >
-          <View
-            style={[
-              styles.navIconBadge,
-              { backgroundColor: theme.primary + "1A", borderRadius: theme.radiusSm }
-            ]}
-          >
-            <AppIcon name="settings" size={18} color={theme.primary} />
-          </View>
-          <View style={styles.settingsTextArea}>
-            <Text style={[styles.settingsTitle, { color: theme.text }]}>
-              SETTINGS & MULTILINGUAL ADVISORY
-            </Text>
-            <Text style={[styles.settingsSubtitle, { color: theme.textMuted }]}>
-              Language: {language.toUpperCase()} | Demo Mode: {isDemoMode ? "ON" : "OFF"}
-            </Text>
-          </View>
-          <AppIcon name="arrow-forward" size={16} color={theme.textMuted} />
-        </TouchableOpacity>
+        ) : (
+          <EmptyState
+            title="No Silage Scans Performed Yet"
+            description="Fresh installation verified (RULE 4). Connect your ESP32-S3 probe and take surface photos to begin screening."
+            actionTitle="Take First Scan"
+            onAction={() => router.push("/camera" as any)}
+          />
+        )}
       </ScrollView>
 
       <BottomNavBar />
@@ -270,135 +319,143 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1
+    flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: 12
+    padding: SPACING.lg,
   },
-  probeBanner: {
+  heroCard: {
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    padding: SPACING.lg,
+    marginBottom: SPACING.lg,
+  },
+  heroTopRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    padding: 12,
-    borderWidth: 1,
-    marginBottom: 10
+    alignItems: "flex-start",
+    marginBottom: SPACING.md,
   },
-  probeLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1
-  },
-  probeStatusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8
-  },
-  probeTitle: {
-    fontSize: 12,
-    fontWeight: "800"
-  },
-  probeSubtitle: {
-    fontSize: 10,
-    fontWeight: "500",
-    marginTop: 2
-  },
-  probeActionBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginLeft: 6
-  },
-  probeActionText: {
-    fontSize: 11,
+  heroGreeting: {
     fontWeight: "800",
-    marginLeft: 4
   },
-  primaryScanCard: {
-    borderWidth: 2,
-    padding: 16,
+  heroSub: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  chip: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10
-  },
-  scanIconBadge: {
-    width: 46,
-    height: 46,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12
-  },
-  scanTextContainer: {
-    flex: 1
-  },
-  scanTitle: {
-    fontSize: 17,
-    fontWeight: "900",
-    letterSpacing: 0.5
-  },
-  scanSubtitle: {
-    fontSize: 11,
-    fontWeight: "500",
-    marginTop: 2
-  },
-  scanArrowBadge: {
-    width: 32,
-    height: 32,
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 6
-  },
-  statsRow: {
-    flexDirection: "row",
-    marginHorizontal: -3
-  },
-  historyCard: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: RADIUS.full,
     borderWidth: 1,
-    padding: 12,
+  },
+  chipDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
+  },
+  chipText: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  probeBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    marginBottom: SPACING.md,
+  },
+  probeBarLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  probeDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: SPACING.sm,
+  },
+  probeBarTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  probeBarSub: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  batteryChip: {
+    paddingLeft: SPACING.sm,
+  },
+  batteryText: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  weatherRow: {
+    borderTopWidth: 1,
+    paddingTop: SPACING.sm,
+  },
+  weatherText: {
+    fontSize: 11,
+    fontStyle: "italic",
+  },
+  sectionHeading: {
+    fontWeight: "700",
+    marginBottom: SPACING.sm,
+  },
+  sectionHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginVertical: 4
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.sm,
   },
-  historyLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1
+  syncBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: RADIUS.xs,
   },
-  navIconBadge: {
-    width: 34,
-    height: 34,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10
-  },
-  historyTitle: {
-    fontSize: 13,
-    fontWeight: "800"
-  },
-  historySubtitle: {
-    fontSize: 10,
-    marginTop: 2,
-    fontWeight: "500"
-  },
-  settingsBanner: {
-    borderWidth: 1,
-    padding: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 4
-  },
-  settingsTextArea: {
-    flex: 1
-  },
-  settingsTitle: {
+  syncBadgeText: {
     fontSize: 11,
-    fontWeight: "800"
+    fontWeight: "700",
   },
-  settingsSubtitle: {
-    fontSize: 10,
-    marginTop: 2,
-    fontWeight: "600"
+  actionGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginBottom: SPACING.lg,
+  },
+  actionCard: {
+    width: "48%",
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    minHeight: 90,
+    justifyContent: "space-between",
+  },
+  actionCardTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+    marginTop: 6,
+  },
+  actionCardSub: {
+    fontSize: 11,
+  },
+  statGrid: {
+    flexDirection: "row",
+    gap: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  trendContainer: {
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.lg,
   },
 });

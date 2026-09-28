@@ -12,11 +12,13 @@ import { useTheme } from "../features/ble/bleManager";
 interface Props {
   dataPoints: number[];
   labels?: string[];
+  title?: string;
 }
 
 export const QualityTrendChart: React.FC<Props> = ({
   dataPoints = [],
-  labels = []
+  labels = [],
+  title,
 }) => {
   const { theme } = useTheme();
 
