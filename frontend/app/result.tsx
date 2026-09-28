@@ -19,7 +19,7 @@ import {
   ScrollView,
   TouchableOpacity
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header } from "../components/Header";
 import { TrafficLightCard } from "../components/TrafficLightCard";
@@ -27,9 +27,11 @@ import { AdvisoryCard } from "../components/AdvisoryCard";
 import { AppIcon } from "../components/AppIcon";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { generateSilageQRPayload } from "../utils/qrGenerator";
+import { safeNavigate } from "../utils/navigation";
 
 export default function ResultScreen() {
   const router = useRouter();
+  const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
 
@@ -43,8 +45,8 @@ export default function ResultScreen() {
   } = useAppStore();
 
   const decision = latestFusionResult?.decision || "SAFE";
-  const confidence = latestFusionResult?.confidence || 92;
-  const mssiScore = latestFusionResult?.mssiScore || 85;
+  const confidence = latestFusionResult?.confidence ?? 0;
+  const mssiScore = latestFusionResult?.mssiScore ?? 0;
   const ruleOverride = latestFusionResult?.rule_override || false;
   const ruleReason = latestFusionResult?.rule_reason || null;
 
@@ -107,7 +109,7 @@ export default function ResultScreen() {
 
   const handleScanAnother = () => {
     clearScanImages();
-    router.push("/camera" as any);
+    safeNavigate(router, "/camera", pathname, true);
   };
 
   return (
@@ -403,7 +405,7 @@ export default function ResultScreen() {
               borderRadius: theme.radiusSm,
             },
           ]}
-          onPress={() => router.push("/explainability" as any)}
+          onPress={() => safeNavigate(router, "/explainability", pathname)}
           activeOpacity={0.8}
         >
           <AppIcon name="shield" size={16} color={theme.accent} />
@@ -457,7 +459,7 @@ export default function ResultScreen() {
                 borderRadius: theme.radiusSm
               }
             ]}
-            onPress={() => router.push("/history" as any)}
+            onPress={() => safeNavigate(router, "/history", pathname)}
             activeOpacity={0.8}
           >
             <AppIcon name="history" size={16} color={theme.text} />

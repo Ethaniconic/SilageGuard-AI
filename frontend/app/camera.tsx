@@ -20,7 +20,7 @@ import {
   Alert,
   ActivityIndicator
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -28,9 +28,11 @@ import { Header } from "../components/Header";
 import { CameraGuidanceOverlay } from "../components/CameraGuidanceOverlay";
 import { AppIcon } from "../components/AppIcon";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
+import { safeNavigate } from "../utils/navigation";
 
 export default function CameraScreen() {
   const router = useRouter();
+  const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
 
@@ -116,7 +118,7 @@ export default function CameraScreen() {
     if (scanImages.length === 0) {
       useFallbackSample();
     }
-    router.push("/processing" as any);
+    safeNavigate(router, "/processing", pathname);
   };
 
   return (
@@ -354,7 +356,7 @@ export default function CameraScreen() {
                   borderRadius: theme.radiusSm
                 }
               ]}
-              onPress={() => router.push("/ble" as any)}
+              onPress={() => safeNavigate(router, "/ble", pathname)}
             >
               <Text
                 style={[
@@ -634,12 +636,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3
   },
   viewfinderContainer: {
-    height: 250,
+    height: 440,
+    minHeight: 420,
+    width: "100%",
     borderWidth: 1,
     overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 10
+    marginBottom: 14,
+    position: "relative"
   },
   previewWrapper: {
     width: "100%",

@@ -14,6 +14,7 @@ import { useRouter, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { AppIcon } from "./AppIcon";
+import { safeNavigate, safeGoBack } from "../utils/navigation";
 
 interface Props {
   title?: string;
@@ -42,18 +43,12 @@ export const Header: React.FC<Props> = ({
       onBack();
       return;
     }
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace((fallbackRoute || "/home") as any);
-    }
+    safeGoBack(router, fallbackRoute);
   };
 
   const handleProbePress = () => {
     // Once on the probe screen, no further duplicate redirections
-    if (!isOnBleScreen) {
-      router.push("/ble" as any);
-    }
+    safeNavigate(router, "/ble", pathname);
   };
 
   return (

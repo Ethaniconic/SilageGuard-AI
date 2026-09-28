@@ -22,18 +22,20 @@ import {
   Dimensions,
   ActivityIndicator
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import Svg, { Rect, Line, Circle, Polyline, Text as SvgText } from "react-native-svg";
 import { Header } from "../components/Header";
 import { BottomNavBar } from "../components/BottomNavBar";
 import { AppIcon } from "../components/AppIcon";
 import { batchRepository, DayTrendPoint } from "../sqlite/batchRepository";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
+import { safeNavigate } from "../utils/navigation";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function InsightsScreen() {
   const router = useRouter();
+  const pathname = usePathname();
   const { theme } = useTheme();
   const { isDemoMode } = useAppStore();
 
@@ -125,7 +127,7 @@ export default function InsightsScreen() {
             </Text>
             <TouchableOpacity
               style={[styles.startScanBtn, { backgroundColor: theme.accent, borderRadius: theme.radiusSm }]}
-              onPress={() => router.push("/camera" as any)}
+              onPress={() => safeNavigate(router, "/camera", pathname)}
             >
               <AppIcon name="camera" size={16} color="#0B130E" strokeWidth={2.5} />
               <Text style={styles.startScanText}>START FIRST SCAN</Text>

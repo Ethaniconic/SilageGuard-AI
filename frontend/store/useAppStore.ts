@@ -47,8 +47,8 @@ export interface AppState {
   isSimulationMode: boolean;
   connectedDeviceId: string | null;
   connectedDeviceName: string | null;
-  rssi: number;
-  batteryPct: number;
+  rssi: number | null;
+  batteryPct: number | null;
   telemetry: ProbeTelemetryData | null;
   telemetryHistory: ProbeTelemetryData[];
   crcErrors: number;
@@ -138,12 +138,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   isSimulationMode: false,
   connectedDeviceId: null,
   connectedDeviceName: null,
-  rssi: -65,
-  batteryPct: 92,
+  rssi: null,
+  batteryPct: null,
   telemetry: null,
   telemetryHistory: [],
   crcErrors: 0,
-  isCalibrated: true,
+  isCalibrated: false,
   calibrationProfile: {
     ph_slope: -5.70,
     ph_offset: 0.0,
@@ -161,6 +161,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       connectedDeviceId: deviceId,
       connectedDeviceName: name,
       isBleScanning: false,
+      ...(connected ? {} : { batteryPct: null, rssi: null, telemetry: null }),
     }),
 
   setBleScanning: (scanning) => set({ isBleScanning: scanning }),

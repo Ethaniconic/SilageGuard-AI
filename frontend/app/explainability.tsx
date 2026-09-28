@@ -25,6 +25,7 @@ import { Header } from "../components/Header";
 import { BottomNavBar } from "../components/BottomNavBar";
 import { AppIcon } from "../components/AppIcon";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
+import { safeGoBack } from "../utils/navigation";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -375,13 +376,7 @@ export default function ExplainabilityScreen() {
         {/* Back to Result Button */}
         <TouchableOpacity
           style={[styles.returnButton, { backgroundColor: theme.accent, borderRadius: theme.radiusSm }]}
-          onPress={() => {
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace("/result" as any);
-            }
-          }}
+          onPress={() => safeGoBack(router, "/result")}
           activeOpacity={0.8}
         >
           <AppIcon name="arrow-back" size={16} color="#0B130E" strokeWidth={2.5} />

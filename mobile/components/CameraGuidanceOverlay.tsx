@@ -240,95 +240,98 @@ const boxSize = Math.min(width * 0.72, 260);
 
 const styles = StyleSheet.create({
   overlayContainer: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFill as any,
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 12
+    paddingVertical: 8,
+    paddingHorizontal: 10
   },
   stepContainer: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderWidth: 1,
     alignItems: "center",
-    width: "100%",
-    maxWidth: 360
+    width: "92%",
+    maxWidth: 340,
+    borderRadius: 16
   },
   stepRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 6
+    marginBottom: 3
   },
   stepItem: {
     flexDirection: "row",
     alignItems: "center"
   },
   stepBullet: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     borderWidth: 1.5,
     justifyContent: "center",
     alignItems: "center"
   },
   stepBulletText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "900"
   },
   stepConnector: {
-    width: 24,
+    width: 16,
     height: 2,
     marginHorizontal: 3
   },
   stepTitle: {
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 0.5
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.4
   },
   targetBox: {
-    width: boxSize,
-    height: boxSize,
+    width: "86%",
+    height: "58%",
     position: "relative",
     justifyContent: "center",
     alignItems: "center"
   },
   corner: {
     position: "absolute",
-    width: 24,
-    height: 24
-  },
-  topLeft: { top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3 },
-  topRight: { top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3 },
-  bottomLeft: { bottom: 0, left: 0, borderBottomWidth: 3, borderLeftWidth: 3 },
-  bottomRight: { bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3 },
-  crosshairH: {
     width: 20,
+    height: 20
+  },
+  topLeft: { top: 0, left: 0, borderTopWidth: 2.5, borderLeftWidth: 2.5 },
+  topRight: { top: 0, right: 0, borderTopWidth: 2.5, borderRightWidth: 2.5 },
+  bottomLeft: { bottom: 0, left: 0, borderBottomWidth: 2.5, borderLeftWidth: 2.5 },
+  bottomRight: { bottom: 0, right: 0, borderBottomWidth: 2.5, borderRightWidth: 2.5 },
+  crosshairH: {
+    width: 16,
     height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.4)"
+    backgroundColor: "rgba(255, 255, 255, 0.3)"
   },
   crosshairV: {
     width: 1,
-    height: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
+    height: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
     position: "absolute"
   },
   innerGuide: {
-    marginTop: 40,
+    marginTop: 20,
     paddingHorizontal: 8,
     paddingVertical: 2,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    borderRadius: 2
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    borderRadius: 4
   },
   guideText: {
     fontSize: 10,
     fontWeight: "700"
   },
   iqaCard: {
-    width: "100%",
-    maxWidth: 360,
-    padding: 10,
-    borderWidth: 1
+    width: "92%",
+    maxWidth: 340,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderRadius: 12
   },
   iqaHeader: {
     flexDirection: "row",

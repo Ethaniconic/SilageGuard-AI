@@ -16,6 +16,7 @@ import { useRouter, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../features/ble/bleManager";
 import { AppIcon, IconName } from "./AppIcon";
+import { safeNavigate } from "../utils/navigation";
 
 interface TabItem {
   key: string;
@@ -65,9 +66,7 @@ export const BottomNavBar: React.FC = () => {
                 }
               ]}
               onPress={() => {
-                if (pathname !== tab.route) {
-                  router.push(tab.route as any);
-                }
+                safeNavigate(router, tab.route, pathname, false);
               }}
               activeOpacity={0.8}
             >
@@ -82,9 +81,7 @@ export const BottomNavBar: React.FC = () => {
             key={tab.key}
             style={styles.tab}
             onPress={() => {
-              if (pathname !== tab.route) {
-                router.push(tab.route as any);
-              }
+              safeNavigate(router, tab.route, pathname, true);
             }}
             activeOpacity={0.7}
           >

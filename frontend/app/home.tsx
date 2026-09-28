@@ -13,7 +13,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header } from "../components/Header";
 import { StatCard } from "../components/StatCard";
@@ -25,10 +25,12 @@ import { StatusCard } from "../components/StatusCard";
 import { EmptyState } from "../components/EmptyState";
 import { useAppStore } from "../store/useAppStore";
 import { batchRepository } from "../sqlite/batchRepository";
+import { safeNavigate } from "../utils/navigation";
 import { SPACING, RADIUS } from "../theme";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const {
     theme,
@@ -36,7 +38,6 @@ export default function HomeScreen() {
     isOnline,
     isBleConnected,
     telemetry,
-    batteryPct,
     pendingSyncCount,
   } = useAppStore();
 
@@ -131,7 +132,7 @@ export default function HomeScreen() {
           {/* Hardware Probe Quick Indicator */}
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => router.push("/ble" as any)}
+            onPress={() => safeNavigate(router, "/ble", pathname)}
             style={[
               styles.probeBar,
               {
@@ -147,7 +148,7 @@ export default function HomeScreen() {
                   { backgroundColor: isBleConnected ? theme.safe : theme.unsafe },
                 ]}
               />
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={[styles.probeBarTitle, { color: theme.text }]}>
                   {isBleConnected
                     ? "ESP32-S3 Silage Probe Connected"
@@ -161,19 +162,14 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            <View style={styles.batteryChip}>
-              <Text style={[styles.batteryText, { color: theme.textSecondary }]}>
-                ⚡ {batteryPct}%
-              </Text>
-            </View>
+            {isBleConnected && telemetry?.battery !== null && telemetry?.battery !== undefined ? (
+              <View style={styles.batteryChip}>
+                <Text style={[styles.batteryText, { color: theme.textSecondary }]}>
+                  ⚡ {telemetry.battery}%
+                </Text>
+              </View>
+            ) : null}
           </TouchableOpacity>
-
-          {/* Weather Placeholder */}
-          <View style={[styles.weatherRow, { borderTopColor: theme.cardBorder }]}>
-            <Text style={[styles.weatherText, { color: theme.textMuted }]}>
-              📍 Local Silage Bunker · 26°C · 58% RH · Direct Sunlight Visible
-            </Text>
-          </View>
         </View>
 
         {/* Quick Actions (4-button grid) */}
@@ -192,7 +188,7 @@ export default function HomeScreen() {
         <View style={styles.actionGrid}>
           <TouchableOpacity
             style={[styles.actionCard, { backgroundColor: theme.primary, borderColor: theme.primaryLight }]}
-            onPress={() => router.push("/camera" as any)}
+            onPress={() => safeNavigate(router, "/camera", pathname)}
             activeOpacity={0.8}
           >
             <AppIcon name="camera" size={26} color="#042F2E" />
@@ -204,7 +200,7 @@ export default function HomeScreen() {
 
           <TouchableOpacity
             style={[styles.actionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
-            onPress={() => router.push("/history" as any)}
+            onPress={() => safeNavigate(router, "/history", pathname)}
             activeOpacity={0.8}
           >
             <AppIcon name="history" size={24} color={theme.accent} />
@@ -216,7 +212,7 @@ export default function HomeScreen() {
 
           <TouchableOpacity
             style={[styles.actionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
-            onPress={() => router.push("/education" as any)}
+            onPress={() => safeNavigate(router, "/education", pathname)}
             activeOpacity={0.8}
           >
             <AppIcon name="help" size={24} color={theme.primary} />
@@ -228,7 +224,7 @@ export default function HomeScreen() {
 
           <TouchableOpacity
             style={[styles.actionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
-            onPress={() => router.push("/calibration" as any)}
+            onPress={() => safeNavigate(router, "/calibration", pathname)}
             activeOpacity={0.8}
           >
             <AppIcon name="sliders" size={24} color={theme.caution} />
@@ -307,7 +303,7 @@ export default function HomeScreen() {
             title="No Silage Scans Performed Yet"
             description="Fresh installation verified (RULE 4). Connect your ESP32-S3 probe and take surface photos to begin screening."
             actionTitle="Take First Scan"
-            onAction={() => router.push("/camera" as any)}
+            onAction={() => safeNavigate(router, "/camera", pathname)}
           />
         )}
       </ScrollView>
@@ -396,14 +392,6 @@ const styles = StyleSheet.create({
   batteryText: {
     fontSize: 11,
     fontWeight: "700",
-  },
-  weatherRow: {
-    borderTopWidth: 1,
-    paddingTop: SPACING.sm,
-  },
-  weatherText: {
-    fontSize: 11,
-    fontStyle: "italic",
   },
   sectionHeading: {
     fontWeight: "700",

@@ -7,7 +7,7 @@
  * - Seamlessly routes to Home Dashboard
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Animated } from "react-native";
 import { useRouter } from "expo-router";
 import { initDatabase } from "../sqlite/database";
@@ -21,10 +21,18 @@ export default function SplashScreen() {
   const [isReady, setIsReady] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
 
+  const hasNavigated = useRef(false);
+
+  const enterHome = () => {
+    if (hasNavigated.current) return;
+    hasNavigated.current = true;
+    router.replace("/home" as any);
+  };
+
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 800,
+      duration: 500,
       useNativeDriver: true
     }).start();
 
@@ -51,7 +59,7 @@ export default function SplashScreen() {
 
         // Auto-navigate after brief pause
         setTimeout(() => {
-          router.replace("/home" as any);
+          enterHome();
         }, 600);
       } catch (e) {
         console.error("Startup notice:", e);
@@ -93,7 +101,7 @@ export default function SplashScreen() {
         {isReady && (
           <TouchableOpacity
             style={styles.enterButton}
-            onPress={() => router.replace("/home" as any)}
+            onPress={enterHome}
             activeOpacity={0.8}
           >
             <Text style={styles.enterButtonText}>ENTER DASHBOARD →</Text>

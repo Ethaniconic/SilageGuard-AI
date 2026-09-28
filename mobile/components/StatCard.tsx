@@ -51,16 +51,10 @@ export const StatCard: React.FC<Props> = ({
       ]}
     >
       <View style={styles.topRow}>
-        {iconName ? (
+        {iconName || icon ? (
           <View style={styles.iconWrapper}>
-            <AppIcon name={iconName} size={13} color={activeColor} />
+            <AppIcon name={(iconName || icon) as IconName} size={14} color={activeColor} />
           </View>
-        ) : icon && ["camera", "scan", "probe", "bluetooth", "battery", "sun", "moon", "history", "settings", "analytics", "info", "help", "file", "shield"].includes(icon) ? (
-          <View style={styles.iconWrapper}>
-            <AppIcon name={icon as IconName} size={13} color={activeColor} />
-          </View>
-        ) : icon ? (
-          <Text style={styles.iconText}>{icon}</Text>
         ) : null}
         <Text style={[styles.label, { color: theme.textMuted }]}>{label}</Text>
       </View>

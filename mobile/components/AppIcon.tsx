@@ -45,9 +45,10 @@ export type IconName =
   | "chevron-up"
 
   | "check"
-
+  | "check-circle"
   | "alert"
-
+  | "alert-triangle"
+  | "activity"
   | "cloud-offline"
 
   | "history"
@@ -431,32 +432,47 @@ export const AppIcon: React.FC<Props> = ({
 
 
 
+    case "alert-triangle":
     case "alert":
-
       return (
-
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-
           <Path
-
             d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
-
             stroke={color}
-
             strokeWidth={strokeWidth}
-
             strokeLinecap="round"
-
             strokeLinejoin="round"
-
           />
-
           <Line x1="12" y1="9" x2="12" y2="13" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-
           <Line x1="12" y1="17" x2="12.01" y2="17" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
-
         </Svg>
+      );
 
+    case "activity":
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Polyline
+            points="22 12 18 12 15 21 9 3 6 12 2 12"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      );
+
+    case "check-circle":
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth={strokeWidth} />
+          <Polyline
+            points="16 10 11 15 8 12"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
       );
 
 
