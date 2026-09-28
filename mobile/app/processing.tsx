@@ -20,6 +20,7 @@ import { computeMultimodalFusion } from "../features/fusion/multimodalFusionEngi
 import { generateFarmerAdvisory } from "../features/advisory/advisoryEngine";
 import { batchRepository } from "../sqlite/batchRepository";
 import { generateSilageQRPayload } from "../utils/qrGenerator";
+import { enqueueBatchForSync } from "../services/syncBridge";
 
 interface PipelineStage {
   id: string;
@@ -226,6 +227,11 @@ export default function ProcessingScreen() {
 
       // Store in Zustand for immediate results view
       setLatestResult(fusionRes, advisory);
+
+      // Queue this batch for the backend. Fire-and-forget: the scan is already
+      // scored and stored locally, so a slow or absent backend must never delay
+      // the farmer seeing their result.
+      enqueueBatchForSync(batchId).catch(() => undefined);
 
       // Route to Results
       setTimeout(() => {

@@ -4,7 +4,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from prometheus_fastapi_instrumentator import Instrumentator
+try:
+    from prometheus_fastapi_instrumentator import Instrumentator
+    has_prometheus = True
+except ImportError:
+    has_prometheus = False
 from starlette.responses import JSONResponse
 
 from app.config import settings
@@ -46,7 +50,8 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
-Instrumentator().instrument(app).expose(app)
+if has_prometheus:
+    Instrumentator().instrument(app).expose(app)
 
 
 @app.get("/")

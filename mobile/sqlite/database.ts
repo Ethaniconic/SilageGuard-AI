@@ -15,6 +15,7 @@
  */
 
 import { Platform } from "react-native";
+import { openDatabaseAsync } from "./sqliteDriver";
 
 export interface BatchRecord {
   id: string;
@@ -150,8 +151,7 @@ export async function initDatabase(): Promise<boolean> {
   try {
     if (Platform.OS !== "web") {
       try {
-        const SQLite = require("expo-sqlite");
-        nativeDb = await SQLite.openDatabaseAsync("silageguard_v3.db");
+        nativeDb = await openDatabaseAsync("silageguard_v3.db");
         
         await nativeDb.execAsync(`
           PRAGMA journal_mode = WAL;
