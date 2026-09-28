@@ -27,6 +27,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header } from "../components/Header";
 import { CameraGuidanceOverlay } from "../components/CameraGuidanceOverlay";
 import { AppIcon } from "../components/AppIcon";
+import { AnimatedPressable } from "../components/AnimatedPressable";
+import { ProbeBeacon } from "../components/ProbeBeacon";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { safeNavigate } from "../utils/navigation";
 
@@ -381,13 +383,8 @@ export default function CameraScreen() {
         >
           <View style={styles.probeCardHeader}>
             <View style={styles.probeIndicatorRow}>
-              <View
-                style={[
-                  styles.probeDot,
-                  { backgroundColor: isConnected ? theme.safe : theme.unsafe }
-                ]}
-              />
-              <Text style={[styles.probeCardTitle, { color: theme.text }]}>
+              <ProbeBeacon isConnected={isConnected} size={11} />
+              <Text style={[styles.probeCardTitle, { color: theme.text, marginLeft: 6 }]}>
                 {isConnected ? "Probe Connected" : "Probe Disconnected"}
               </Text>
             </View>
@@ -631,7 +628,7 @@ export default function CameraScreen() {
         )}
 
         {/* PRIMARY ACTION BUTTON (Large, Farmer-Friendly Target) */}
-        <TouchableOpacity
+        <AnimatedPressable
           style={[
             styles.analyzeButton,
             {
@@ -640,12 +637,11 @@ export default function CameraScreen() {
             }
           ]}
           onPress={handleProceedToAI}
-          activeOpacity={0.85}
         >
-          <AppIcon name="scan" size={20} color="#090D16" strokeWidth={2.4} />
+          <AppIcon name="scan" size={20} color="#042F2E" strokeWidth={2.4} />
           <Text style={styles.analyzeButtonText}>RUN AI EVALUATION</Text>
-          <AppIcon name="arrow-forward" size={18} color="#090D16" strokeWidth={2.4} />
-        </TouchableOpacity>
+          <AppIcon name="arrow-forward" size={18} color="#042F2E" strokeWidth={2.4} />
+        </AnimatedPressable>
       </ScrollView>
     </View>
   );
