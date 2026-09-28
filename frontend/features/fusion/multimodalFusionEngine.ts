@@ -201,6 +201,18 @@ export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionO
   }
 
   // 2. Individual Modality Scores
+  // Helper to normalize confidence strictly to 0..100 percentage
+  const normalizeToPercentage = (val: number | null | undefined, fallback = 70): number => {
+    if (val === null || val === undefined || isNaN(val)) return fallback;
+    if (val > 0 && val <= 1.0) {
+      return Math.min(100, Math.max(0, Math.round(val * 100)));
+    }
+    if (val > 100) {
+      return Math.min(100, Math.max(0, Math.round(val / 100)));
+    }
+    return Math.min(100, Math.max(0, Math.round(val)));
+  };
+
   let sensorScore: number | null = null;
   let sensorConfidence: number | null = null;
   let ph = 4.0;
@@ -210,10 +222,16 @@ export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionO
   let coreTemp = 25.0;
 
   if (hasSensor && sensorResult) {
-    sensorScore = Math.round(
-      sensorResult.probabilities.safe * 100 + sensorResult.probabilities.caution * 50
+    sensorScore = Math.min(
+      100,
+      Math.max(
+        0,
+        Math.round(
+          sensorResult.probabilities.safe * 100 + sensorResult.probabilities.caution * 50
+        )
+      )
     );
-    sensorConfidence = Math.round(sensorResult.confidence * 100);
+    sensorConfidence = normalizeToPercentage(sensorResult.confidence, 85);
     isPhReal = !sensorResult.explainability.some(e => e.factor.includes("Unmeasured"));
     ph = sensorResult.features.ph;
     moisture = sensorResult.features.moisture_adc;
@@ -226,11 +244,17 @@ export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionO
   let mouldProb = 0.0;
 
   if (hasVision && visionResult) {
-    visionScore = Math.round(
-      visionResult.probabilities.safe * 100 + visionResult.probabilities.caution * 50
+    visionScore = Math.min(
+      100,
+      Math.max(
+        0,
+        Math.round(
+          visionResult.probabilities.safe * 100 + visionResult.probabilities.caution * 50
+        )
+      )
     );
-    visionConfidence = Math.round(visionResult.confidence * 100);
-    mouldProb = visionResult.mouldProbability;
+    visionConfidence = normalizeToPercentage(visionResult.confidence, 85);
+    mouldProb = Math.min(1.0, Math.max(0.0, visionResult.mouldProbability));
   }
 
   // 3. Continuous Fusion Score & Raw Confidence
@@ -241,19 +265,21 @@ export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionO
     const sW = FUSION_CONFIG.FUSION_SENSOR_WEIGHT;
     const vW = FUSION_CONFIG.FUSION_VISION_WEIGHT;
     fusionScore = Math.min(100, Math.max(0, Math.round(sW * sensorScore + vW * visionScore)));
-    rawConfidence = Math.round(sW * (sensorConfidence ?? 0) + vW * (visionConfidence ?? 0));
+    rawConfidence = Math.min(100, Math.max(0, Math.round(sW * (sensorConfidence ?? 0) + vW * (visionConfidence ?? 0))));
   } else if (modalityState === "SENSOR_ONLY" && sensorScore !== null) {
-    fusionScore = sensorScore;
-    rawConfidence = Math.round((sensorConfidence ?? 70) * 0.85); // slight penalty for missing surface inspection
+    fusionScore = Math.min(100, Math.max(0, sensorScore));
+    rawConfidence = Math.min(100, Math.max(0, Math.round((sensorConfidence ?? 70) * 0.85))); // slight penalty for missing surface inspection
   } else if (modalityState === "VISION_ONLY" && visionScore !== null) {
-    fusionScore = visionScore;
-    rawConfidence = Math.round((visionConfidence ?? 70) * 0.75); // higher penalty for missing core fermentation chemistry
+    fusionScore = Math.min(100, Math.max(0, visionScore));
+    rawConfidence = Math.min(100, Math.max(0, Math.round((visionConfidence ?? 70) * 0.75))); // higher penalty for missing core fermentation chemistry
   }
 
   // Penalty if image quality did not cleanly pass IQA
   if (!iqaPassed) {
     rawConfidence = Math.max(20, rawConfidence - 20);
   }
+
+  rawConfidence = Math.min(100, Math.max(0, rawConfidence));
 
   // 4. Calibrated Confidence Tier
   let confidenceLevel: ConfidenceTier = "HIGH";

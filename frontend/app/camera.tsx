@@ -53,6 +53,8 @@ export default function CameraScreen() {
   const cameraRef = useRef<any>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [showAdvancedParams, setShowAdvancedParams] = useState(false);
+  const [pictureSize, setPictureSize] = useState<string | undefined>(undefined);
+  const [torchEnabled, setTorchEnabled] = useState(false);
 
   const isConnected = bleStatus === "CONNECTED";
 
@@ -63,15 +65,41 @@ export default function CameraScreen() {
     "Lucerne / Alfalfa"
   ];
 
-  // Shutter action using active CameraView
+  // Negotiate highest hardware resolution picture sizes supported by device camera
+  const handleCameraReady = async () => {
+    if (cameraRef.current?.getAvailablePictureSizesAsync) {
+      try {
+        const sizes: string[] = await cameraRef.current.getAvailablePictureSizesAsync();
+        if (sizes && sizes.length > 0) {
+          // Sort descending by total pixels (width * height) so maximum megapixels are utilized
+          const sorted = [...sizes].sort((a, b) => {
+            const [wA, hA] = a.split("x").map(Number);
+            const [wB, hB] = b.split("x").map(Number);
+            return (wB * hB) - (wA * hA);
+          });
+          if (sorted[0]) {
+            console.log("[SilageGuard Camera] Configured maximum sensor resolution:", sorted[0]);
+            setPictureSize(sorted[0]);
+          }
+        }
+      } catch (e) {
+        console.warn("Could not query camera picture sizes:", e);
+      }
+    }
+  };
+
+  // Shutter action using active CameraView with maximum sensor megapixels and uncompressed quality
   const handleSnapPhoto = async () => {
     if (cameraRef.current) {
       try {
         setIsCapturing(true);
         const photo = await cameraRef.current.takePictureAsync({
-          quality: 0.8
+          quality: 1.0,           // 100% full uncompressed quality (no lossy compression)
+          skipProcessing: false,  // Complete EXIF and sensor orientation pipeline
+          shutterSound: true
         });
         if (photo && photo.uri) {
+          console.log("[SilageGuard Camera] Captured photo:", photo.width, "x", photo.height, photo.uri);
           addScanImage(photo.uri);
         }
       } catch (err) {
@@ -85,13 +113,13 @@ export default function CameraScreen() {
     }
   };
 
-  // Pick from device photo gallery
+  // Pick from device photo gallery at full original native megapixels (no crop downscaling)
   const handlePickGallery = async () => {
     try {
       const res = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
-        allowsEditing: true,
-        quality: 0.8
+        allowsEditing: false, // Keep original native uncropped resolution
+        quality: 1.0          // Full 100% resolution without downsampling
       });
       if (!res.canceled && res.assets && res.assets[0]?.uri) {
         addScanImage(res.assets[0].uri);
@@ -208,7 +236,26 @@ export default function CameraScreen() {
                 ref={cameraRef}
                 style={StyleSheet.absoluteFill}
                 facing="back"
+                mode="picture"
+                autofocus="on"
+                pictureSize={pictureSize}
+                enableTorch={torchEnabled}
+                onCameraReady={handleCameraReady}
               />
+              {/* Torch / Flash Toggle Button */}
+              <TouchableOpacity
+                style={[
+                  styles.torchButton,
+                  {
+                    backgroundColor: torchEnabled ? theme.primary : "rgba(0,0,0,0.65)",
+                    borderColor: torchEnabled ? theme.primary : theme.cardBorder
+                  }
+                ]}
+                onPress={() => setTorchEnabled((prev) => !prev)}
+                activeOpacity={0.8}
+              >
+                <AppIcon name="flash" size={16} color={torchEnabled ? "#090D16" : "#FFFFFF"} />
+              </TouchableOpacity>
               <CameraGuidanceOverlay currentStep={scanImages.length + 1} photoCount={scanImages.length} maxPhotos={3} probeConnected={isConnected} />
             </View>
           ) : (
@@ -685,6 +732,18 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "800",
     marginLeft: 6
+  },
+  torchButton: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    zIndex: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center"
   },
   permissionCard: {
     alignItems: "center",

@@ -90,7 +90,8 @@ export type IconName =
   | "help"
   | "file"
   | "sliders"
-  | "layers";
+  | "layers"
+  | "flash";
 
 
 
@@ -842,6 +843,20 @@ export const AppIcon: React.FC<Props> = ({
       );
 
 
+
+    case "flash":
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Polygon
+            points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill={color}
+          />
+        </Svg>
+      );
 
     default:
 

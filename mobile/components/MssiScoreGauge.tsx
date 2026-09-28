@@ -73,7 +73,7 @@ export const MssiScoreGauge: React.FC<Props> = ({
         <Text style={[styles.verdictText, { color }]}>{verdict}</Text>
         {confidence !== undefined && (
           <Text style={[styles.confidenceText, { color: theme.textMuted }]}>
-            {confidence}% conf
+            {Math.min(100, Math.max(0, Math.round(confidence > 100 ? confidence / 100 : confidence)))}% conf
           </Text>
         )}
       </View>

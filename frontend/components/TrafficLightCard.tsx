@@ -47,6 +47,9 @@ export const TrafficLightCard: React.FC<Props> = ({
     ? "Aerobic Heating Signal - Monitor closely / Feed within 6h"
     : "Elevated Spoilage Signal - Do not feed suspect forage";
 
+  const normalizedConfidence = Math.min(100, Math.max(0, Math.round(confidence > 100 ? confidence / 100 : confidence)));
+  const normalizedScore = Math.min(100, Math.max(0, Math.round(mssiScore)));
+
   return (
     <View
       style={[
@@ -95,12 +98,12 @@ export const TrafficLightCard: React.FC<Props> = ({
       <View style={[styles.metaRow, { borderTopColor: borderColor + "44" }]}>
         <View style={styles.badge}>
           <Text style={[styles.badgeLabel, { color: theme.textMuted }]}>MSSI SAFETY INDEX</Text>
-          <Text style={[styles.badgeValue, { color: mainColor }]}>{mssiScore}/100</Text>
+          <Text style={[styles.badgeValue, { color: mainColor }]}>{normalizedScore}/100</Text>
         </View>
         <View style={[styles.badgeDivider, { backgroundColor: borderColor + "44" }]} />
         <View style={styles.badge}>
           <Text style={[styles.badgeLabel, { color: theme.textMuted }]}>AI CONFIDENCE</Text>
-          <Text style={[styles.badgeValue, { color: theme.text }]}>{confidence}%</Text>
+          <Text style={[styles.badgeValue, { color: theme.text }]}>{normalizedConfidence}%</Text>
         </View>
       </View>
     </View>

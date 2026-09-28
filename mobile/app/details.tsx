@@ -125,7 +125,7 @@ export default function BatchDetailsScreen() {
         {/* Primary Verdict Card */}
         <TrafficLightCard
           decision={batch.decision}
-          confidence={batch.confidence}
+          confidence={Math.min(100, Math.max(0, Math.round(batch.confidence > 100 ? batch.confidence / 100 : batch.confidence)))}
           mssiScore={batch.mssi_score}
           cropType={batch.crop_type}
           pitDepthCm={batch.pit_depth_cm}
@@ -135,7 +135,7 @@ export default function BatchDetailsScreen() {
         <MssiScoreGauge
           score={batch.mssi_score}
           decision={batch.decision}
-          confidence={batch.confidence}
+          confidence={Math.min(100, Math.max(0, Math.round(batch.confidence > 100 ? batch.confidence / 100 : batch.confidence)))}
         />
 
         {/* Multi-Modal Evidence Breakdown */}

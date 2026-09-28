@@ -144,7 +144,9 @@ export default function HistoryScreen() {
 
           <View style={styles.confidencePill}>
             <Text style={[styles.confLabel, { color: theme.textMuted }]}>Confidence:</Text>
-            <Text style={[styles.confVal, { color: theme.text }]}>{item.confidence}%</Text>
+            <Text style={[styles.confVal, { color: theme.text }]}>
+              {Math.min(100, Math.max(0, Math.round(item.confidence > 100 ? item.confidence / 100 : item.confidence)))}%
+            </Text>
           </View>
 
           <View style={{ flexDirection: "row", alignItems: "center" }}>
