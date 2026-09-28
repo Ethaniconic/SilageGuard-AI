@@ -181,6 +181,90 @@ class BLEServiceManager {
   }
 
   /**
+   * Diagnostic inspector for Web Bluetooth execution environment.
+   */
+  public getBluetoothEnvironmentStatus(): {
+    supported: boolean;
+    isSecureContext: boolean;
+    origin: string;
+    isIOS: boolean;
+    isMobile: boolean;
+    reason?: string;
+    fixInstructions?: string;
+  } {
+    const isBrowser = typeof window !== "undefined" && typeof navigator !== "undefined";
+    if (!isBrowser) {
+      return {
+        supported: false,
+        isSecureContext: false,
+        origin: "",
+        isIOS: false,
+        isMobile: false,
+        reason: "Non-browser environment."
+      };
+    }
+
+    const origin = window.location.origin || "";
+    const isSecure = Boolean(
+      window.isSecureContext ||
+      window.location.protocol === "https:" ||
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1"
+    );
+    const hasBluetooth = this.isWebBluetoothSupported();
+    const userAgent = navigator.userAgent || "";
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent);
+
+    if (hasBluetooth) {
+      return {
+        supported: true,
+        isSecureContext: isSecure,
+        origin,
+        isIOS,
+        isMobile
+      };
+    }
+
+    if (isIOS) {
+      return {
+        supported: false,
+        isSecureContext: isSecure,
+        origin,
+        isIOS: true,
+        isMobile: true,
+        reason: "Apple restricts Web Bluetooth in Safari & Chrome on iOS.",
+        fixInstructions:
+          "Apple restricts Web Bluetooth on iPhone. Please install the free 'Bluefy - Web BLE Browser' from the App Store, or open http://localhost:8081 on your laptop in Chrome/Edge."
+      };
+    }
+
+    if (!isSecure) {
+      return {
+        supported: false,
+        isSecureContext: false,
+        origin,
+        isIOS: false,
+        isMobile,
+        reason: `Mobile Chrome disables Web Bluetooth on non-localhost HTTP (${origin}).`,
+        fixInstructions:
+          `Chrome blocks Bluetooth over local IP HTTP (${origin}).\nFix in 30 seconds:\n1. On phone Chrome, open: chrome://flags\n2. Search: 'Insecure origins treated as secure'\n3. Enable and add: ${origin}\n4. Tap Relaunch.\nOr open http://localhost:8081 directly on your laptop in Chrome/Edge!`
+      };
+    }
+
+    return {
+      supported: false,
+      isSecureContext: isSecure,
+      origin,
+      isIOS,
+      isMobile,
+      reason: "Browser does not expose Web Bluetooth API.",
+      fixInstructions:
+        "Please use Google Chrome, Microsoft Edge, or Samsung Internet with Bluetooth enabled."
+    };
+  }
+
+  /**
    * Connect to physical ESP32 probe over Bluetooth Low Energy.
    * If isDemo is explicitly true, runs simulated benchmark stream for judging/offline review.
    */
@@ -205,11 +289,9 @@ class BLEServiceManager {
       this.mockInterval = null;
     }
 
-    if (!this.isWebBluetoothSupported()) {
-      this.setStatus(
-        "ERROR",
-        "Web Bluetooth is not supported in this browser. Please open in Google Chrome, Microsoft Edge, or Android Chrome on your laptop/mobile to connect directly to the ESP32 hardware via BLE."
-      );
+    const env = this.getBluetoothEnvironmentStatus();
+    if (!env.supported) {
+      this.setStatus("ERROR", env.fixInstructions || env.reason || "Web Bluetooth is not available in this browser.");
       return;
     }
 

@@ -197,6 +197,63 @@ export default function BleScreen() {
           >
             {statusMessage}
           </Text>
+
+          {/* Dedicated Solution Card if Mobile Chrome blocks HTTP Bluetooth */}
+          {bleStatus === "ERROR" && (
+            <View
+              style={[
+                styles.helpCard,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.unsafe,
+                  borderRadius: theme.radiusSm
+                }
+              ]}
+            >
+              <View style={styles.helpHeaderRow}>
+                <AppIcon name="alert" size={16} color={theme.unsafe} />
+                <Text style={[styles.helpHeaderTitle, { color: theme.unsafe }]}>
+                  HOW TO ENABLE IN MOBILE CHROME (30 SECONDS)
+                </Text>
+              </View>
+
+              <Text style={[styles.helpIntro, { color: theme.text }]}>
+                Google Chrome security requires <Text style={{ fontWeight: "700" }}>HTTPS or localhost</Text> for Bluetooth. Because you opened the app over local Wi-Fi, Chrome temporarily hides Bluetooth on HTTP.
+              </Text>
+
+              <View style={styles.helpStepBlock}>
+                <Text style={[styles.helpStepTitle, { color: theme.primary }]}>
+                  Option 1 (Fastest on Android Phone):
+                </Text>
+                <Text style={[styles.helpStepText, { color: theme.textMuted }]}>
+                  1. In phone Chrome, type: <Text style={{ color: theme.accent, fontWeight: "700" }}>chrome://flags</Text>
+                </Text>
+                <Text style={[styles.helpStepText, { color: theme.textMuted }]}>
+                  2. Search: <Text style={{ color: theme.accent, fontWeight: "700" }}>Insecure origins treated as secure</Text>
+                </Text>
+                <Text style={[styles.helpStepText, { color: theme.textMuted }]}>
+                  3. Set to <Text style={{ color: theme.safe, fontWeight: "800" }}>Enabled</Text> and type:
+                </Text>
+                <View style={[styles.urlBadge, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+                  <Text style={[styles.urlBadgeText, { color: theme.primary }]}>
+                    {typeof window !== "undefined" && window.location?.origin ? window.location.origin : "http://<YOUR_IP>:8081"}
+                  </Text>
+                </View>
+                <Text style={[styles.helpStepText, { color: theme.textMuted }]}>
+                  4. Tap <Text style={{ color: theme.text, fontWeight: "700" }}>Relaunch</Text> at the bottom.
+                </Text>
+              </View>
+
+              <View style={[styles.helpStepBlock, { marginTop: 10 }]}>
+                <Text style={[styles.helpStepTitle, { color: theme.accent }]}>
+                  Option 2 (No Flags Needed — On Laptop):
+                </Text>
+                <Text style={[styles.helpStepText, { color: theme.textMuted }]}>
+                  Open <Text style={{ color: theme.accent, fontWeight: "700" }}>http://localhost:8081</Text> directly on your laptop in Chrome or Edge. Since localhost is inherently secure, Bluetooth works immediately!
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Demo Preset Selector */}
@@ -493,5 +550,52 @@ const styles = StyleSheet.create({
   gaugeRow: {
     flexDirection: "row",
     justifyContent: "space-between"
+  },
+  helpCard: {
+    marginTop: 12,
+    padding: 12,
+    borderWidth: 1.5
+  },
+  helpHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 6
+  },
+  helpHeaderTitle: {
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.4
+  },
+  helpIntro: {
+    fontSize: 11,
+    lineHeight: 16,
+    marginBottom: 10
+  },
+  helpStepBlock: {
+    paddingLeft: 4
+  },
+  helpStepTitle: {
+    fontSize: 11,
+    fontWeight: "800",
+    marginBottom: 4
+  },
+  helpStepText: {
+    fontSize: 11,
+    lineHeight: 16,
+    marginBottom: 2
+  },
+  urlBadge: {
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginVertical: 4,
+    alignSelf: "flex-start",
+    borderRadius: 4
+  },
+  urlBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    fontFamily: "monospace"
   }
 });
