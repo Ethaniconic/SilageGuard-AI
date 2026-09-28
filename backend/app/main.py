@@ -14,7 +14,7 @@ from starlette.responses import JSONResponse
 from app.config import settings
 from app.database import Base, engine
 from app.models import AnalyticsEvent, Batch, Cooperative, RegionalAggregate, SyncLog, User
-from app.routers import analytics, auth, device_auth, health, models, qr, sync
+from app.routers import analytics, auth, device_auth, health, inference, models, qr, sync
 from app.utils.jwt import decode_access_token
 
 
@@ -65,6 +65,7 @@ app.include_router(sync.router, prefix="/api/v1/sync")
 app.include_router(qr.router, prefix="/api/v1/qr")
 app.include_router(analytics.router, prefix="/api/v1/analytics")
 app.include_router(models.router, prefix="/api/v1/models")
+app.include_router(inference.router, prefix="/api/v1/inference")
 app.include_router(health.router, prefix="/api/v1")
 # NOTE: "/metrics" at the root is owned by the Prometheus Instrumentator above.
 # The application's own health metrics stay available at "/api/v1/metrics"

@@ -87,7 +87,7 @@ export default function ProcessingScreen() {
   useEffect(() => {
     async function executeAIPipeline() {
       // --- STAGE 1: Sensor AI ---
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 400));
       let sensorRes: any = null;
 
       if (isProbeConnected) {
@@ -102,7 +102,14 @@ export default function ProcessingScreen() {
       setStages((prev) =>
         prev.map((s, idx) =>
           idx === 0
-            ? { ...s, status: "completed", durationMs: sensorRes ? sensorRes.latencyMs : 5 }
+            ? {
+                ...s,
+                status: "completed",
+                subtitle: sensorRes
+                  ? s.subtitle
+                  : "Bypassed • Probe Disconnected",
+                durationMs: sensorRes ? sensorRes.latencyMs : undefined
+              }
             : idx === 1
             ? { ...s, status: "running" }
             : s
@@ -312,15 +319,20 @@ export default function ProcessingScreen() {
                   </View>
                 </View>
 
-                {isCompleted && stage.durationMs !== undefined && (
+                {isCompleted && (
                   <View
                     style={[
                       styles.latencyBadge,
                       { backgroundColor: theme.surface, borderRadius: theme.radiusSm }
                     ]}
                   >
-                    <Text style={[styles.latencyText, { color: theme.safe }]}>
-                      {stage.durationMs}ms
+                    <Text
+                      style={[
+                        styles.latencyText,
+                        { color: stage.durationMs !== undefined ? theme.safe : theme.textMuted }
+                      ]}
+                    >
+                      {stage.durationMs !== undefined ? `${stage.durationMs}ms` : "Bypassed"}
                     </Text>
                   </View>
                 )}

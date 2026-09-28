@@ -42,7 +42,13 @@ export const API_CONFIG = {
     MODELS_REGISTRY: "/api/v1/models/registry/",
     MODELS_FAMILY: (family: string) => `/api/v1/models/registry/${family}`,
     MODELS_METRICS: (family: string) => `/api/v1/models/registry/${family}/metrics`,
-    MODELS_READY: (family: string) => `/api/v1/models/registry/${family}/ready`
+    MODELS_READY: (family: string) => `/api/v1/models/registry/${family}/ready`,
+
+    // Real Multimodal Edge Inference
+    INFERENCE_VISION: "/api/v1/inference/vision",
+    INFERENCE_VISION_UPLOAD: "/api/v1/inference/vision/upload",
+    INFERENCE_SENSOR: "/api/v1/inference/sensor",
+    INFERENCE_PREDICT: "/api/v1/inference/predict"
   },
 
   STORAGE_KEYS: {

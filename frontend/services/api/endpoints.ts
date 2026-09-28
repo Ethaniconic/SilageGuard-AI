@@ -47,4 +47,17 @@ export const endpoints = {
   async getModelFamilyStatus(family: string): Promise<ApiResponse<any>> {
     return apiClient.get(API_CONFIG.ENDPOINTS.MODELS_READY(family));
   },
+
+  // Edge Multimodal Inference
+  async predictVision(payload: { image_base64?: string; uri?: string; demo_preset?: string }): Promise<ApiResponse<any>> {
+    return apiClient.post(API_CONFIG.ENDPOINTS.INFERENCE_VISION, payload);
+  },
+
+  async predictSensor(payload: { ph?: number | null; moisture?: number | null; temperature?: number | null; ambient?: number | null }): Promise<ApiResponse<any>> {
+    return apiClient.post(API_CONFIG.ENDPOINTS.INFERENCE_SENSOR, payload);
+  },
+
+  async predictMultimodal(payload: any): Promise<ApiResponse<any>> {
+    return apiClient.post(API_CONFIG.ENDPOINTS.INFERENCE_PREDICT, payload);
+  },
 };
