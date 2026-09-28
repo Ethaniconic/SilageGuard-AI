@@ -46,7 +46,7 @@ export default function ExplainabilityScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Header showBack={true} />
+      <Header showBack={true} fallbackRoute="/result" />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Title & Badge */}
@@ -375,7 +375,13 @@ export default function ExplainabilityScreen() {
         {/* Back to Result Button */}
         <TouchableOpacity
           style={[styles.returnButton, { backgroundColor: theme.accent, borderRadius: theme.radiusSm }]}
-          onPress={() => router.back()}
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/result" as any);
+            }
+          }}
           activeOpacity={0.8}
         >
           <AppIcon name="arrow-back" size={16} color="#0B130E" strokeWidth={2.5} />

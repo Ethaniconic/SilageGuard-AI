@@ -112,7 +112,7 @@ export default function ResultScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Header title="SilageGuard AI" showBack={true} />
+      <Header title="SilageGuard AI" showBack={true} fallbackRoute="/home" />
 
       <ScrollView
         contentContainerStyle={[

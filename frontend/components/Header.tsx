@@ -18,9 +18,16 @@ import { AppIcon } from "./AppIcon";
 interface Props {
   title?: string;
   showBack?: boolean;
+  onBack?: () => void;
+  fallbackRoute?: string;
 }
 
-export const Header: React.FC<Props> = ({ title, showBack = false }) => {
+export const Header: React.FC<Props> = ({
+  title,
+  showBack = false,
+  onBack,
+  fallbackRoute = "/home"
+}) => {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
@@ -29,6 +36,18 @@ export const Header: React.FC<Props> = ({ title, showBack = false }) => {
 
   const isConnected = bleStatus === "CONNECTED";
   const isOnBleScreen = pathname === "/ble";
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace((fallbackRoute || "/home") as any);
+    }
+  };
 
   const handleProbePress = () => {
     // Once on the probe screen, no further duplicate redirections
@@ -59,7 +78,7 @@ export const Header: React.FC<Props> = ({ title, showBack = false }) => {
                 borderRadius: theme.radiusSm
               }
             ]}
-            onPress={() => router.back()}
+            onPress={handleBack}
             activeOpacity={0.7}
           >
             <AppIcon name="arrow-back" size={16} color={theme.text} />

@@ -121,7 +121,7 @@ export default function CameraScreen() {
 
   return (
     <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="SilageGuard AI" showBack={true} />
+      <Header title="SilageGuard AI" showBack={true} fallbackRoute="/home" />
 
       <ScrollView
         contentContainerStyle={[

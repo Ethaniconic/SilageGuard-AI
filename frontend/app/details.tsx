@@ -51,7 +51,7 @@ export default function BatchDetailsScreen() {
   if (!details) {
     return (
       <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
-        <Header title="SilageGuard AI" showBack={true} />
+        <Header title="SilageGuard AI" showBack={true} fallbackRoute="/history" />
         <View style={styles.loadingContainer}>
           <Text style={[styles.loadingText, { color: theme.textMuted }]}>
             Loading Batch Record...
@@ -89,7 +89,7 @@ export default function BatchDetailsScreen() {
 
   return (
     <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      <Header title="SilageGuard AI" showBack={true} />
+      <Header title="SilageGuard AI" showBack={true} fallbackRoute="/history" />
 
       <ScrollView
         contentContainerStyle={[
