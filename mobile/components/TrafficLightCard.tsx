@@ -1,11 +1,11 @@
 /**
- * SILAGEGUARD AI - Traffic Light Safety Result Card
+ * SILAGEGUARD AI V4 — Farmer Traffic Light Safety Result Card
  * Large high-contrast visual display designed for field farmers.
- * Vector icons for indicators, sharp industrial corners, and theme support.
+ * Vector icons for indicators, animated active light pulse, animated score gauge, and theme support.
  */
 
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { View, Text, StyleSheet, Animated, Easing } from "react-native";
 import { SilageDecision } from "../features/fusion/multimodalFusionEngine";
 import { useTheme } from "../features/ble/bleManager";
 import { AppIcon } from "./AppIcon";
@@ -42,22 +42,87 @@ export const TrafficLightCard: React.FC<Props> = ({
     : "UNSAFE / SPOILED";
 
   const decisionSubtext = isSafe
-    ? "Safe to feed - Optimal preservation criteria met"
+    ? "Safe to feed — Optimal lactic preservation criteria met"
     : isCaution
-    ? "Aerobic Heating Signal - Monitor closely / Feed within 6h"
-    : "Elevated Spoilage Signal - Do not feed suspect forage";
+    ? "Aerobic Heating Signal — Monitor closely / Feed within 6h"
+    : "Elevated Spoilage Signal — Do not feed suspect forage";
+
+  const thresholdText = isSafe
+    ? "Optimal Fermentation (MSSI ≥ 72)"
+    : isCaution
+    ? "Aerobic Heating Risk (MSSI 40-71)"
+    : "Severe Spoilage / Mould (MSSI < 40)";
 
   const normalizedConfidence = Math.min(100, Math.max(0, Math.round(confidence > 100 ? confidence / 100 : confidence)));
   const normalizedScore = Math.min(100, Math.max(0, Math.round(mssiScore)));
 
+  // Animation values
+  const entranceAnim = useRef(new Animated.Value(0.94)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const scoreBarAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Entrance spring
+    Animated.parallel([
+      Animated.spring(entranceAnim, {
+        toValue: 1,
+        tension: 140,
+        friction: 10,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scoreBarAnim, {
+        toValue: normalizedScore,
+        duration: 900,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+    ]).start();
+
+    // Subtle pulsing on active light
+    const pulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.18,
+          duration: 1200,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1200,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulseLoop.start();
+
+    return () => {
+      pulseLoop.stop();
+    };
+  }, [normalizedScore]);
+
+  const scoreBarWidth = scoreBarAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: ["0%", "100%"],
+  });
+
   return (
-    <View
+    <Animated.View
       style={[
         styles.container,
         {
           backgroundColor: bgColor,
           borderColor,
-          borderRadius: theme.radiusMd
+          borderRadius: theme.radiusLg,
+          opacity: fadeAnim,
+          transform: [{ scale: entranceAnim }],
         }
       ]}
     >
@@ -72,19 +137,47 @@ export const TrafficLightCard: React.FC<Props> = ({
           }
         ]}
       >
-        <View style={[styles.lightCircle, isUnsafe ? styles.activeRed : styles.dimRed]}>
-          {isUnsafe && <AppIcon name="alert" size={14} color="#FFFFFF" strokeWidth={2.4} />}
-        </View>
-        <View style={[styles.lightCircle, isCaution ? styles.activeYellow : styles.dimYellow]}>
-          {isCaution && <AppIcon name="alert" size={14} color="#FFFFFF" strokeWidth={2.4} />}
-        </View>
-        <View style={[styles.lightCircle, isSafe ? styles.activeGreen : styles.dimGreen]}>
-          {isSafe && <AppIcon name="check" size={14} color="#FFFFFF" strokeWidth={2.5} />}
-        </View>
+        {/* RED LIGHT */}
+        <Animated.View
+          style={[
+            styles.lightCircle,
+            isUnsafe ? styles.activeRed : styles.dimRed,
+            isUnsafe ? { transform: [{ scale: pulseAnim }] } : null,
+          ]}
+        >
+          {isUnsafe && <AppIcon name="alert" size={15} color="#FFFFFF" strokeWidth={2.4} />}
+        </Animated.View>
+
+        {/* YELLOW LIGHT */}
+        <Animated.View
+          style={[
+            styles.lightCircle,
+            isCaution ? styles.activeYellow : styles.dimYellow,
+            isCaution ? { transform: [{ scale: pulseAnim }] } : null,
+          ]}
+        >
+          {isCaution && <AppIcon name="alert" size={15} color="#FFFFFF" strokeWidth={2.4} />}
+        </Animated.View>
+
+        {/* GREEN LIGHT */}
+        <Animated.View
+          style={[
+            styles.lightCircle,
+            isSafe ? styles.activeGreen : styles.dimGreen,
+            isSafe ? { transform: [{ scale: pulseAnim }] } : null,
+          ]}
+        >
+          {isSafe && <AppIcon name="check" size={15} color="#FFFFFF" strokeWidth={2.8} />}
+        </Animated.View>
       </View>
 
       <Text style={[styles.decisionText, { color: mainColor }]}>{decisionLabel}</Text>
       <Text style={[styles.subtext, { color: theme.text }]}>{decisionSubtext}</Text>
+
+      {/* Threshold agronomic tag */}
+      <View style={[styles.thresholdPill, { backgroundColor: theme.surface, borderColor }]}>
+        <Text style={[styles.thresholdText, { color: mainColor }]}>{thresholdText}</Text>
+      </View>
 
       {cropType && (
         <View style={styles.cropBadge}>
@@ -95,96 +188,172 @@ export const TrafficLightCard: React.FC<Props> = ({
         </View>
       )}
 
+      {/* Metric Row with Animated Score Gauge */}
       <View style={[styles.metaRow, { borderTopColor: borderColor + "44" }]}>
         <View style={styles.badge}>
           <Text style={[styles.badgeLabel, { color: theme.textMuted }]}>MSSI SAFETY INDEX</Text>
           <Text style={[styles.badgeValue, { color: mainColor }]}>{normalizedScore}/100</Text>
+          {/* Animated Gauge Bar */}
+          <View style={[styles.gaugeTrack, { backgroundColor: theme.surfaceElevated }]}>
+            <Animated.View
+              style={[
+                styles.gaugeFill,
+                {
+                  width: scoreBarWidth,
+                  backgroundColor: mainColor,
+                },
+              ]}
+            />
+          </View>
         </View>
+
         <View style={[styles.badgeDivider, { backgroundColor: borderColor + "44" }]} />
+
         <View style={styles.badge}>
           <Text style={[styles.badgeLabel, { color: theme.textMuted }]}>AI CONFIDENCE</Text>
           <Text style={[styles.badgeValue, { color: theme.text }]}>{normalizedConfidence}%</Text>
+          <Text style={[styles.confidenceSub, { color: theme.textMuted }]}>
+            {normalizedConfidence >= 80 ? "HIGH CERTAINTY" : normalizedConfidence >= 60 ? "MEDIUM TIER" : "RETAKE ADVISED"}
+          </Text>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     borderWidth: 2,
-    padding: 16,
+    padding: 18,
     alignItems: "center",
-    marginVertical: 10
+    marginVertical: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   trafficLightRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     marginBottom: 12,
-    borderWidth: 1
+    borderWidth: 1,
   },
   lightCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    marginHorizontal: 6,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginHorizontal: 7,
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
   },
-  activeRed: { backgroundColor: "#EF4444" },
+  activeRed: {
+    backgroundColor: "#EF4444",
+    shadowColor: "#EF4444",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 8,
+    elevation: 5,
+  },
   dimRed: { backgroundColor: "rgba(239, 68, 68, 0.2)" },
-  activeYellow: { backgroundColor: "#F59E0B" },
+  activeYellow: {
+    backgroundColor: "#F59E0B",
+    shadowColor: "#F59E0B",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 8,
+    elevation: 5,
+  },
   dimYellow: { backgroundColor: "rgba(245, 158, 11, 0.2)" },
-  activeGreen: { backgroundColor: "#10B981" },
+  activeGreen: {
+    backgroundColor: "#10B981",
+    shadowColor: "#10B981",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 8,
+    elevation: 5,
+  },
   dimGreen: { backgroundColor: "rgba(16, 185, 129, 0.2)" },
   decisionText: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: "900",
     letterSpacing: 0.5,
-    textAlign: "center"
+    textAlign: "center",
   },
   subtext: {
     fontSize: 13,
     marginTop: 4,
     fontWeight: "600",
-    textAlign: "center"
+    textAlign: "center",
+    lineHeight: 18,
+  },
+  thresholdPill: {
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  thresholdText: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.4,
   },
   cropBadge: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 6
+    marginTop: 6,
   },
   cropBadgeText: {
     fontSize: 11,
     fontWeight: "700",
-    marginLeft: 4
+    marginLeft: 4,
   },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 14,
-    paddingTop: 12,
+    marginTop: 16,
+    paddingTop: 14,
     borderTopWidth: 1,
     width: "100%",
-    justifyContent: "space-around"
+    justifyContent: "space-around",
   },
   badge: {
-    alignItems: "center"
+    alignItems: "center",
+    flex: 1,
   },
   badgeLabel: {
     fontSize: 9,
     fontWeight: "800",
-    letterSpacing: 0.5
+    letterSpacing: 0.5,
   },
   badgeValue: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "900",
-    marginTop: 2
+    marginTop: 2,
+    letterSpacing: -0.5,
+  },
+  gaugeTrack: {
+    width: "75%",
+    height: 5,
+    borderRadius: 3,
+    overflow: "hidden",
+    marginTop: 6,
+  },
+  gaugeFill: {
+    height: "100%",
+    borderRadius: 3,
+  },
+  confidenceSub: {
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+    marginTop: 4,
   },
   badgeDivider: {
     width: 1,
-    height: 24
-  }
+    height: 38,
+  },
 });

@@ -1,8 +1,8 @@
 /**
- * SILAGEGUARD AI V4 — Home Dashboard
- * Industrial instrumentation interface with time-based farmer greeting,
- * offline status, live probe telemetry badge, today's summary, quick actions,
- * and educational insights. Strict adherence to RULE 4 (ZERO DUMMY DATA).
+ * SILAGEGUARD AI V4 — Farmer-Friendly Home Dashboard
+ * High-contrast agricultural console designed for bright sunlight and tactile field use.
+ * Features animated probe beacon, spring-tactile touchables, animated quality meters,
+ * and actionable agronomic insights. Strict adherence to RULE 4 (ZERO DUMMY DATA).
  */
 
 import React, { useEffect, useState } from "react";
@@ -11,18 +11,17 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
 } from "react-native";
 import { useRouter, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header } from "../components/Header";
-import { StatCard } from "../components/StatCard";
 import { QualityTrendChart } from "../components/QualityTrendChart";
 import { AppIcon } from "../components/AppIcon";
 import { BottomNavBar } from "../components/BottomNavBar";
-import { PrimaryButton, SecondaryButton } from "../components/Buttons";
-import { StatusCard } from "../components/StatusCard";
 import { EmptyState } from "../components/EmptyState";
+import { AnimatedPressable } from "../components/AnimatedPressable";
+import { ProbeBeacon } from "../components/ProbeBeacon";
+import { QualityMeter } from "../components/QualityMeter";
 import { useAppStore } from "../store/useAppStore";
 import { useTheme } from "../features/ble/bleManager";
 import { batchRepository } from "../sqlite/batchRepository";
@@ -65,10 +64,14 @@ export default function HomeScreen() {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Good Morning Farmer";
-    if (hour < 17) return "Good Afternoon Farmer";
-    return "Good Evening Farmer";
+    if (hour < 12) return "🌾 Good Morning, Farmer!";
+    if (hour < 17) return "🌾 Good Afternoon, Farmer!";
+    return "🌾 Good Evening, Farmer!";
   };
+
+  const safePercentage = stats.total > 0
+    ? Math.round((stats.safeCount / stats.total) * 100)
+    : 100;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -83,7 +86,7 @@ export default function HomeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Section */}
+        {/* Hero Card: Greeting & Offline/Cloud Status */}
         <View style={[styles.heroCard, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           <View style={styles.heroTopRow}>
             <View style={{ flex: 1 }}>
@@ -92,23 +95,23 @@ export default function HomeScreen() {
                   styles.heroGreeting,
                   {
                     color: theme.text,
-                    fontSize: largeTypography ? 24 : 20,
+                    fontSize: largeTypography ? 24 : 21,
                   },
                 ]}
               >
                 {getGreeting()}
               </Text>
               <Text style={[styles.heroSub, { color: theme.textSecondary }]}>
-                Rapid AI Screening & Spoilage Prevention System
+                Bunker Pit Screening & Spoilage Prevention
               </Text>
             </View>
 
-            {/* Offline Badge */}
+            {/* Offline / Cloud Status Pill */}
             <View
               style={[
                 styles.chip,
                 {
-                  backgroundColor: isOnline ? "rgba(16, 185, 129, 0.14)" : "rgba(245, 158, 11, 0.14)",
+                  backgroundColor: isOnline ? theme.safeBg : theme.cautionBg,
                   borderColor: isOnline ? theme.safeBorder : theme.cautionBorder,
                 },
               ]}
@@ -125,132 +128,147 @@ export default function HomeScreen() {
                   { color: isOnline ? theme.safe : theme.caution },
                 ]}
               >
-                {isOnline ? "CLOUD SYNC" : "OFFLINE FIRST"}
+                {isOnline ? "CLOUD SYNC" : "OFFLINE READY"}
               </Text>
             </View>
           </View>
 
-          {/* Hardware Probe Quick Indicator */}
-          <TouchableOpacity
-            activeOpacity={0.8}
+          {/* Hardware Probe Live Status Widget with Animated Beacon */}
+          <AnimatedPressable
             onPress={() => safeNavigate(router, "/ble", pathname)}
             style={[
               styles.probeBar,
               {
                 backgroundColor: theme.card,
-                borderColor: isBleConnected ? theme.safeBorder : theme.cardBorderHover,
+                borderColor: isBleConnected ? theme.safeBorder : theme.cardBorder,
               },
             ]}
           >
             <View style={styles.probeBarLeft}>
-              <View
-                style={[
-                  styles.probeDot,
-                  { backgroundColor: isBleConnected ? theme.safe : theme.unsafe },
-                ]}
-              />
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.probeBarTitle, { color: theme.text }]}>
-                  {isBleConnected
-                    ? "ESP32-S3 Silage Probe Connected"
-                    : "Hardware Probe Disconnected"}
-                </Text>
+              <View style={styles.beaconWrap}>
+                <ProbeBeacon isConnected={isBleConnected} size={11} />
+              </View>
+
+              <View style={{ flex: 1, marginLeft: 8 }}>
+                <View style={styles.probeTitleRow}>
+                  <Text style={[styles.probeBarTitle, { color: theme.text }]}>
+                    {isBleConnected
+                      ? "ESP32 Silage Probe Connected"
+                      : "Silage Probe Disconnected"}
+                  </Text>
+                  {isBleConnected && (
+                    <View style={[styles.activePill, { backgroundColor: theme.safeBg, borderColor: theme.safeBorder }]}>
+                      <Text style={[styles.activePillText, { color: theme.safe }]}>LIVE</Text>
+                    </View>
+                  )}
+                </View>
+
                 <Text style={[styles.probeBarSub, { color: theme.textMuted }]}>
-                  {isBleConnected && telemetry
-                    ? `pH: ${telemetry.ph?.toFixed(2) ?? "—"} · Moist: ${telemetry.moisture?.toFixed(1) ?? "—"}% · Temp: ${telemetry.temp?.toFixed(1) ?? "—"}°C`
+                  {isBleConnected && telemetry && telemetry.ph !== null
+                    ? `pH: ${telemetry.ph?.toFixed(2)}  ·  Moist: ${telemetry.moisture?.toFixed(1)}%  ·  Temp: ${telemetry.temp?.toFixed(1)}°C`
                     : "Tap to pair physical probe or configure calibration"}
                 </Text>
               </View>
             </View>
 
             {isBleConnected && telemetry?.battery !== null && telemetry?.battery !== undefined ? (
-              <View style={styles.batteryChip}>
+              <View style={[styles.batteryChip, { backgroundColor: theme.surfaceElevated }]}>
                 <Text style={[styles.batteryText, { color: theme.textSecondary }]}>
                   ⚡ {telemetry.battery}%
                 </Text>
               </View>
-            ) : null}
-          </TouchableOpacity>
+            ) : (
+              <View style={styles.probeChevron}>
+                <AppIcon name="arrow-forward" size={18} color={theme.textMuted} />
+              </View>
+            )}
+          </AnimatedPressable>
         </View>
 
-        {/* Quick Actions (4-button grid) */}
-        <Text
-          style={[
-            styles.sectionHeading,
-            {
-              color: theme.text,
-              fontSize: largeTypography ? 18 : 16,
-            },
-          ]}
+        {/* Primary Hero Action: START SCAN Banner */}
+        <AnimatedPressable
+          style={[styles.heroScanBtn, { backgroundColor: theme.primary, borderColor: theme.primaryLight }]}
+          onPress={() => safeNavigate(router, "/camera", pathname)}
         >
-          Quick Actions
-        </Text>
+          <View style={styles.scanBtnLeft}>
+            <View style={styles.scanIconCircle}>
+              <AppIcon name="camera" size={26} color="#042F2E" />
+            </View>
+            <View style={{ flex: 1, marginLeft: 14 }}>
+              <Text style={styles.scanBtnTitle}>START SILAGE SCAN</Text>
+              <Text style={styles.scanBtnSub}>
+                3-Photo Surface & Hyphae Screening
+              </Text>
+            </View>
+          </View>
+          <View style={styles.scanActionTag}>
+            <Text style={styles.scanActionText}>SCAN NOW ➔</Text>
+          </View>
+        </AnimatedPressable>
 
-        <View style={styles.actionGrid}>
-          <TouchableOpacity
-            style={[styles.actionCard, { backgroundColor: theme.primary, borderColor: theme.primaryLight }]}
-            onPress={() => safeNavigate(router, "/camera", pathname)}
-            activeOpacity={0.8}
-          >
-            <AppIcon name="camera" size={26} color="#042F2E" />
-            <Text style={[styles.actionCardTitle, { color: "#042F2E" }]}>START SCAN</Text>
-            <Text style={[styles.actionCardSub, { color: "rgba(4, 47, 46, 0.8)" }]}>
-              3-Step Rapid Screening
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
+        {/* Quick Actions (3 secondary tiles) */}
+        <View style={styles.secondaryActionRow}>
+          <AnimatedPressable
+            style={[styles.secondaryCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
             onPress={() => safeNavigate(router, "/history", pathname)}
-            activeOpacity={0.8}
           >
-            <AppIcon name="history" size={24} color={theme.accent} />
-            <Text style={[styles.actionCardTitle, { color: theme.text }]}>SCAN HISTORY</Text>
-            <Text style={[styles.actionCardSub, { color: theme.textMuted }]}>
+            <View style={[styles.miniIconBox, { backgroundColor: theme.accent + "22" }]}>
+              <AppIcon name="history" size={20} color={theme.accent} />
+            </View>
+            <Text style={[styles.secondaryCardTitle, { color: theme.text }]}>SCAN HISTORY</Text>
+            <Text style={[styles.secondaryCardSub, { color: theme.textMuted }]}>
               {stats.total} Pit Records
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
 
-          <TouchableOpacity
-            style={[styles.actionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
+          <AnimatedPressable
+            style={[styles.secondaryCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
             onPress={() => safeNavigate(router, "/education", pathname)}
-            activeOpacity={0.8}
           >
-            <AppIcon name="help" size={24} color={theme.primary} />
-            <Text style={[styles.actionCardTitle, { color: theme.text }]}>LEARN SILAGE</Text>
-            <Text style={[styles.actionCardSub, { color: theme.textMuted }]}>
-              Agronomic Guides
+            <View style={[styles.miniIconBox, { backgroundColor: theme.primary + "22" }]}>
+              <AppIcon name="help" size={20} color={theme.primary} />
+            </View>
+            <Text style={[styles.secondaryCardTitle, { color: theme.text }]}>SILAGE GUIDE</Text>
+            <Text style={[styles.secondaryCardSub, { color: theme.textMuted }]}>
+              Agronomic Tips
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
 
-          <TouchableOpacity
-            style={[styles.actionCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
+          <AnimatedPressable
+            style={[styles.secondaryCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
             onPress={() => safeNavigate(router, "/calibration", pathname)}
-            activeOpacity={0.8}
           >
-            <AppIcon name="sliders" size={24} color={theme.caution} />
-            <Text style={[styles.actionCardTitle, { color: theme.text }]}>CALIBRATION</Text>
-            <Text style={[styles.actionCardSub, { color: theme.textMuted }]}>
-              pH / Moisture Offsets
+            <View style={[styles.miniIconBox, { backgroundColor: theme.caution + "22" }]}>
+              <AppIcon name="sliders" size={20} color={theme.caution} />
+            </View>
+            <Text style={[styles.secondaryCardTitle, { color: theme.text }]}>CALIBRATION</Text>
+            <Text style={[styles.secondaryCardSub, { color: theme.textMuted }]}>
+              Sensor Offsets
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
 
-        {/* Today's Summary Section */}
+        {/* Today's Silage Quality Section */}
         <View style={styles.sectionHeaderRow}>
-          <Text
-            style={[
-              styles.sectionHeading,
-              {
-                color: theme.text,
-                fontSize: largeTypography ? 18 : 16,
-              },
-            ]}
-          >
-            Today's Silage Metrics
-          </Text>
+          <View>
+            <Text
+              style={[
+                styles.sectionHeading,
+                {
+                  color: theme.text,
+                  fontSize: largeTypography ? 20 : 17,
+                },
+              ]}
+            >
+              Today's Silage Quality
+            </Text>
+            <Text style={[styles.sectionSub, { color: theme.textMuted }]}>
+              Live fermentation health metrics
+            </Text>
+          </View>
+
           {pendingSyncCount > 0 ? (
-            <View style={[styles.syncBadge, { backgroundColor: theme.cautionBg }]}>
+            <View style={[styles.syncBadge, { backgroundColor: theme.cautionBg, borderColor: theme.cautionBorder }]}>
               <Text style={[styles.syncBadgeText, { color: theme.caution }]}>
                 {pendingSyncCount} Pending Sync
               </Text>
@@ -258,40 +276,83 @@ export default function HomeScreen() {
           ) : null}
         </View>
 
-        <View style={styles.statGrid}>
-          <StatCard
-            label="Total Scans"
-            value={stats.total.toString()}
-            subtitle={`${stats.todayCount} completed today`}
-            icon="analytics"
-          />
-          <StatCard
+        {/* Quality Meters Grid */}
+        <View style={styles.meterGrid}>
+          <QualityMeter
             label="Safe Batches"
-            value={stats.safeCount.toString()}
+            value={stats.safeCount}
+            displayValue={`${stats.safeCount} / ${stats.total || 0}`}
+            percentage={safePercentage}
             status="safe"
+            statusText={safePercentage >= 70 ? "OPTIMAL" : "MONITOR"}
             subtitle="Low screening risk"
             icon="check-circle"
           />
-        </View>
 
-        <View style={styles.statGrid}>
-          <StatCard
-            label="Unsafe Alerts"
-            value={stats.unsafeCount.toString()}
-            status={stats.unsafeCount > 0 ? "unsafe" : "neutral"}
-            subtitle="Immediate action advised"
-            icon="alert-triangle"
-          />
-          <StatCard
+          <View style={{ width: 12 }} />
+
+          <QualityMeter
             label="Average MSSI"
-            value={stats.avgMssi > 0 ? `${stats.avgMssi}/100` : "—"}
+            value={stats.avgMssi}
+            displayValue={stats.avgMssi > 0 ? `${stats.avgMssi}/100` : "—"}
+            percentage={stats.avgMssi || 0}
             status={stats.avgMssi >= 70 ? "safe" : stats.avgMssi >= 40 ? "caution" : "neutral"}
+            statusText={stats.avgMssi >= 70 ? "EXCELLENT" : stats.avgMssi >= 40 ? "CAUTION" : "STANDBY"}
             subtitle="Composite safety index"
             icon="activity"
           />
         </View>
 
-        {/* Trend Graph or Empty State */}
+        <View style={[styles.meterGrid, { marginTop: 12 }]}>
+          <QualityMeter
+            label="Total Scans"
+            value={stats.total}
+            displayValue={stats.total.toString()}
+            percentage={Math.min(100, stats.total * 10)}
+            status="neutral"
+            statusText={`${stats.todayCount} TODAY`}
+            subtitle="Bunker pits inspected"
+            icon="analytics"
+          />
+
+          <View style={{ width: 12 }} />
+
+          <QualityMeter
+            label="Spoilage Alerts"
+            value={stats.unsafeCount}
+            displayValue={stats.unsafeCount.toString()}
+            percentage={stats.total > 0 ? Math.round((stats.unsafeCount / stats.total) * 100) : 0}
+            status={stats.unsafeCount > 0 ? "unsafe" : "safe"}
+            statusText={stats.unsafeCount > 0 ? "ACTION REQ" : "CLEAN"}
+            subtitle={stats.unsafeCount > 0 ? "Immediate triage advised" : "Zero spoilage detected"}
+            icon="alert-triangle"
+          />
+        </View>
+
+        {/* Farmer Tip of the Day Card */}
+        <View
+          style={[
+            styles.tipCard,
+            {
+              backgroundColor: theme.surface,
+              borderColor: theme.cardBorder,
+            },
+          ]}
+        >
+          <View style={[styles.tipIconWrap, { backgroundColor: theme.primary + "22" }]}>
+            <AppIcon name="leaf" size={20} color={theme.primary} />
+          </View>
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Text style={[styles.tipTitle, { color: theme.text }]}>
+              💡 Agronomic Field Tip
+            </Text>
+            <Text style={[styles.tipBody, { color: theme.textSecondary }]}>
+              Maintain firm face compaction during feedout. Exposure to open air can cause aerobic heating and rapid fungal proliferation within 12 hours.
+            </Text>
+          </View>
+        </View>
+
+        {/* Trend Graph or Clean Empty State */}
         {trendPoints.length > 0 ? (
           <View style={styles.trendContainer}>
             <QualityTrendChart
@@ -319,13 +380,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: SPACING.lg,
+    padding: SPACING.md,
   },
   heroCard: {
     borderRadius: RADIUS.lg,
     borderWidth: 1,
-    padding: SPACING.lg,
-    marginBottom: SPACING.lg,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
   heroTopRow: {
     flexDirection: "row",
@@ -335,16 +401,18 @@ const styles = StyleSheet.create({
   },
   heroGreeting: {
     fontWeight: "800",
+    letterSpacing: -0.3,
   },
   heroSub: {
     fontSize: 12,
-    marginTop: 4,
+    fontWeight: "500",
+    marginTop: 3,
   },
   chip: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: RADIUS.full,
     borderWidth: 1,
   },
@@ -363,88 +431,198 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: SPACING.md,
+    padding: 12,
     borderRadius: RADIUS.md,
-    borderWidth: 1,
-    marginBottom: SPACING.md,
+    borderWidth: 1.5,
   },
   probeBarLeft: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
   },
-  probeDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: SPACING.sm,
+  beaconWrap: {
+    width: 24,
+    height: 24,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  probeTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   probeBarTitle: {
     fontSize: 13,
     fontWeight: "700",
   },
+  activePill: {
+    marginLeft: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  activePillText: {
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
   probeBarSub: {
     fontSize: 11,
+    fontWeight: "500",
     marginTop: 2,
   },
   batteryChip: {
-    paddingLeft: SPACING.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: RADIUS.sm,
+    marginLeft: 8,
   },
   batteryText: {
     fontSize: 11,
     fontWeight: "700",
   },
-  sectionHeading: {
-    fontWeight: "700",
-    marginBottom: SPACING.sm,
+  probeChevron: {
+    paddingLeft: 4,
+  },
+  heroScanBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1.5,
+    marginBottom: SPACING.md,
+    shadowColor: "#10B981",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  scanBtnLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  scanIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(4, 47, 46, 0.15)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  scanBtnTitle: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#042F2E",
+    letterSpacing: 0.5,
+  },
+  scanBtnSub: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "rgba(4, 47, 46, 0.8)",
+    marginTop: 2,
+  },
+  scanActionTag: {
+    backgroundColor: "#042F2E",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: RADIUS.full,
+  },
+  scanActionText: {
+    color: "#34D399",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+  },
+  secondaryActionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: SPACING.lg,
+  },
+  secondaryCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    padding: 10,
+    alignItems: "center",
+    marginHorizontal: 3,
+  },
+  miniIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  secondaryCardTitle: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.3,
+    textAlign: "center",
+  },
+  secondaryCardSub: {
+    fontSize: 9,
+    fontWeight: "500",
+    marginTop: 2,
+    textAlign: "center",
   },
   sectionHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: SPACING.sm,
+    alignItems: "flex-end",
     marginBottom: SPACING.sm,
+  },
+  sectionHeading: {
+    fontWeight: "800",
+    letterSpacing: -0.2,
+  },
+  sectionSub: {
+    fontSize: 11,
+    fontWeight: "500",
+    marginTop: 2,
   },
   syncBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: RADIUS.xs,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
   },
   syncBadgeText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "700",
   },
-  actionGrid: {
+  meterGrid: {
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "space-between",
-    marginBottom: SPACING.lg,
   },
-  actionCard: {
-    width: "48%",
+  tipCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    padding: SPACING.md,
+    marginTop: SPACING.md,
     marginBottom: SPACING.md,
-    minHeight: 90,
-    justifyContent: "space-between",
   },
-  actionCardTitle: {
-    fontSize: 13,
+  tipIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  tipTitle: {
+    fontSize: 12,
     fontWeight: "800",
-    letterSpacing: 0.5,
-    marginTop: 6,
+    marginBottom: 2,
   },
-  actionCardSub: {
+  tipBody: {
     fontSize: 11,
-  },
-  statGrid: {
-    flexDirection: "row",
-    gap: SPACING.md,
-    marginBottom: SPACING.md,
+    lineHeight: 16,
   },
   trendContainer: {
-    marginTop: SPACING.sm,
-    marginBottom: SPACING.lg,
+    marginTop: SPACING.xs,
   },
 });

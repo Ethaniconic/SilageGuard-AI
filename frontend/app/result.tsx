@@ -25,6 +25,7 @@ import { Header } from "../components/Header";
 import { TrafficLightCard } from "../components/TrafficLightCard";
 import { AdvisoryCard } from "../components/AdvisoryCard";
 import { AppIcon } from "../components/AppIcon";
+import { AnimatedPressable } from "../components/AnimatedPressable";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { generateSilageQRPayload } from "../utils/qrGenerator";
 import { safeNavigate } from "../utils/navigation";
@@ -396,31 +397,30 @@ export default function ResultScreen() {
         </View>
 
         {/* Explainability & PDF Buttons */}
-        <TouchableOpacity
+        <AnimatedPressable
           style={[
             styles.explainBtn,
             {
               backgroundColor: theme.surface,
               borderColor: theme.accent,
-              borderRadius: theme.radiusSm,
+              borderRadius: theme.radiusMd,
             },
           ]}
           onPress={() => safeNavigate(router, "/explainability", pathname)}
-          activeOpacity={0.8}
         >
           <AppIcon name="shield" size={16} color={theme.accent} />
           <Text style={[styles.explainBtnText, { color: theme.accent }]}>
             WHY THIS RESULT? (AI EXPLAINABILITY & PROVENANCE)
           </Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
 
-        <TouchableOpacity
+        <AnimatedPressable
           style={[
             styles.pdfBtn,
             {
               backgroundColor: theme.card,
               borderColor: theme.cardBorder,
-              borderRadius: theme.radiusSm,
+              borderRadius: theme.radiusMd,
             },
           ]}
           onPress={() => {
@@ -440,48 +440,45 @@ export default function ResultScreen() {
               advisory: latestAdvisory,
             });
           }}
-          activeOpacity={0.8}
         >
           <AppIcon name="share" size={16} color={theme.text} />
           <Text style={[styles.pdfBtnText, { color: theme.text }]}>
             DOWNLOAD / PRINT AUDITABLE PDF REPORT
           </Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
 
         {/* Action Buttons */}
         <View style={styles.actionsRow}>
-          <TouchableOpacity
+          <AnimatedPressable
             style={[
               styles.historyBtn,
               {
                 backgroundColor: theme.card,
                 borderColor: theme.cardBorder,
-                borderRadius: theme.radiusSm
+                borderRadius: theme.radiusMd
               }
             ]}
             onPress={() => safeNavigate(router, "/history", pathname)}
-            activeOpacity={0.8}
           >
             <AppIcon name="history" size={16} color={theme.text} />
             <Text style={[styles.historyBtnText, { color: theme.text, marginLeft: 6 }]}>
               PAST BATCHES
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
 
-          <TouchableOpacity
+          <AnimatedPressable
             style={[
               styles.newScanBtn,
               {
                 backgroundColor: theme.primary,
-                borderRadius: theme.radiusSm
+                borderRadius: theme.radiusMd
               }
             ]}
             onPress={handleScanAnother}
-            activeOpacity={0.85}
           >
-            <AppIcon name="camera" size={16} color="#090D16" />
-            <Text style={styles.newScanBtnText}>TEST NEXT BATCH</Text>
-          </TouchableOpacity>
+            <AppIcon name="camera" size={17} color="#042F2E" />
+            <Text style={styles.newScanBtnText}>TEST NEXT BATCH ➔</Text>
+          </AnimatedPressable>
         </View>
       </ScrollView>
     </View>
