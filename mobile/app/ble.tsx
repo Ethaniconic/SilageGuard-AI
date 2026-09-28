@@ -106,7 +106,7 @@ export default function BleScreen() {
               </View>
               <View>
                 <Text style={[styles.deviceName, { color: theme.text }]}>
-                  SilageGuard-Probe
+                  {isConnected && telemetry.probe_id ? telemetry.probe_id : "SilageGuard-Probe"}
                 </Text>
                 <Text style={[styles.deviceSub, { color: theme.textMuted }]}>
                   UUID: 4fafc201-1fb5-459e-8fcc-c5c9c331914b
@@ -189,7 +189,12 @@ export default function BleScreen() {
             )}
           </TouchableOpacity>
 
-          <Text style={[styles.statusMsg, { color: theme.textMuted }]}>
+          <Text
+            style={[
+              styles.statusMsg,
+              { color: bleStatus === "ERROR" ? theme.unsafe : theme.textMuted }
+            ]}
+          >
             {statusMessage}
           </Text>
         </View>

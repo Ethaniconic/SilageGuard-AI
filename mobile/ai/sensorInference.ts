@@ -74,21 +74,22 @@ function moistureToAdc(moistPct: number): number {
 }
 
 export function runSensorInference(telemetry: SensorTelemetryInput): SensorInferenceResult | null {
-  if (
-    telemetry.ph === null ||
-    telemetry.moisture === null ||
-    telemetry.temperature === null ||
-    telemetry.ambient === null
-  ) {
+  // Require at least moisture and temperature, or pH
+  const hasMoisture = telemetry.moisture !== null && telemetry.moisture !== undefined;
+  const hasTemp = telemetry.temperature !== null && telemetry.temperature !== undefined;
+  const hasPh = telemetry.ph !== null && telemetry.ph !== undefined;
+
+  if (!hasMoisture && !hasTemp && !hasPh) {
     return null;
   }
 
   const startTime = Date.now();
 
-  const ph = telemetry.ph;
-  const moisture = telemetry.moisture;
-  const temp = telemetry.temperature;
-  const ambient = telemetry.ambient;
+  const isPhMissing = !hasPh;
+  const ph = hasPh ? telemetry.ph! : OPTIMAL_PH;
+  const moisture = hasMoisture ? telemetry.moisture! : OPTIMAL_MOISTURE;
+  const temp = hasTemp ? telemetry.temperature! : 25.0;
+  const ambient = telemetry.ambient !== null && telemetry.ambient !== undefined ? telemetry.ambient : 24.0;
 
   const moisture_adc = moistureToAdc(moisture);
   const delta_temp = Number((temp - ambient).toFixed(2));
@@ -158,7 +159,14 @@ export function runSensorInference(telemetry: SensorTelemetryInput): SensorInfer
   // Compute explainability factors
   const explainability: SensorExplainabilityFactor[] = [];
 
-  if (ph > 4.6) {
+  if (isPhMissing) {
+    explainability.push({
+      factor: "pH Electrode Unmeasured",
+      contributionPercent: 5,
+      rationale: "Physical pH probe not connected. Core moisture and thermal readings prioritized from physical hardware.",
+      severity: "INFO"
+    });
+  } else if (ph > 4.6) {
     explainability.push({
       factor: `High pH Acidity (${ph.toFixed(2)})`,
       contributionPercent: Math.min(Math.round(((ph - 4.0) / 1.5) * 45), 45),

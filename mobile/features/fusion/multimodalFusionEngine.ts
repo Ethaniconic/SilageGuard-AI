@@ -118,7 +118,7 @@ export interface FusionInputV3 {
 
 export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionOutput {
   const { sensorResult, visionResult, iqaPassed = true } = input;
-  const hasSensor = !!sensorResult && sensorResult.features.ph > 0;
+  const hasSensor = !!sensorResult;
   const hasVision = !!visionResult;
 
   // 1. Determine Modality State
@@ -204,6 +204,7 @@ export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionO
   let sensorScore: number | null = null;
   let sensorConfidence: number | null = null;
   let ph = 4.0;
+  let isPhReal = false;
   let moisture = 65.0;
   let deltaTemp = 0.0;
   let coreTemp = 25.0;
@@ -213,6 +214,7 @@ export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionO
       sensorResult.probabilities.safe * 100 + sensorResult.probabilities.caution * 50
     );
     sensorConfidence = Math.round(sensorResult.confidence * 100);
+    isPhReal = !sensorResult.explainability.some(e => e.factor.includes("Unmeasured"));
     ph = sensorResult.features.ph;
     moisture = sensorResult.features.moisture_adc;
     deltaTemp = sensorResult.features.delta_temp;
@@ -270,7 +272,7 @@ export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionO
 
   // 5. Decoupled Safety Rule Engine Check
   const ruleResult: SafetyEvaluationResult = evaluateSafetyRules({
-    ph: hasSensor ? ph : null,
+    ph: hasSensor && isPhReal ? ph : null,
     moisture: hasSensor ? moisture : null,
     deltaTemp: hasSensor ? deltaTemp : null,
     coreTemp: hasSensor ? coreTemp : null,
@@ -322,7 +324,7 @@ export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionO
   const evidenceList: string[] = [];
 
   // (a) pH
-  if (hasSensor) {
+  if (hasSensor && isPhReal) {
     if (ph > 4.80) {
       explainabilityChain.push({
         parameter: "pH Acidity",
@@ -355,7 +357,9 @@ export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionO
       parameter: "pH Acidity",
       measuredValue: "Not Measured",
       status: "UNAVAILABLE",
-      assessment: "Silage probe was not inserted. Core pH was not acquired."
+      assessment: hasSensor
+        ? "Physical pH probe not detected. Core moisture and thermal readings prioritized."
+        : "Silage probe was not inserted. Core pH was not acquired."
     });
   }
 

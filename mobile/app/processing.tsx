@@ -92,10 +92,10 @@ export default function ProcessingScreen() {
 
       if (isProbeConnected) {
         sensorRes = runSensorInference({
-          ph: telemetry.ph!,
-          moisture: telemetry.moisture!,
-          temperature: telemetry.temp!,
-          ambient: telemetry.ambient!
+          ph: telemetry.ph,
+          moisture: telemetry.moisture,
+          temperature: telemetry.temp,
+          ambient: telemetry.ambient
         });
       }
 

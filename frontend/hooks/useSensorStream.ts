@@ -31,7 +31,7 @@ export function useSensorStream() {
     stream,
     status,
     isConnected: status === "CONNECTED",
-    connect: () => bleService.startScanAndConnect(true),
+    connect: (isDemo = false) => bleService.startScanAndConnect(isDemo),
     disconnect: () => bleService.disconnect()
   };
 }
