@@ -320,6 +320,8 @@ export default function BleScreen() {
                       styles.presetBtnText,
                       { color: isActive ? color : theme.textMuted }
                     ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit={true}
                   >
                     {preset}
                   </Text>
@@ -504,52 +506,63 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10
+    marginBottom: 10,
+    flexWrap: "wrap",
+    gap: 8,
   },
   demoTitle: {
     fontSize: 11,
-    fontWeight: "900"
+    fontWeight: "900",
+    flex: 1,
+    minWidth: 150,
   },
   demoTogglePill: {
     borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 4
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    flexShrink: 0,
   },
   demoToggleText: {
-    fontSize: 9,
-    fontWeight: "800"
+    fontSize: 9.5,
+    fontWeight: "800",
   },
   presetsRow: {
     flexDirection: "row",
-    justifyContent: "space-between"
+    justifyContent: "space-between",
+    gap: 6,
   },
   presetBtn: {
     flex: 1,
-    marginHorizontal: 3,
     borderWidth: 1,
     paddingVertical: 8,
-    alignItems: "center"
+    paddingHorizontal: 4,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 70,
   },
   presetBtnText: {
     fontSize: 11,
-    fontWeight: "900"
+    fontWeight: "900",
+    textAlign: "center",
   },
   gaugesContainer: {
     borderWidth: 1,
-    padding: 12
+    padding: 12,
   },
   gaugesSectionTitle: {
     fontSize: 12,
     fontWeight: "900",
     letterSpacing: 0.5,
-    marginBottom: 8
+    marginBottom: 8,
   },
   gaugesGrid: {
-    width: "100%"
+    width: "100%",
   },
   gaugeRow: {
     flexDirection: "row",
-    justifyContent: "space-between"
+    justifyContent: "space-between",
+    gap: 6,
+    flexWrap: "wrap",
   },
   helpCard: {
     marginTop: 12,

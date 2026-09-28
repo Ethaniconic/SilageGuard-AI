@@ -215,8 +215,18 @@ export default function HomeScreen() {
             <View style={[styles.miniIconBox, { backgroundColor: theme.accent + "22" }]}>
               <AppIcon name="history" size={20} color={theme.accent} />
             </View>
-            <Text style={[styles.secondaryCardTitle, { color: theme.text }]}>SCAN HISTORY</Text>
-            <Text style={[styles.secondaryCardSub, { color: theme.textMuted }]}>
+            <Text
+              style={[styles.secondaryCardTitle, { color: theme.text }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+            >
+              SCAN HISTORY
+            </Text>
+            <Text
+              style={[styles.secondaryCardSub, { color: theme.textMuted }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+            >
               {stats.total} Pit Records
             </Text>
           </AnimatedPressable>
@@ -228,8 +238,18 @@ export default function HomeScreen() {
             <View style={[styles.miniIconBox, { backgroundColor: theme.primary + "22" }]}>
               <AppIcon name="help" size={20} color={theme.primary} />
             </View>
-            <Text style={[styles.secondaryCardTitle, { color: theme.text }]}>SILAGE GUIDE</Text>
-            <Text style={[styles.secondaryCardSub, { color: theme.textMuted }]}>
+            <Text
+              style={[styles.secondaryCardTitle, { color: theme.text }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+            >
+              SILAGE GUIDE
+            </Text>
+            <Text
+              style={[styles.secondaryCardSub, { color: theme.textMuted }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+            >
               Agronomic Tips
             </Text>
           </AnimatedPressable>
@@ -241,8 +261,18 @@ export default function HomeScreen() {
             <View style={[styles.miniIconBox, { backgroundColor: theme.caution + "22" }]}>
               <AppIcon name="sliders" size={20} color={theme.caution} />
             </View>
-            <Text style={[styles.secondaryCardTitle, { color: theme.text }]}>CALIBRATION</Text>
-            <Text style={[styles.secondaryCardSub, { color: theme.textMuted }]}>
+            <Text
+              style={[styles.secondaryCardTitle, { color: theme.text }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+            >
+              CALIBRATION
+            </Text>
+            <Text
+              style={[styles.secondaryCardSub, { color: theme.textMuted }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+            >
               Sensor Offsets
             </Text>
           </AnimatedPressable>
@@ -289,8 +319,6 @@ export default function HomeScreen() {
             icon="check-circle"
           />
 
-          <View style={{ width: 12 }} />
-
           <QualityMeter
             label="Average MSSI"
             value={stats.avgMssi}
@@ -314,8 +342,6 @@ export default function HomeScreen() {
             subtitle="Bunker pits inspected"
             icon="analytics"
           />
-
-          <View style={{ width: 12 }} />
 
           <QualityMeter
             label="Spoilage Alerts"
@@ -398,6 +424,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
     marginBottom: SPACING.md,
+    flexWrap: "wrap",
+    gap: 8,
   },
   heroGreeting: {
     fontWeight: "800",
@@ -415,6 +443,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: RADIUS.full,
     borderWidth: 1,
+    flexShrink: 0,
   },
   chipDot: {
     width: 6,
@@ -434,11 +463,14 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: RADIUS.md,
     borderWidth: 1.5,
+    flexWrap: "wrap",
+    gap: 6,
   },
   probeBarLeft: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    minWidth: 200,
   },
   beaconWrap: {
     width: 24,
@@ -449,13 +481,14 @@ const styles = StyleSheet.create({
   probeTitleRow: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
+    gap: 4,
   },
   probeBarTitle: {
     fontSize: 13,
     fontWeight: "700",
   },
   activePill: {
-    marginLeft: 6,
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 8,
@@ -476,6 +509,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: RADIUS.sm,
     marginLeft: 8,
+    flexShrink: 0,
   },
   batteryText: {
     fontSize: 11,
@@ -483,15 +517,18 @@ const styles = StyleSheet.create({
   },
   probeChevron: {
     paddingLeft: 4,
+    flexShrink: 0,
   },
   heroScanBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
+    padding: 14,
     borderRadius: RADIUS.lg,
     borderWidth: 1.5,
     marginBottom: SPACING.md,
+    flexWrap: "wrap",
+    gap: 8,
     shadowColor: "#10B981",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
@@ -502,14 +539,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    minWidth: 180,
   },
   scanIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: "rgba(4, 47, 46, 0.15)",
     justifyContent: "center",
     alignItems: "center",
+    flexShrink: 0,
   },
   scanBtnTitle: {
     fontSize: 15,
@@ -525,9 +564,11 @@ const styles = StyleSheet.create({
   },
   scanActionTag: {
     backgroundColor: "#042F2E",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: RADIUS.full,
+    flexShrink: 0,
+    alignSelf: "center",
   },
   scanActionText: {
     color: "#34D399",
@@ -539,31 +580,34 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: SPACING.lg,
+    gap: 6,
   },
   secondaryCard: {
     flex: 1,
     borderWidth: 1,
     borderRadius: RADIUS.md,
-    padding: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
     alignItems: "center",
-    marginHorizontal: 3,
+    minWidth: 85,
   },
   miniIconBox: {
-    width: 34,
-    height: 34,
+    width: 32,
+    height: 32,
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 6,
+    flexShrink: 0,
   },
   secondaryCardTitle: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: "800",
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
     textAlign: "center",
   },
   secondaryCardSub: {
-    fontSize: 9,
+    fontSize: 8.5,
     fontWeight: "500",
     marginTop: 2,
     textAlign: "center",
@@ -573,6 +617,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-end",
     marginBottom: SPACING.sm,
+    flexWrap: "wrap",
+    gap: 8,
   },
   sectionHeading: {
     fontWeight: "800",
@@ -588,6 +634,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: RADIUS.full,
     borderWidth: 1,
+    flexShrink: 0,
   },
   syncBadgeText: {
     fontSize: 10,
@@ -596,6 +643,7 @@ const styles = StyleSheet.create({
   meterGrid: {
     flexDirection: "row",
     justifyContent: "space-between",
+    gap: 10,
   },
   tipCard: {
     flexDirection: "row",

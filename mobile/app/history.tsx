@@ -223,6 +223,8 @@ export default function HistoryScreen() {
                     styles.filterPillText,
                     { color: isSelected ? accent : theme.textMuted }
                   ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={true}
                 >
                   {f}
                 </Text>
@@ -283,18 +285,22 @@ const styles = StyleSheet.create({
   },
   filterRow: {
     flexDirection: "row",
-    marginBottom: 10
+    marginBottom: 10,
+    gap: 6,
   },
   filterPill: {
     flex: 1,
-    marginHorizontal: 2,
     borderWidth: 1,
-    paddingVertical: 6,
-    alignItems: "center"
+    paddingVertical: 7,
+    paddingHorizontal: 4,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 64,
   },
   filterPillText: {
     fontSize: 10,
-    fontWeight: "800"
+    fontWeight: "800",
+    textAlign: "center",
   },
   listContent: {
     paddingBottom: 20
@@ -308,10 +314,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8
+    marginBottom: 8,
+    flexWrap: "wrap",
+    gap: 6,
   },
   batchIdArea: {
-    flex: 1
+    flex: 1,
+    minWidth: 160,
   },
   batchId: {
     fontSize: 13,
@@ -325,7 +334,8 @@ const styles = StyleSheet.create({
   statusBadge: {
     borderWidth: 1,
     paddingHorizontal: 8,
-    paddingVertical: 3
+    paddingVertical: 3,
+    flexShrink: 0,
   },
   statusBadgeText: {
     fontSize: 10,
@@ -335,7 +345,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginVertical: 4
+    marginVertical: 4,
+    flexWrap: "wrap",
+    gap: 6,
   },
   cropText: {
     fontSize: 12,
@@ -350,7 +362,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderTopWidth: 1,
     paddingTop: 8,
-    marginTop: 6
+    marginTop: 6,
+    flexWrap: "wrap",
+    gap: 6,
   },
   scorePill: {
     flexDirection: "row",

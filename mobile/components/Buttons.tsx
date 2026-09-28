@@ -96,6 +96,8 @@ export const PrimaryButton: React.FC<ButtonBaseProps> = ({
               },
               textStyle,
             ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
           >
             {title}
           </Text>
@@ -164,6 +166,8 @@ export const SecondaryButton: React.FC<ButtonBaseProps> = ({
               },
               textStyle,
             ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
           >
             {title}
           </Text>
@@ -230,6 +234,8 @@ export const DangerButton: React.FC<ButtonBaseProps> = ({
               },
               textStyle,
             ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
           >
             {title}
           </Text>
@@ -296,6 +302,8 @@ export const SuccessButton: React.FC<ButtonBaseProps> = ({
               },
               textStyle,
             ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
           >
             {title}
           </Text>
@@ -310,10 +318,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 44, // Accessible touch target size
+    minHeight: 48, // Accessible touch target size
   },
   text: {
     fontWeight: "700",
     letterSpacing: 0.3,
+    flexShrink: 1,
+    textAlign: "center",
   },
 });

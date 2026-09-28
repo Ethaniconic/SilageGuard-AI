@@ -442,6 +442,8 @@ export default function CameraScreen() {
                         : theme.textMuted
                   }
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit={true}
               >
                 {isConnected && telemetry.ph !== null
                   ? telemetry.ph.toFixed(2)
@@ -471,6 +473,8 @@ export default function CameraScreen() {
                         : theme.textMuted
                   }
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit={true}
               >
                 {isConnected && telemetry.moisture !== null
                   ? `${telemetry.moisture.toFixed(1)}%`
@@ -500,6 +504,8 @@ export default function CameraScreen() {
                         : theme.textMuted
                   }
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit={true}
               >
                 {isConnected && telemetry.temp !== null
                   ? `${telemetry.temp.toFixed(1)}C`
@@ -767,99 +773,112 @@ const styles = StyleSheet.create({
   },
   shutterRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-around",
     alignItems: "center",
     marginBottom: 12,
-    paddingHorizontal: 10
+    paddingHorizontal: 8,
+    gap: 12,
   },
   auxButton: {
     borderWidth: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 10,
     alignItems: "center",
     justifyContent: "center",
-    minWidth: 80
+    minWidth: 72,
+    maxWidth: 96,
+    flex: 1,
   },
   auxText: {
     fontSize: 11,
     fontWeight: "800",
-    marginTop: 4
+    marginTop: 4,
+    textAlign: "center",
   },
   mainShutterBtn: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 66,
+    height: 66,
+    borderRadius: 33,
     borderWidth: 4,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "transparent"
+    backgroundColor: "transparent",
+    flexShrink: 0,
   },
   mainShutterInner: {
-    width: 52,
-    height: 52,
-    borderRadius: 26
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
   probeStatusCard: {
     borderWidth: 1,
     padding: 12,
-    marginBottom: 10
+    marginBottom: 10,
   },
   probeCardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10
+    marginBottom: 10,
+    flexWrap: "wrap",
+    gap: 6,
   },
   probeIndicatorRow: {
     flexDirection: "row",
-    alignItems: "center"
+    alignItems: "center",
+    flexShrink: 1,
   },
   probeDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginRight: 6
+    marginRight: 6,
   },
   probeCardTitle: {
     fontSize: 13,
-    fontWeight: "800"
+    fontWeight: "800",
   },
   probePairBtn: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
     paddingHorizontal: 8,
-    paddingVertical: 4
+    paddingVertical: 4,
+    flexShrink: 0,
   },
   probePairBtnText: {
     fontSize: 11,
     fontWeight: "800",
-    marginRight: 4
+    marginRight: 4,
   },
   telemetryGrid: {
     flexDirection: "row",
-    justifyContent: "space-between"
+    justifyContent: "space-between",
+    gap: 6,
   },
   telemetryCell: {
     flex: 1,
-    padding: 10,
-    marginHorizontal: 3,
-    alignItems: "center"
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    alignItems: "center",
+    minWidth: 70,
   },
   cellHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4
+    marginBottom: 4,
+    flexWrap: "wrap",
+    justifyContent: "center",
   },
   telemetryLabel: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: "800",
     letterSpacing: 0.3,
-    marginLeft: 4
+    marginLeft: 3,
   },
   telemetryVal: {
-    fontSize: 18,
-    fontWeight: "900"
+    fontSize: 16,
+    fontWeight: "900",
   },
   probeHintText: {
     fontSize: 10,
@@ -926,13 +945,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 14,
-    marginTop: 6
+    paddingHorizontal: 16,
+    marginTop: 8,
+    minHeight: 52,
+    flexWrap: "wrap",
+    gap: 8,
   },
   analyzeButtonText: {
     color: "#090D16",
     fontSize: 14,
     fontWeight: "900",
     letterSpacing: 0.5,
-    marginHorizontal: 8
+    marginHorizontal: 8,
   }
 });

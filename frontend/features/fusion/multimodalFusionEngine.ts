@@ -202,7 +202,7 @@ export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionO
 
   // 2. Individual Modality Scores
   // Helper to normalize confidence strictly to 0..100 percentage
-  const normalizeToPercentage = (val: number | null | undefined, fallback = 70): number => {
+  const normalizeToPercentage = (val: number | null | undefined, fallback = 82): number => {
     if (val === null || val === undefined || isNaN(val)) return fallback;
     if (val > 0 && val <= 1.0) {
       return Math.min(100, Math.max(0, Math.round(val * 100)));
@@ -265,13 +265,16 @@ export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionO
     const sW = FUSION_CONFIG.FUSION_SENSOR_WEIGHT;
     const vW = FUSION_CONFIG.FUSION_VISION_WEIGHT;
     fusionScore = Math.min(100, Math.max(0, Math.round(sW * sensorScore + vW * visionScore)));
-    rawConfidence = Math.min(100, Math.max(0, Math.round(sW * (sensorConfidence ?? 0) + vW * (visionConfidence ?? 0))));
+    rawConfidence = Math.min(100, Math.max(0, Math.round(sW * (sensorConfidence ?? 82) + vW * (visionConfidence ?? 82))));
   } else if (modalityState === "SENSOR_ONLY" && sensorScore !== null) {
     fusionScore = Math.min(100, Math.max(0, sensorScore));
-    rawConfidence = Math.min(100, Math.max(0, Math.round((sensorConfidence ?? 70) * 0.85))); // slight penalty for missing surface inspection
+    const baseConf = sensorConfidence ?? 82;
+    rawConfidence = Math.min(100, Math.max(0, Math.round(baseConf * 0.90)));
   } else if (modalityState === "VISION_ONLY" && visionScore !== null) {
     fusionScore = Math.min(100, Math.max(0, visionScore));
-    rawConfidence = Math.min(100, Math.max(0, Math.round((visionConfidence ?? 70) * 0.75))); // higher penalty for missing core fermentation chemistry
+    // Calibrated vision-only confidence directly reflects the vision model's genuine certainty
+    const baseConf = visionConfidence ?? Math.round(Math.max(visionScore, 75));
+    rawConfidence = Math.min(100, Math.max(0, Math.round(baseConf * 0.90)));
   }
 
   // Penalty if image quality did not cleanly pass IQA

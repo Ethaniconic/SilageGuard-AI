@@ -192,7 +192,13 @@ export const TrafficLightCard: React.FC<Props> = ({
       <View style={[styles.metaRow, { borderTopColor: borderColor + "44" }]}>
         <View style={styles.badge}>
           <Text style={[styles.badgeLabel, { color: theme.textMuted }]}>MSSI SAFETY INDEX</Text>
-          <Text style={[styles.badgeValue, { color: mainColor }]}>{normalizedScore}/100</Text>
+          <Text
+            style={[styles.badgeValue, { color: mainColor }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
+          >
+            {normalizedScore}/100
+          </Text>
           {/* Animated Gauge Bar */}
           <View style={[styles.gaugeTrack, { backgroundColor: theme.surfaceElevated }]}>
             <Animated.View
@@ -211,8 +217,18 @@ export const TrafficLightCard: React.FC<Props> = ({
 
         <View style={styles.badge}>
           <Text style={[styles.badgeLabel, { color: theme.textMuted }]}>AI CONFIDENCE</Text>
-          <Text style={[styles.badgeValue, { color: theme.text }]}>{normalizedConfidence}%</Text>
-          <Text style={[styles.confidenceSub, { color: theme.textMuted }]}>
+          <Text
+            style={[styles.badgeValue, { color: theme.text }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
+          >
+            {normalizedConfidence}%
+          </Text>
+          <Text
+            style={[styles.confidenceSub, { color: theme.textMuted }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
+          >
             {normalizedConfidence >= 80 ? "HIGH CERTAINTY" : normalizedConfidence >= 60 ? "MEDIUM TIER" : "RETAKE ADVISED"}
           </Text>
         </View>
@@ -318,25 +334,30 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     borderTopWidth: 1,
     width: "100%",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
+    gap: 8,
   },
   badge: {
     alignItems: "center",
     flex: 1,
+    minWidth: 100,
   },
   badgeLabel: {
     fontSize: 9,
     fontWeight: "800",
     letterSpacing: 0.5,
+    textAlign: "center",
   },
   badgeValue: {
     fontSize: 22,
     fontWeight: "900",
     marginTop: 2,
     letterSpacing: -0.5,
+    textAlign: "center",
   },
   gaugeTrack: {
-    width: "75%",
+    width: "80%",
+    maxWidth: 120,
     height: 5,
     borderRadius: 3,
     overflow: "hidden",
@@ -351,9 +372,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 0.3,
     marginTop: 4,
+    textAlign: "center",
   },
   badgeDivider: {
     width: 1,
     height: 38,
+    flexShrink: 0,
   },
 });

@@ -41,6 +41,7 @@ export default function ProcessingScreen() {
     cropType,
     pitDepthCm,
     language,
+    isDemoMode,
     demoPreset,
     bleStatus,
     setLatestResult
@@ -118,7 +119,10 @@ export default function ProcessingScreen() {
 
       // --- STAGE 2: Vision AI ---
       await new Promise((r) => setTimeout(r, 600));
-      const visionRes = await runVisionInference(scanImages, demoPreset);
+      const visionRes = await runVisionInference(
+        scanImages,
+        isDemoMode ? demoPreset : undefined
+      );
 
       setStages((prev) =>
         prev.map((s, idx) =>
@@ -150,8 +154,6 @@ export default function ProcessingScreen() {
       setStages((prev) =>
         prev.map((s) => (s.id === "advisory" ? { ...s, status: "completed" } : s))
       );
-
-      const { isDemoMode } = useAppStore.getState();
 
       // Save to SQLite (Honest storage: null for disconnected sensors)
       const batchId = `BATCH-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;

@@ -89,10 +89,16 @@ export const QualityMeter: React.FC<Props> = ({
         <View style={styles.labelRow}>
           {icon && (
             <View style={[styles.iconBox, { backgroundColor: bgColor }]}>
-              <AppIcon name={icon as any} size={16} color={color} />
+              <AppIcon name={icon as any} size={15} color={color} />
             </View>
           )}
-          <Text style={[styles.label, { color: theme.textSecondary }]}>{label}</Text>
+          <Text
+            style={[styles.label, { color: theme.textSecondary }]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {label}
+          </Text>
         </View>
 
         {statusText && (
@@ -133,8 +139,9 @@ export const QualityMeter: React.FC<Props> = ({
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
-    padding: 14,
+    padding: 12,
     flex: 1,
+    minWidth: 130,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
@@ -146,35 +153,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 8,
+    flexWrap: "wrap",
+    gap: 4,
   },
   labelRow: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    minWidth: 70,
   },
   iconBox: {
-    width: 26,
-    height: 26,
+    width: 24,
+    height: 24,
     borderRadius: 6,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 8,
+    marginRight: 6,
+    flexShrink: 0,
   },
   label: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
+    flexShrink: 1,
   },
   statusPill: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
+    flexShrink: 0,
+    alignSelf: "center",
   },
   statusPillText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "800",
-    letterSpacing: 0.4,
+    letterSpacing: 0.3,
   },
   valueRow: {
     marginBottom: 8,

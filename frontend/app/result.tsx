@@ -461,7 +461,11 @@ export default function ResultScreen() {
             onPress={() => safeNavigate(router, "/history", pathname)}
           >
             <AppIcon name="history" size={16} color={theme.text} />
-            <Text style={[styles.historyBtnText, { color: theme.text, marginLeft: 6 }]}>
+            <Text
+              style={[styles.historyBtnText, { color: theme.text }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+            >
               PAST BATCHES
             </Text>
           </AnimatedPressable>
@@ -477,7 +481,13 @@ export default function ResultScreen() {
             onPress={handleScanAnother}
           >
             <AppIcon name="camera" size={17} color="#042F2E" />
-            <Text style={styles.newScanBtnText}>TEST NEXT BATCH ➔</Text>
+            <Text
+              style={styles.newScanBtnText}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+            >
+              TEST NEXT BATCH ➔
+            </Text>
           </AnimatedPressable>
         </View>
       </ScrollView>
@@ -652,13 +662,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1.5,
     paddingVertical: 14,
+    paddingHorizontal: 12,
     marginBottom: 8,
+    flexWrap: "wrap",
+    gap: 6,
   },
   explainBtnText: {
     fontSize: 12,
     fontWeight: "800",
-    marginLeft: 8,
     letterSpacing: 0.3,
+    textAlign: "center",
+    flexShrink: 1,
   },
   pdfBtn: {
     flexDirection: "row",
@@ -666,43 +680,52 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     paddingVertical: 14,
+    paddingHorizontal: 12,
     marginBottom: 8,
+    flexWrap: "wrap",
+    gap: 6,
   },
   pdfBtnText: {
     fontSize: 12,
     fontWeight: "700",
-    marginLeft: 8,
+    textAlign: "center",
+    flexShrink: 1,
   },
   actionsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginVertical: 12
+    marginVertical: 12,
+    flexWrap: "wrap",
+    gap: 10,
   },
   historyBtn: {
     flex: 1,
+    minWidth: 135,
     flexDirection: "row",
     justifyContent: "center",
     borderWidth: 1,
     paddingVertical: 14,
+    paddingHorizontal: 8,
     alignItems: "center",
-    marginRight: 6
   },
   historyBtnText: {
     fontSize: 12,
-    fontWeight: "800"
+    fontWeight: "800",
+    marginLeft: 6,
   },
   newScanBtn: {
     flex: 1,
+    minWidth: 135,
     flexDirection: "row",
     justifyContent: "center",
     paddingVertical: 14,
+    paddingHorizontal: 8,
     alignItems: "center",
-    marginLeft: 6
   },
   newScanBtnText: {
     color: "#090D16",
     fontSize: 12,
     fontWeight: "900",
-    marginLeft: 6
+    marginLeft: 6,
   }
 });
