@@ -315,7 +315,9 @@ export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionO
     sensorConfidence = normalizeToPercentage(sensorResult.confidence, 85);
     isPhReal = !sensorResult.explainability.some(e => e.factor.includes("Unmeasured"));
     ph = sensorResult.features.ph;
-    moisture = sensorResult.features.moisture_adc;
+    // Derive genuine moisture percentage from moisture_adc
+    const derivedMoisturePct = Math.round(Math.max(20, Math.min(95, (3200 - sensorResult.features.moisture_adc) / 20)));
+    moisture = derivedMoisturePct;
     deltaTemp = sensorResult.features.delta_temp;
     coreTemp = sensorResult.features.temperature;
   }
@@ -346,16 +348,14 @@ export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionO
     const sW = FUSION_CONFIG.FUSION_SENSOR_WEIGHT;
     const vW = FUSION_CONFIG.FUSION_VISION_WEIGHT;
     fusionScore = Math.min(100, Math.max(0, Math.round(sW * sensorScore + vW * visionScore)));
-    rawConfidence = Math.min(100, Math.max(0, Math.round(sW * (sensorConfidence ?? 82) + vW * (visionConfidence ?? 82))));
+    rawConfidence = Math.min(100, Math.max(0, Math.round(sW * (sensorConfidence ?? 85) + vW * (visionConfidence ?? 85))));
   } else if (modalityState === "SENSOR_ONLY" && sensorScore !== null) {
     fusionScore = Math.min(100, Math.max(0, sensorScore));
-    const baseConf = sensorConfidence ?? 82;
-    rawConfidence = Math.min(100, Math.max(0, Math.round(baseConf * 0.90)));
+    rawConfidence = sensorConfidence ?? Math.round(Math.max(sensorResult?.probabilities.safe ?? 0, sensorResult?.probabilities.unsafe ?? 0) * 100);
   } else if (modalityState === "VISION_ONLY" && visionScore !== null) {
     fusionScore = Math.min(100, Math.max(0, visionScore));
-    // Calibrated vision-only confidence directly reflects the vision model's genuine certainty
-    const baseConf = visionConfidence ?? Math.round(Math.max(visionScore, 75));
-    rawConfidence = Math.min(100, Math.max(0, Math.round(baseConf * 0.90)));
+    // Use genuine vision model confidence directly without arbitrary 0.90 or 75 clamps
+    rawConfidence = visionConfidence ?? Math.round(Math.max(visionResult?.probabilities.safe ?? 0, visionResult?.probabilities.unsafe ?? 0) * 100);
   }
 
   // Penalty if image quality did not cleanly pass IQA

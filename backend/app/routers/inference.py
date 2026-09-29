@@ -148,8 +148,8 @@ def _evaluate_image_quality(pil_img: Image.Image) -> dict[str, Any]:
     mean_val = float(np.mean(arr))
     std_val = float(np.std(arr))
 
-    # Black screen / camera covered / pitch dark
-    if mean_val < 25.0 or (mean_val < 38.0 and std_val < 12.0):
+    # Black screen / camera covered / pitch dark (low mean AND low contrast)
+    if (mean_val < 15.0 and std_val < 12.0) or (mean_val < 35.0 and std_val < 8.0):
         return {
             "passed": False,
             "is_dark": True,
@@ -430,20 +430,25 @@ async def predict_multimodal(payload: MultimodalPayload):
         fusion_score = int(np.clip(round(0.55 * s_score + 0.45 * v_score), 0, 100))
         confidence = int(np.clip(round(0.55 * sensor_res["confidence"] + 0.45 * vision_res["confidence"]), 0, 100))
         total_latency_ms = round((time.perf_counter() - start_total) * 1000, 2)
+        if vision_res["prediction"] == "UNSAFE" or sensor_res["prediction"] == "UNSAFE":
+            decision = "UNSAFE"
+        elif fusion_score >= 72 and vision_res["prediction"] == "SAFE" and sensor_res["prediction"] == "SAFE":
+            decision = "SAFE"
+        else:
+            decision = "CAUTION"
     elif has_sensor:
         modality_state = "SENSOR_ONLY"
         fusion_score = int(round(sensor_res["probabilities"]["safe"] * 100 + sensor_res["probabilities"]["caution"] * 50))
-        confidence = int(np.clip(round(sensor_res["confidence"] * 0.85), 0, 100))
+        confidence = int(sensor_res["confidence"])
         total_latency_ms = sensor_res["latency_ms"]
+        decision = sensor_res["prediction"]
     else:
         modality_state = "VISION_ONLY"
         v_probs = vision_res["probabilities"]
         fusion_score = int(round(v_probs["safe"] * 100 + v_probs["caution"] * 50))
-        # Honest vision-only screening confidence discount (75% of vision model confidence due to absence of core biochemistry)
-        confidence = int(np.clip(round(vision_res["confidence"] * 0.75), 0, 100))
+        confidence = int(vision_res["confidence"])
         total_latency_ms = vision_res["latency_ms"]
-
-    decision = "SAFE" if fusion_score >= 72 else ("CAUTION" if fusion_score >= 40 else "UNSAFE")
+        decision = vision_res["prediction"]
 
     return {
         "decision": decision,

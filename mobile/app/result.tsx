@@ -29,6 +29,7 @@ import { AppIcon } from "../components/AppIcon";
 import { AnimatedPressable } from "../components/AnimatedPressable";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { generateSilageQRPayload } from "../utils/qrGenerator";
+import { QRCodeView } from "../components/QRCodeView";
 import { safeNavigate } from "../utils/navigation";
 import { t } from "../utils/i18n";
 import { shareOrCopyPayload } from "../utils/shareUtil";
@@ -443,20 +444,9 @@ export default function ResultScreen() {
           </View>
 
           <View style={styles.qrContainer}>
-            <View
-              style={[
-                styles.qrMockBox,
-                { backgroundColor: theme.surface, borderColor: theme.primary, borderRadius: theme.radiusSm }
-              ]}
-            >
-              <Text style={[styles.qrMockCode, { color: theme.primary }]}>[#  #  #  #  #]</Text>
-              <Text style={[styles.qrMockCode, { color: theme.primary }]}>[#   SILAGE   #]</Text>
-              <Text style={[styles.qrMockCode, { color: theme.text }]}>[#    GUARD   #]</Text>
-              <Text style={[styles.qrMockCode, { color: theme.accent }]}>[#  {decision.padEnd(8)}  #]</Text>
-              <Text style={[styles.qrMockCode, { color: theme.primary }]}>[#  #  #  #  #]</Text>
-            </View>
-            <Text style={[styles.qrHash, { color: theme.textMuted }]}>
-              {qrPayload}
+            <QRCodeView value={qrPayload} size={170} />
+            <Text style={[styles.qrSub, { color: theme.textMuted, marginTop: 10, textAlign: "center" }]}>
+              Scan with any mobile camera or QR app to verify certificate
             </Text>
             <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8, paddingHorizontal: 12, paddingVertical: 6, borderRadius: theme.radiusSm, backgroundColor: theme.primary + "1A" }}>
               <AppIcon name="share" size={14} color={theme.primary} />

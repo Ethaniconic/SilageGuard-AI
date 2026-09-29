@@ -46,9 +46,9 @@ async def validate_bearer_if_present(request, call_next):
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"] if settings.CORS_ORIGINS == "*" else settings.CORS_ORIGINS.split(","),
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_credentials=True if settings.CORS_ORIGINS != "*" else False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 if has_prometheus:
     Instrumentator().instrument(app).expose(app)

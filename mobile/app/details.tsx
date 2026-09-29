@@ -31,6 +31,7 @@ import { generateFarmerAdvisory } from "../features/advisory/advisoryEngine";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { t } from "../utils/i18n";
 import { shareOrCopyPayload } from "../utils/shareUtil";
+import { QRCodeView } from "../components/QRCodeView";
 
 export default function BatchDetailsScreen() {
   const router = useRouter();
@@ -356,11 +357,14 @@ export default function BatchDetailsScreen() {
             }
           ]}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
             <AppIcon name="qr-code" size={16} color={theme.text} />
             <Text style={[styles.cardHeaderTitle, { color: theme.text, marginLeft: 6, marginBottom: 0 }]}>
-              VERIFIABLE QR PAYLOAD
+              VERIFIABLE QR CERTIFICATE
             </Text>
+          </View>
+          <View style={{ alignItems: "center", marginVertical: 10 }}>
+            <QRCodeView value={batch.qr_data || batch.id} size={150} />
           </View>
           <View
             style={[
@@ -372,7 +376,7 @@ export default function BatchDetailsScreen() {
               }
             ]}
           >
-            <Text style={[styles.qrPayloadText, { color: theme.textMuted }]}>{batch.qr_data}</Text>
+            <Text style={[styles.qrPayloadText, { color: theme.textMuted }]}>{batch.qr_data || batch.id}</Text>
           </View>
           <TouchableOpacity
             style={[

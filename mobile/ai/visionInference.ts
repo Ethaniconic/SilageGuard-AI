@@ -92,23 +92,30 @@ async function extractBrowserPixelAnalysis(uri: string): Promise<{
       lumaSum += luma;
       lumaSqSum += luma * luma;
 
-      // Silage agronomic optical heuristics:
-      // Spoilage mould: whitish/grey fuzzy hyphae (high luminance, low saturation) or dark black fungal clusters
-      const isMouldHyphae = (r > 165 && g > 165 && b > 165 && Math.abs(r - g) < 25 && Math.abs(g - b) < 25);
-      const isDarkRot = (r < 50 && g < 50 && b < 45);
-      if (isMouldHyphae || isDarkRot) {
+      // Silage agronomic optical analysis:
+      // 1. Spoilage moulds:
+      // - White/grey fungal hyphae (high luminance, low saturation)
+      const isWhiteGreyMould = (r > 150 && g > 150 && b > 150 && Math.abs(r - g) < 28 && Math.abs(g - b) < 28);
+      // - Blue/green Penicillium or Aspergillus fungal colonies
+      const isBlueGreenMould = (g > r * 1.15 && b > r * 1.08 && (g > 65 || b > 65));
+      // - Reddish/pink Fusarium mould
+      const isPinkFusarium = (r > 135 && r > g * 1.30 && r > b * 1.30);
+      // - Black clostridial slimy rot / fungal spores
+      const isDarkRot = (r < 65 && g < 65 && b < 65);
+
+      if (isWhiteGreyMould || isBlueGreenMould || isPinkFusarium || isDarkRot) {
         unsafeCount++;
         continue;
       }
 
-      // Heat damage / browning / Maillard reaction: deep dark brown / dark reddish-brown
-      const isBrowning = (r > g * 1.20 && r > 85 && b < 75);
+      // 2. Heat damage / browning / Maillard reaction: deep dark brown / dark reddish-brown
+      const isBrowning = (r > g * 1.18 && r > 80 && b < 75);
       if (isBrowning) {
         cautionCount++;
         continue;
       }
 
-      // Healthy lactic preservation: olive-green, golden-yellow, light brown forage
+      // 3. Healthy lactic preservation: olive-green, golden-yellow, light brown forage
       safeCount++;
     }
 
@@ -141,13 +148,12 @@ async function extractBrowserPixelAnalysis(uri: string): Promise<{
       };
     }
 
-    const sRaw = safeCount / totalSamples;
-    const cRaw = cautionCount / totalSamples;
-    const uRaw = unsafeCount / totalSamples;
+    const totalCount = safeCount + cautionCount + unsafeCount;
+    if (totalCount === 0) return null;
 
-    const safe = Number(Math.min(0.96, Math.max(0.04, sRaw * 0.90 + 0.05)).toFixed(4));
-    const caution = Number(Math.min(0.90, Math.max(0.03, cRaw * 1.05 + 0.04)).toFixed(4));
-    const unsafe = Number(Math.max(0.01, (1.0 - safe - caution)).toFixed(4));
+    const safe = Number((safeCount / totalCount).toFixed(4));
+    const caution = Number((cautionCount / totalCount).toFixed(4));
+    const unsafe = Number((unsafeCount / totalCount).toFixed(4));
     const maxP = Math.max(safe, caution, unsafe);
     const confidence = Math.round(maxP * 100);
 
