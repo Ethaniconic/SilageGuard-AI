@@ -9,12 +9,22 @@
  */
 
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { useRouter, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { AppIcon } from "./AppIcon";
 import { safeNavigate, safeGoBack } from "../utils/navigation";
+import { LanguageCode } from "../utils/constants";
+import { t } from "../utils/i18n";
+
+const LANG_OPTIONS: { code: LanguageCode; label: string }[] = [
+  { code: "en", label: "EN" },
+  { code: "hi", label: "हिन्दी" },
+  { code: "mr", label: "मराठी" },
+  { code: "kn", label: "ಕನ್ನಡ" },
+  { code: "te", label: "తెలుగు" },
+];
 
 interface Props {
   title?: string;
@@ -32,7 +42,7 @@ export const Header: React.FC<Props> = ({
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
-  const { bleStatus, telemetry } = useAppStore();
+  const { bleStatus, telemetry, language, setLanguage } = useAppStore();
   const { theme, isDark, toggleTheme } = useTheme();
 
   const isConnected = bleStatus === "CONNECTED";
@@ -47,9 +57,16 @@ export const Header: React.FC<Props> = ({
   };
 
   const handleProbePress = () => {
-    // Once on the probe screen, no further duplicate redirections
     safeNavigate(router, "/ble", pathname);
   };
+
+  const cycleLanguage = () => {
+    const currentIndex = LANG_OPTIONS.findIndex((l) => l.code === language);
+    const nextIndex = (currentIndex + 1) % LANG_OPTIONS.length;
+    setLanguage(LANG_OPTIONS[nextIndex].code);
+  };
+
+  const currentLangLabel = LANG_OPTIONS.find((l) => l.code === language)?.label || "EN";
 
   return (
     <View
@@ -79,12 +96,41 @@ export const Header: React.FC<Props> = ({
             <AppIcon name="arrow-back" size={16} color={theme.text} />
           </TouchableOpacity>
         )}
-        <View>
-          <Text style={[styles.title, { color: theme.text }]}>SilageGuard AI</Text>
-        </View>
+        <TouchableOpacity
+          style={styles.brandRow}
+          onPress={() => safeNavigate(router, "/home", pathname)}
+          activeOpacity={0.8}
+        >
+          <Image
+            source={require("../assets/icon-logo.png")}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          <Text style={[styles.title, { color: theme.text }]}>SilageGuard</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.rightRow}>
+        {/* Instant Farmer Language Switcher */}
+        <TouchableOpacity
+          style={[
+            styles.langPill,
+            {
+              backgroundColor: theme.primary + "1A",
+              borderColor: theme.primary,
+              borderRadius: theme.radiusSm
+            }
+          ]}
+          onPress={cycleLanguage}
+          activeOpacity={0.7}
+          accessibilityLabel="Switch Language"
+        >
+          <AppIcon name="settings" size={12} color={theme.primary} />
+          <Text style={[styles.langText, { color: theme.primary }]}>
+            {currentLangLabel}
+          </Text>
+        </TouchableOpacity>
+
         {/* Theme Toggle Button (Light/Dark mode) */}
         <TouchableOpacity
           style={[
@@ -105,21 +151,6 @@ export const Header: React.FC<Props> = ({
             color={isDark ? theme.caution : theme.accent}
           />
         </TouchableOpacity>
-
-        {/* Offline Badge */}
-        <View
-          style={[
-            styles.offlineBadge,
-            {
-              backgroundColor: theme.safeBg,
-              borderColor: theme.safeBorder,
-              borderRadius: theme.radiusSm
-            }
-          ]}
-        >
-          <AppIcon name="cloud-offline" size={11} color={theme.safe} strokeWidth={2.2} />
-          <Text style={[styles.offlineText, { color: theme.safe }]}>OFFLINE</Text>
-        </View>
 
         {/* Probe Battery & Status */}
         <TouchableOpacity
@@ -145,7 +176,7 @@ export const Header: React.FC<Props> = ({
               { color: isConnected ? theme.accent : theme.textMuted }
             ]}
           >
-            {isConnected && telemetry.battery !== null ? `${telemetry.battery}%` : "PROBE"}
+            {isConnected && telemetry.battery !== null ? `${telemetry.battery}%` : t("bluetooth", language).toUpperCase()}
           </Text>
         </TouchableOpacity>
       </View>
@@ -215,6 +246,29 @@ const styles = StyleSheet.create({
   },
   probeText: {
     fontSize: 10,
+    fontWeight: "800",
+    marginLeft: 4
+  },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center"
+  },
+  logoImage: {
+    width: 28,
+    height: 28,
+    marginRight: 8,
+    borderRadius: 6
+  },
+  langPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderWidth: 1,
+    marginRight: 6
+  },
+  langText: {
+    fontSize: 11,
     fontWeight: "800",
     marginLeft: 4
   }

@@ -47,6 +47,9 @@ interface AppState {
   latestAdvisory: FarmerAdvisory | null;
   setLatestResult: (fusion: FusionResult, advisory: FarmerAdvisory) => void;
   clearHistory: () => void;
+  clearScanWizard: () => void;
+  setCurrentAnalysisResult: (result: any) => void;
+  showToast: (message: string, type?: "success" | "error" | "info" | "warning", durationMs?: number) => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => {
@@ -129,12 +132,30 @@ export const useAppStore = create<AppState>((set, get) => {
     latestAdvisory: null,
     setLatestResult: (latestFusionResult, latestAdvisory) =>
       set({ latestFusionResult, latestAdvisory }),
-    clearHistory: () =>
+    clearHistory: () => {
+      useGlobalStore.getState().clearScanWizard();
+      useGlobalStore.getState().setCurrentAnalysisResult(null);
       set({
         latestFusionResult: null,
         latestAdvisory: null,
         scanImages: []
-      })
+      });
+    },
+    clearScanWizard: () => {
+      useGlobalStore.getState().clearScanWizard();
+      useGlobalStore.getState().setCurrentAnalysisResult(null);
+      set({
+        latestFusionResult: null,
+        latestAdvisory: null,
+        scanImages: []
+      });
+    },
+    setCurrentAnalysisResult: (result: any) => {
+      useGlobalStore.getState().setCurrentAnalysisResult(result);
+    },
+    showToast: (message: string, type: "success" | "error" | "info" | "warning" = "info", durationMs = 3000) => {
+      useGlobalStore.getState().showToast(message, type, durationMs);
+    }
   };
 });
 

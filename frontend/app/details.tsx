@@ -29,12 +29,14 @@ import { AppIcon } from "../components/AppIcon";
 import { batchRepository, CompleteBatchDetails } from "../sqlite/batchRepository";
 import { generateFarmerAdvisory } from "../features/advisory/advisoryEngine";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
+import { t } from "../utils/i18n";
+import { shareOrCopyPayload } from "../utils/shareUtil";
 
 export default function BatchDetailsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { language } = useAppStore();
+  const { language, showToast } = useAppStore();
   const { theme } = useTheme();
   const [details, setDetails] = useState<CompleteBatchDetails | null>(null);
 
@@ -83,8 +85,23 @@ export default function BatchDetailsScreen() {
     }
   };
 
-  const handleShareCertificate = () => {
-    Alert.alert("QR Certificate", `Batch Verification Payload:\n\n${batch.qr_data}`);
+  const handleShareCertificate = async () => {
+    try {
+      const shareResult = await shareOrCopyPayload(
+        `[SILAGEGUARD AI AUDIT CERTIFICATE]\nBatch ID: ${batch.id}\nVerdict: ${batch.decision}\nMSSI Score: ${batch.mssi_score}/100\nDate: ${batch.created_at || new Date().toISOString()}\nPayload: ${batch.qr_data}`,
+        "SilageGuard Audit Certificate"
+      );
+      if (shareResult.copied) {
+        showToast?.(t("qrCopied", language) || "Certificate copied to clipboard!", "success");
+      } else if (shareResult.shared) {
+        showToast?.(t("shareQR", language) || "Certificate shared successfully!", "success");
+      } else {
+        showToast?.(t("qrCopied", language) || "Certificate copied to clipboard!", "success");
+      }
+    } catch (err) {
+      console.warn("Share certificate error:", err);
+      showToast?.(t("qrCopied", language) || "Certificate copied to clipboard!", "info");
+    }
   };
 
   return (
@@ -365,7 +382,9 @@ export default function BatchDetailsScreen() {
             onPress={handleShareCertificate}
           >
             <AppIcon name="share" size={15} color="#090D16" />
-            <Text style={[styles.shareBtnText, { marginLeft: 6 }]}>SHARE / COPY CERTIFICATE</Text>
+            <Text style={[styles.shareBtnText, { marginLeft: 6 }]}>
+              {t("shareQR", language).toUpperCase()}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

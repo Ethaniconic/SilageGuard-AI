@@ -8,7 +8,7 @@
  */
 
 import React, { useEffect, useState, useRef } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Animated } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Animated, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { initDatabase } from "../sqlite/database";
 import { THEME_COLORS } from "../utils/constants";
@@ -73,12 +73,13 @@ export default function SplashScreen() {
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-        {/* Logo Glyph */}
+        {/* Main Application Load Logo */}
         <View style={styles.logoContainer}>
-          <View style={styles.logoHalo} />
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoIcon}>🌾</Text>
-          </View>
+          <Image
+            source={require("../assets/logo.png")}
+            style={{ width: 140, height: 140, borderRadius: 20 }}
+            resizeMode="contain"
+          />
         </View>
 
         <Text style={styles.title}>SILAGEGUARD AI</Text>

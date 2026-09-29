@@ -18,9 +18,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Share,
-  Alert,
-  Clipboard
+  Alert
 } from "react-native";
 import { useRouter, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -33,6 +31,7 @@ import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { generateSilageQRPayload } from "../utils/qrGenerator";
 import { safeNavigate } from "../utils/navigation";
 import { t } from "../utils/i18n";
+import { shareOrCopyPayload } from "../utils/shareUtil";
 
 export default function ResultScreen() {
   const router = useRouter();
@@ -47,7 +46,8 @@ export default function ResultScreen() {
     telemetry,
     cropType,
     pitDepthCm,
-    clearScanImages
+    clearScanImages,
+    showToast
   } = useAppStore();
 
   const decision = latestFusionResult?.decision || "SAFE";
@@ -69,21 +69,20 @@ export default function ResultScreen() {
 
   const handleShareQR = async () => {
     try {
-      if (Share && Share.share) {
-        const result = await Share.share({
-          message: `[SILAGEGUARD AI CERTIFICATE]\nPayload: ${qrPayload}\nDecision: ${decision}\nMSSI Quality Score: ${mssiScore}/100`,
-          title: "Silage Audit QR Payload"
-        });
-      } else if (navigator && navigator.clipboard) {
-        await navigator.clipboard.writeText(qrPayload);
-        Alert.alert("QR Payload Shared", t("qrCopied", language));
-      } else {
-        Clipboard.setString(qrPayload);
-        Alert.alert("QR Payload Shared", t("qrCopied", language));
+      const shareResult = await shareOrCopyPayload(
+        `[SILAGEGUARD AI CERTIFICATE]\nPayload: ${qrPayload}\nDecision: ${decision}\nMSSI Quality Score: ${mssiScore}/100`,
+        "Silage Audit QR Payload"
+      );
+      if (shareResult.copied) {
+        showToast?.(t("qrCopied", language) || "QR Code copied to clipboard!", "success");
+      } else if (shareResult.shared) {
+        showToast?.(t("shareQR", language) || "QR Code shared successfully!", "success");
+      } else if (shareResult.success) {
+        showToast?.(t("qrCopied", language) || "QR Code copied to clipboard!", "success");
       }
     } catch (err) {
       console.warn("Share QR Error:", err);
-      Alert.alert("QR Payload Shared", t("qrCopied", language));
+      showToast?.(t("qrCopied", language) || "QR Code copied to clipboard!", "info");
     }
   };
 
@@ -275,14 +274,14 @@ export default function ResultScreen() {
           ]}
         >
           <Text style={[styles.cardTitle, { color: theme.text }]}>
-            INSPECTED SENSORY PARAMETERS
+            {t("inspectedParams", language)}
           </Text>
 
           <View style={styles.metricsGrid}>
             <View style={[styles.metricItem, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
               <View style={styles.metricItemHeader}>
                 <AppIcon name="ph" size={13} color={theme.safe} />
-                <Text style={[styles.metricLabel, { color: theme.textMuted, marginLeft: 4 }]}>pH Acidity</Text>
+                <Text style={[styles.metricLabel, { color: theme.textMuted, marginLeft: 4 }]}>{t("phAcidity", language)}</Text>
               </View>
               <Text
                 style={[
@@ -299,13 +298,13 @@ export default function ResultScreen() {
               >
                 {telemetry.ph !== null ? telemetry.ph.toFixed(2) : "--"}
               </Text>
-              <Text style={[styles.metricTarget, { color: theme.textMuted }]}>Target: 3.8 - 4.2</Text>
+              <Text style={[styles.metricTarget, { color: theme.textMuted }]}>{t("target", language)}: 3.8 - 4.2</Text>
             </View>
 
             <View style={[styles.metricItem, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
               <View style={styles.metricItemHeader}>
                 <AppIcon name="water" size={13} color={theme.accent} />
-                <Text style={[styles.metricLabel, { color: theme.textMuted, marginLeft: 4 }]}>Moisture</Text>
+                <Text style={[styles.metricLabel, { color: theme.textMuted, marginLeft: 4 }]}>{t("moisture", language)}</Text>
               </View>
               <Text
                 style={[
@@ -322,13 +321,13 @@ export default function ResultScreen() {
               >
                 {telemetry.moisture !== null ? `${telemetry.moisture.toFixed(1)}%` : "--"}
               </Text>
-              <Text style={[styles.metricTarget, { color: theme.textMuted }]}>Target: 60 - 68%</Text>
+              <Text style={[styles.metricTarget, { color: theme.textMuted }]}>{t("target", language)}: 60 - 68%</Text>
             </View>
 
             <View style={[styles.metricItem, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
               <View style={styles.metricItemHeader}>
                 <AppIcon name="thermometer" size={13} color={theme.caution} />
-                <Text style={[styles.metricLabel, { color: theme.textMuted, marginLeft: 4 }]}>Core Heat Rise</Text>
+                <Text style={[styles.metricLabel, { color: theme.textMuted, marginLeft: 4 }]}>{t("heatRise", language)}</Text>
               </View>
               <Text
                 style={[
@@ -345,13 +344,13 @@ export default function ResultScreen() {
               >
                 {deltaTemp !== null ? `+${deltaTemp.toFixed(1)}C` : "--"}
               </Text>
-              <Text style={[styles.metricTarget, { color: theme.textMuted }]}>Target: &lt; 3.0C</Text>
+              <Text style={[styles.metricTarget, { color: theme.textMuted }]}>{t("target", language)}: &lt; 3.0C</Text>
             </View>
 
             <View style={[styles.metricItem, { backgroundColor: theme.surface, borderRadius: theme.radiusSm }]}>
               <View style={styles.metricItemHeader}>
                 <AppIcon name="camera" size={13} color={theme.primary} />
-                <Text style={[styles.metricLabel, { color: theme.textMuted, marginLeft: 4 }]}>Mould Signal</Text>
+                <Text style={[styles.metricLabel, { color: theme.textMuted, marginLeft: 4 }]}>{t("mouldSignal", language)}</Text>
               </View>
               <Text
                 style={[
@@ -366,7 +365,7 @@ export default function ResultScreen() {
               >
                 {((latestFusionResult?.breakdown?.mouldProbability ?? 0.05) * 100).toFixed(0)}%
               </Text>
-              <Text style={[styles.metricTarget, { color: theme.textMuted }]}>Surface Anomaly Proxy</Text>
+              <Text style={[styles.metricTarget, { color: theme.textMuted }]}>Surface Proxy</Text>
             </View>
           </View>
         </View>
@@ -399,9 +398,9 @@ export default function ResultScreen() {
               <AppIcon name="qr-code" size={20} color={theme.accent} />
             </View>
             <View style={styles.qrHeaderText}>
-              <Text style={[styles.qrTitle, { color: theme.text }]}>DIGITAL BATCH CERTIFICATE</Text>
+              <Text style={[styles.qrTitle, { color: theme.text }]}>{t("certificateTitle", language)}</Text>
               <Text style={[styles.qrSub, { color: theme.textMuted }]}>
-                {t("shareQR", language)}
+                {t("certificateSub", language)}
               </Text>
             </View>
             <AppIcon name="share" size={18} color={theme.accent} />
@@ -423,6 +422,12 @@ export default function ResultScreen() {
             <Text style={[styles.qrHash, { color: theme.textMuted }]}>
               {qrPayload}
             </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8, paddingHorizontal: 12, paddingVertical: 6, borderRadius: theme.radiusSm, backgroundColor: theme.primary + "1A" }}>
+              <AppIcon name="share" size={14} color={theme.primary} />
+              <Text style={{ color: theme.primary, fontSize: 12, fontWeight: "700", marginLeft: 6 }}>
+                {t("shareQR", language)}
+              </Text>
+            </View>
           </View>
         </TouchableOpacity>
 
@@ -440,7 +445,7 @@ export default function ResultScreen() {
         >
           <AppIcon name="shield" size={16} color={theme.accent} />
           <Text style={[styles.explainBtnText, { color: theme.accent }]}>
-            WHY THIS RESULT? (AI EXPLAINABILITY & PROVENANCE)
+            {t("whyThisResult", language).toUpperCase()}
           </Text>
         </AnimatedPressable>
 
@@ -473,7 +478,7 @@ export default function ResultScreen() {
         >
           <AppIcon name="share" size={16} color={theme.text} />
           <Text style={[styles.pdfBtnText, { color: theme.text }]}>
-            DOWNLOAD / PRINT AUDITABLE PDF REPORT
+            {t("downloadPdf", language).toUpperCase()}
           </Text>
         </AnimatedPressable>
 
@@ -496,7 +501,7 @@ export default function ResultScreen() {
               numberOfLines={1}
               adjustsFontSizeToFit={true}
             >
-              PAST BATCHES
+              {t("pastBatches", language)}
             </Text>
           </AnimatedPressable>
 
@@ -516,7 +521,7 @@ export default function ResultScreen() {
               numberOfLines={1}
               adjustsFontSizeToFit={true}
             >
-              TEST NEXT BATCH ➔
+              {t("testNextBatch", language)}
             </Text>
           </AnimatedPressable>
         </View>

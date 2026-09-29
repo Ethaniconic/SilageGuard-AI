@@ -7,8 +7,9 @@
 import React, { useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Animated, Easing } from "react-native";
 import { SilageDecision } from "../features/fusion/multimodalFusionEngine";
-import { useTheme } from "../features/ble/bleManager";
+import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { AppIcon } from "./AppIcon";
+import { t } from "../utils/i18n";
 
 interface Props {
   decision: SilageDecision;
@@ -26,6 +27,7 @@ export const TrafficLightCard: React.FC<Props> = ({
   pitDepthCm
 }) => {
   const { theme } = useTheme();
+  const { language } = useAppStore();
 
   const isSafe = decision === "SAFE";
   const isCaution = decision === "CAUTION";
@@ -36,16 +38,16 @@ export const TrafficLightCard: React.FC<Props> = ({
   const borderColor = isSafe ? theme.safeBorder : isCaution ? theme.cautionBorder : theme.unsafeBorder;
 
   const decisionLabel = isSafe
-    ? "LOW SCREENING RISK"
+    ? t("safe", language)
     : isCaution
-    ? "FEED WITH CAUTION"
-    : "UNSAFE / SPOILED";
+    ? t("caution", language)
+    : t("unsafe", language);
 
   const decisionSubtext = isSafe
-    ? "Safe to feed — Optimal lactic preservation criteria met"
+    ? t("goodSilage", language)
     : isCaution
-    ? "Aerobic Heating Signal — Monitor closely / Feed within 6h"
-    : "Elevated Spoilage Signal — Do not feed suspect forage";
+    ? t("warningSilage", language)
+    : t("badSilage", language);
 
   const thresholdText = isSafe
     ? "Optimal Fermentation (MSSI ≥ 72)"
@@ -191,7 +193,7 @@ export const TrafficLightCard: React.FC<Props> = ({
       {/* Metric Row with Animated Score Gauge */}
       <View style={[styles.metaRow, { borderTopColor: borderColor + "44" }]}>
         <View style={styles.badge}>
-          <Text style={[styles.badgeLabel, { color: theme.textMuted }]}>MSSI SAFETY INDEX</Text>
+          <Text style={[styles.badgeLabel, { color: theme.textMuted }]}>{t("mssiScore", language).toUpperCase()}</Text>
           <Text
             style={[styles.badgeValue, { color: mainColor }]}
             numberOfLines={1}
@@ -216,7 +218,7 @@ export const TrafficLightCard: React.FC<Props> = ({
         <View style={[styles.badgeDivider, { backgroundColor: borderColor + "44" }]} />
 
         <View style={styles.badge}>
-          <Text style={[styles.badgeLabel, { color: theme.textMuted }]}>AI CONFIDENCE</Text>
+          <Text style={[styles.badgeLabel, { color: theme.textMuted }]}>{t("confidence", language).toUpperCase()}</Text>
           <Text
             style={[styles.badgeValue, { color: theme.text }]}
             numberOfLines={1}

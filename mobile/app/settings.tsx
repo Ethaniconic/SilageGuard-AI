@@ -17,7 +17,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
-  Alert
+  Alert,
+  Platform
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Header } from "../components/Header";
@@ -40,12 +41,36 @@ export default function SettingsScreen() {
     setDemoMode,
     demoPreset,
     setDemoPreset,
-    clearHistory
+    clearScanWizard,
+    setCurrentAnalysisResult,
+    showToast
   } = useAppStore();
 
   const [speechRate, setSpeechRate] = useState<"normal" | "slow">("normal");
 
-  const handleClearDatabase = () => {
+  const handleClearDatabase = async () => {
+    const doClear = async () => {
+      try {
+        await batchRepository.clearAllBatches();
+        clearScanWizard?.();
+        setCurrentAnalysisResult?.(null);
+        showToast?.(t("resetSuccess", language) || "Local scan history cleared successfully!", "success");
+      } catch (err) {
+        console.warn("clearAllBatches error:", err);
+        showToast?.("Failed to clear local scan database", "error");
+      }
+    };
+
+    if (Platform.OS === "web") {
+      const confirmed = typeof window !== "undefined"
+        ? window.confirm(`${t("resetConfirmTitle", language)}\n\n${t("resetConfirmBody", language)}`)
+        : true;
+      if (confirmed) {
+        await doClear();
+      }
+      return;
+    }
+
     Alert.alert(
       t("resetConfirmTitle", language),
       t("resetConfirmBody", language),
@@ -54,13 +79,7 @@ export default function SettingsScreen() {
         {
           text: t("reset", language),
           style: "destructive",
-          onPress: async () => {
-            const success = await batchRepository.clearAllBatches();
-            if (clearHistory) clearHistory();
-            if (success) {
-              Alert.alert(t("reset", language), t("resetSuccess", language));
-            }
-          }
+          onPress: doClear
         }
       ]
     );
@@ -418,7 +437,7 @@ export default function SettingsScreen() {
         >
           <AppIcon name="trash" size={15} color={theme.unsafe} />
           <Text style={[styles.clearDbText, { color: theme.unsafe, marginLeft: 6 }]}>
-            RESET LOCAL CACHED SCANS
+            {t("resetHistory", language).toUpperCase()}
           </Text>
         </TouchableOpacity>
       </ScrollView>

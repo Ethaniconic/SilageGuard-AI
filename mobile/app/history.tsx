@@ -15,7 +15,9 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  TextInput
+  TextInput,
+  Alert,
+  Platform
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,13 +25,15 @@ import { Header } from "../components/Header";
 import { AppIcon } from "../components/AppIcon";
 import { batchRepository } from "../sqlite/batchRepository";
 import { BatchRecord } from "../sqlite/database";
-import { useTheme } from "../features/ble/bleManager";
+import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { BottomNavBar } from "../components/BottomNavBar";
+import { t } from "../utils/i18n";
 
 export default function HistoryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { language, clearScanWizard, setCurrentAnalysisResult, showToast } = useAppStore();
 
   const [batches, setBatches] = useState<BatchRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,6 +47,39 @@ export default function HistoryScreen() {
     const list = await batchRepository.filterBatches(searchQuery, filterDecision);
     setBatches(list);
   }
+
+  const handleClearHistory = async () => {
+    const doClear = async () => {
+      try {
+        await batchRepository.clearAllBatches();
+        clearScanWizard?.();
+        setCurrentAnalysisResult?.(null);
+        setBatches([]);
+        showToast?.(t("resetSuccess", language) || "Local scan history cleared successfully!", "success");
+      } catch (err) {
+        console.warn("Clear history error:", err);
+      }
+    };
+
+    if (Platform.OS === "web") {
+      const confirmed = typeof window !== "undefined"
+        ? window.confirm(`${t("resetConfirmTitle", language)}\n\n${t("resetConfirmBody", language)}`)
+        : true;
+      if (confirmed) {
+        await doClear();
+      }
+      return;
+    }
+
+    Alert.alert(
+      t("resetConfirmTitle", language),
+      t("resetConfirmBody", language),
+      [
+        { text: t("cancel", language), style: "cancel" },
+        { text: t("reset", language), style: "destructive", onPress: doClear }
+      ]
+    );
+  };
 
   const renderBatchItem = ({ item }: { item: BatchRecord }) => {
     const isSafe = item.decision === "SAFE";
@@ -231,6 +268,24 @@ export default function HistoryScreen() {
               </TouchableOpacity>
             );
           })}
+        </View>
+
+        {/* Count & Reset Row */}
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8, paddingHorizontal: 2 }}>
+          <Text style={{ fontSize: 12, fontWeight: "700", color: theme.textMuted }}>
+            {batches.length} {t("pastBatches", language)}
+          </Text>
+          {batches.length > 0 && (
+            <TouchableOpacity
+              onPress={handleClearHistory}
+              style={{ flexDirection: "row", alignItems: "center", paddingVertical: 4, paddingHorizontal: 8, borderRadius: theme.radiusSm, backgroundColor: theme.unsafe + "15" }}
+            >
+              <AppIcon name="trash" size={13} color={theme.unsafe} />
+              <Text style={{ fontSize: 11, fontWeight: "700", color: theme.unsafe, marginLeft: 4 }}>
+                {t("resetHistory", language)}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Batches FlatList */}
