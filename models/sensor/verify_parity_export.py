@@ -12,7 +12,7 @@ from sensor_pipeline import engineer_single_reading
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_JSON_PATH = os.path.join(BASE_DIR, "sensor_rf_model.json")
-REPORT_PATH = os.path.join(BASE_DIR, "..", "validation", "parity", "model_parity_report.json")
+REPORT_PATH = os.path.join(BASE_DIR, "..", "..", "validation", "parity", "model_parity_report.json")
 
 def evaluate_tree(tree, features):
     node_id = 0
@@ -94,6 +94,7 @@ def generate_parity_report():
         "cases": report_items
     }
     
+    os.makedirs(os.path.dirname(REPORT_PATH), exist_ok=True)
     with open(REPORT_PATH, "w") as f:
         json.dump(full_report, f, indent=2)
         

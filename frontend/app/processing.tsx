@@ -136,9 +136,11 @@ export default function ProcessingScreen() {
 
       // --- STAGE 3: Multimodal Fusion ---
       await new Promise((r) => setTimeout(r, 500));
+      const isImageIqaPassed = visionRes ? (visionRes.iqaPassed !== false && !visionRes.needRetake) : true;
       const fusionRes = computeMultimodalFusion({
         sensorResult: sensorRes,
-        visionResult: visionRes
+        visionResult: visionRes,
+        iqaPassed: isImageIqaPassed
       });
 
       setStages((prev) =>
@@ -217,7 +219,7 @@ export default function ProcessingScreen() {
           caution_prob: visionRes.probabilities.caution,
           unsafe_prob: visionRes.probabilities.unsafe,
           mould_prob: visionRes.mouldProbability,
-          iqa_passed: true,
+          iqa_passed: isImageIqaPassed,
           num_frames: scanImages.length || 1
         },
         {

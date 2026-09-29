@@ -55,6 +55,7 @@ export default function ResultScreen() {
   const mssiScore = latestFusionResult?.mssiScore ?? 0;
   const ruleOverride = latestFusionResult?.rule_override || false;
   const ruleReason = latestFusionResult?.rule_reason || null;
+  const needRetake = latestFusionResult?.needRetake || false;
 
   const qrPayload = generateSilageQRPayload({
     batchId: "BATCH-CURR",
@@ -176,6 +177,41 @@ export default function ResultScreen() {
             Rapid on-farm estimation. Not a substitute for wet-chemistry laboratory HPLC/NIR feed analysis.
           </Text>
         </View>
+
+        {/* Photo Retake Alert (Dark / Covered / Unreadable Image) */}
+        {needRetake && (
+          <View
+            style={[
+              styles.retakeAlert,
+              {
+                backgroundColor: theme.unsafeBg,
+                borderColor: theme.unsafe,
+                borderRadius: theme.radiusSm
+              }
+            ]}
+          >
+            <View style={styles.overrideHeader}>
+              <AppIcon name="alert" size={16} color={theme.unsafe} />
+              <Text style={[styles.overrideTitle, { color: theme.unsafe, marginLeft: 6 }]}>
+                PHOTO RETAKE REQUIRED
+              </Text>
+            </View>
+            <Text style={[styles.overrideReason, { color: theme.text }]}>
+              {latestFusionResult?.summaryReason || "Silage photograph was too dark or camera was covered. Silage forage quality cannot be determined. Please retake photo with proper lighting."}
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.retakeActionBtn,
+                { backgroundColor: theme.primary, borderRadius: theme.radiusSm }
+              ]}
+              onPress={handleScanAnother}
+              activeOpacity={0.8}
+            >
+              <AppIcon name="camera" size={16} color="#090D16" />
+              <Text style={styles.retakeActionBtnText}>Retake Silage Photo</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Primary Verdict Card */}
         <TrafficLightCard
@@ -572,6 +608,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     marginTop: 4
+  },
+  retakeAlert: {
+    borderWidth: 1.5,
+    padding: 12,
+    marginBottom: 10
+  },
+  retakeActionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginTop: 10,
+    gap: 8
+  },
+  retakeActionBtnText: {
+    color: "#090D16",
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 0.3
   },
   sectionCard: {
     borderWidth: 1,

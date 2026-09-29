@@ -67,6 +67,10 @@ export interface VisionInferenceResult {
   };
   disagreementScore: number;
   requiresRecapture: boolean;
+  needRetake?: boolean;
+  iqaPassed?: boolean;
+  iqaReason?: string;
+  reasons?: string[];
   photoPredictions?: VisionPrediction[];
   individualFrames?: any[];
   individualScores?: {

@@ -49,6 +49,8 @@ async function extractBrowserPixelAnalysis(uri: string): Promise<{
   caution: number;
   unsafe: number;
   confidence: number;
+  iqaPassed: boolean;
+  iqaReason?: string;
 } | null> {
   if (typeof window === "undefined" || typeof document === "undefined") {
     return null;
@@ -77,12 +79,18 @@ async function extractBrowserPixelAnalysis(uri: string): Promise<{
     let cautionCount = 0;
     let unsafeCount = 0;
     let totalSamples = 0;
+    let lumaSum = 0;
+    let lumaSqSum = 0;
 
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
       const g = data[i + 1];
       const b = data[i + 2];
       totalSamples++;
+
+      const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+      lumaSum += luma;
+      lumaSqSum += luma * luma;
 
       // Silage agronomic optical heuristics:
       // Spoilage mould: whitish/grey fuzzy hyphae (high luminance, low saturation) or dark black fungal clusters
@@ -106,6 +114,33 @@ async function extractBrowserPixelAnalysis(uri: string): Promise<{
 
     if (totalSamples === 0) return null;
 
+    const meanLuma = lumaSum / totalSamples;
+    const stdLuma = Math.sqrt(Math.max(0, (lumaSqSum / totalSamples) - (meanLuma * meanLuma)));
+
+    // Image Quality Assessment (IQA): Reject black screen / lens covered / underexposed
+    if (meanLuma < 25.0 || (meanLuma < 38.0 && stdLuma < 12.0)) {
+      return {
+        safe: 0.0,
+        caution: 0.0,
+        unsafe: 0.0,
+        confidence: 0,
+        iqaPassed: false,
+        iqaReason: "Image is too dark or black screen (lens covered). Please capture silage with adequate lighting."
+      };
+    }
+
+    // Reject solid blank/monochrome images
+    if (stdLuma < 5.0) {
+      return {
+        safe: 0.0,
+        caution: 0.0,
+        unsafe: 0.0,
+        confidence: 0,
+        iqaPassed: false,
+        iqaReason: "Solid color or blank image detected. Silage texture is not visible."
+      };
+    }
+
     const sRaw = safeCount / totalSamples;
     const cRaw = cautionCount / totalSamples;
     const uRaw = unsafeCount / totalSamples;
@@ -116,7 +151,7 @@ async function extractBrowserPixelAnalysis(uri: string): Promise<{
     const maxP = Math.max(safe, caution, unsafe);
     const confidence = Math.round(maxP * 100);
 
-    return { safe, caution, unsafe, confidence };
+    return { safe, caution, unsafe, confidence, iqaPassed: true };
   } catch {
     return null;
   }
@@ -147,6 +182,8 @@ export async function runMultiPhotoVisionInference(
 
   const individualPredictions: VisionPrediction[] = [];
   let aggregateModelLatency = 0;
+  let anyIqaFailed = false;
+  let iqaFailReason: string | undefined = undefined;
 
   for (let i = 0; i < photoList.length; i++) {
     const item = photoList[i];
@@ -158,6 +195,23 @@ export async function runMultiPhotoVisionInference(
 
     // 1. Execute against real backend ONNX MobileNetV3 inference endpoint
     try {
+      let imageBase64: string | undefined = undefined;
+      if (item.uri.startsWith("data:image")) {
+        imageBase64 = item.uri;
+      } else if (item.uri.startsWith("blob:") && typeof fetch !== "undefined") {
+        try {
+          const bResp = await fetch(item.uri);
+          const bBlob = await bResp.blob();
+          imageBase64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(bBlob);
+          });
+        } catch (bErr) {
+          console.warn("Failed converting blob URL to base64:", bErr);
+        }
+      }
+
       const isFileUri = item.uri.startsWith("file://") || item.uri.startsWith("content://");
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 6000);
@@ -194,7 +248,7 @@ export async function runMultiPhotoVisionInference(
               },
               body: JSON.stringify({
                 uri: item.uri,
-                image_base64: item.uri.startsWith("data:image") ? item.uri : undefined,
+                image_base64: imageBase64,
                 demo_preset: demoPreset
               }),
               signal: controller.signal
@@ -212,12 +266,16 @@ export async function runMultiPhotoVisionInference(
       if (res && res.ok) {
         const data = await res.json();
         if (data && data.probabilities) {
+          if (data.need_retake || data.iqa_passed === false || data.prediction === "RETAKE_REQUIRED") {
+            anyIqaFailed = true;
+            iqaFailReason = (data.reasons && data.reasons[0]) || "Image failed quality assessment.";
+          }
           probs = {
             safe: Number(Number(data.probabilities.safe).toFixed(4)),
             caution: Number(Number(data.probabilities.caution).toFixed(4)),
             unsafe: Number(Number(data.probabilities.unsafe).toFixed(4))
           };
-          topClass = (data.prediction as VisionClass) || "SAFE";
+          topClass = data.prediction === "RETAKE_REQUIRED" ? "CAUTION" : ((data.prediction as VisionClass) || "SAFE");
           conf = Math.round(data.confidence ?? Math.max(probs.safe, probs.caution, probs.unsafe) * 100);
           photoLatency = Math.round(data.latency_ms || 18);
           aggregateModelLatency += photoLatency;
@@ -241,6 +299,10 @@ export async function runMultiPhotoVisionInference(
         // Try real browser canvas pixel analysis first
         const pixelAnalysis = await extractBrowserPixelAnalysis(item.uri);
         if (pixelAnalysis) {
+          if (!pixelAnalysis.iqaPassed) {
+            anyIqaFailed = true;
+            iqaFailReason = pixelAnalysis.iqaReason;
+          }
           probs = {
             safe: pixelAnalysis.safe,
             caution: pixelAnalysis.caution,
@@ -316,7 +378,7 @@ export async function runMultiPhotoVisionInference(
     0
   ) / numPhotos;
   const disagreementScore = Number(Math.sqrt(unsafeVariance).toFixed(3));
-  const requiresRecapture = disagreementScore > 0.28;
+  const requiresRecapture = disagreementScore > 0.28 || anyIqaFailed;
 
   let aggregatePrediction: VisionClass = "SAFE";
   if (meanProbs.unsafe >= meanProbs.caution && meanProbs.unsafe >= meanProbs.safe) {
@@ -336,6 +398,10 @@ export async function runMultiPhotoVisionInference(
     mouldProbability: meanProbs.unsafe,
     disagreementScore,
     requiresRecapture,
+    needRetake: anyIqaFailed,
+    iqaPassed: !anyIqaFailed,
+    iqaReason: iqaFailReason,
+    reasons: anyIqaFailed ? [iqaFailReason || "Silage photo failed quality check."] : [],
     photoPredictions: individualPredictions,
     gradcamMap: {
       generated: true,
@@ -354,15 +420,21 @@ export async function runMultiPhotoVisionInference(
 }
 
 // Backward compatibility alias
-export const runVisionInference = async (uris: string[], preset?: any) => {
+export const runVisionInference = async (uris: string[], preset?: any): Promise<VisionInferenceResult> => {
   const res = await runMultiPhotoVisionInference(uris, preset);
   return {
     prediction: res.aggregatePrediction || res.prediction,
+    aggregatePrediction: res.aggregatePrediction,
     confidence: res.confidence,
     probabilities: res.probabilities,
     mouldProbability: res.mouldProbability,
     disagreementScore: res.disagreementScore,
     requiresRecapture: res.requiresRecapture,
+    needRetake: res.needRetake,
+    iqaPassed: res.iqaPassed,
+    iqaReason: res.iqaReason,
+    reasons: res.reasons,
+    photoPredictions: res.photoPredictions,
     individualFrames: (res.photoPredictions || []).map((p: VisionPrediction, idx: number) => ({
       frameIndex: idx + 1,
       imageUri: photosToUris(uris as string[])[idx] || "",

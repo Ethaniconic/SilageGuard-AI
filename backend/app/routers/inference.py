@@ -136,8 +136,89 @@ def _load_image_from_input(
         )
 
 
+def _evaluate_image_quality(pil_img: Image.Image) -> dict[str, Any]:
+    """
+    Agricultural Image Quality Assessment (IQA):
+    - Rejects black screen / lens covered / underexposed frames
+    - Rejects whiteout / overexposed frames
+    - Rejects solid monochrome / featureless blank canvases
+    """
+    img_gray = pil_img.convert("L")
+    arr = np.array(img_gray, dtype=np.float32)
+    mean_val = float(np.mean(arr))
+    std_val = float(np.std(arr))
+
+    # Black screen / camera covered / pitch dark
+    if mean_val < 25.0 or (mean_val < 38.0 and std_val < 12.0):
+        return {
+            "passed": False,
+            "is_dark": True,
+            "is_overexposed": False,
+            "is_blank": False,
+            "brightness": round(mean_val, 1),
+            "contrast": round(std_val, 1),
+            "reason": "Image is too dark or black screen (camera covered). Please capture silage with proper lighting.",
+        }
+
+    # Whiteout / heavy overexposure
+    if mean_val > 240.0 and std_val < 15.0:
+        return {
+            "passed": False,
+            "is_dark": False,
+            "is_overexposed": True,
+            "is_blank": False,
+            "brightness": round(mean_val, 1),
+            "contrast": round(std_val, 1),
+            "reason": "Image is overexposed or blank white screen. Please ensure even ambient lighting.",
+        }
+
+    # Featureless blank canvas / solid color
+    if std_val < 5.0:
+        return {
+            "passed": False,
+            "is_dark": False,
+            "is_overexposed": False,
+            "is_blank": True,
+            "brightness": round(mean_val, 1),
+            "contrast": round(std_val, 1),
+            "reason": "Solid color or blank image detected. Silage forage texture is not visible.",
+        }
+
+    return {
+        "passed": True,
+        "is_dark": False,
+        "is_overexposed": False,
+        "is_blank": False,
+        "brightness": round(mean_val, 1),
+        "contrast": round(std_val, 1),
+        "reason": "Acceptable image quality.",
+    }
+
+
 def _run_vision_onnx(pil_img: Image.Image) -> dict[str, Any]:
     start_time = time.perf_counter()
+
+    # Step 1: Enforce Image Quality Assessment (IQA) gate
+    iqa = _evaluate_image_quality(pil_img)
+    if not iqa["passed"]:
+        return {
+            "prediction": "RETAKE_REQUIRED",
+            "confidence": 0,
+            "probabilities": {
+                "safe": 0.0,
+                "caution": 0.0,
+                "unsafe": 0.0,
+            },
+            "mould_probability": 0.0,
+            "iqa_passed": False,
+            "iqa_report": iqa,
+            "reasons": [iqa["reason"]],
+            "need_retake": True,
+            "latency_ms": round((time.perf_counter() - start_time) * 1000, 2),
+            "model_version": "MobileNetV3-Small-INT8-v4.1",
+            "disclaimer": "Rapid AI Screening Tool — Image Quality Assessment Rejection.",
+        }
+
     session = _get_onnx_session()
 
     # Preprocess: resize to 224x224 RGB, ImageNet normalization
@@ -168,6 +249,9 @@ def _run_vision_onnx(pil_img: Image.Image) -> dict[str, Any]:
             "unsafe": round(float(probs[2]), 4),
         },
         "mould_probability": round(float(probs[2]), 4),
+        "iqa_passed": True,
+        "iqa_report": iqa,
+        "need_retake": False,
         "latency_ms": latency_ms,
         "model_version": "MobileNetV3-Small-INT8-v4.1",
         "disclaimer": "Rapid AI Screening Tool — Not a laboratory diagnostic device.",
@@ -192,7 +276,7 @@ def _run_sensor_rf(telemetry: SensorPayload) -> dict[str, Any] | None:
     moisture_adc = max(1100.0, min(3300.0, 3200.0 - (moisture / 100.0) * 2000.0))
     delta_temp = temp - ambient
     ph_dev = abs(ph - 4.0)
-    moisture_dev = abs(moisture - 65.0)
+    moisture_dev = abs(moisture - 64.0)
     heat_rise = max(0.0, delta_temp)
 
     feat_vec = [
@@ -204,9 +288,9 @@ def _run_sensor_rf(telemetry: SensorPayload) -> dict[str, Any] | None:
         ph_dev,
         moisture_dev,
         heat_rise,
-        1.0,  # storage_type
-        1.0,  # crop_type
-        2.0,  # depth_bucket
+        0.0,  # storage_type (0=Bunker)
+        0.0,  # crop_type (0=Corn)
+        1.0,  # depth_bucket (1=40cm)
     ]
 
     trees = forest["trees"]
@@ -323,6 +407,22 @@ async def predict_multimodal(payload: MultimodalPayload):
     if not has_sensor and not has_vision:
         raise HTTPException(status_code=400, detail="At least one modality (image or probe sensor) must be supplied.")
 
+    # Image Quality Assessment Gate: If photo failed IQA (e.g. black screen), reject immediately
+    if has_vision and vision_res.get("need_retake"):
+        modality_state = "MULTIMODAL" if has_sensor else "VISION_ONLY"
+        return {
+            "decision": "RETAKE_REQUIRED",
+            "mssi_score": 0,
+            "confidence": 0,
+            "need_retake": True,
+            "modality_state": modality_state,
+            "vision_result": vision_res,
+            "sensor_result": sensor_res,
+            "total_latency_ms": round((time.perf_counter() - start_total) * 1000, 2),
+            "reasons": vision_res.get("reasons", ["Silage photo failed quality check (black screen or covered lens)."]),
+            "disclaimer": "Rapid AI Screening Tool — Image Quality Assessment Rejection.",
+        }
+
     if has_sensor and has_vision:
         modality_state = "MULTIMODAL"
         s_score = int(round(sensor_res["probabilities"]["safe"] * 100 + sensor_res["probabilities"]["caution"] * 50))
@@ -349,6 +449,7 @@ async def predict_multimodal(payload: MultimodalPayload):
         "decision": decision,
         "mssi_score": fusion_score,
         "confidence": confidence,
+        "need_retake": False,
         "modality_state": modality_state,
         "vision_result": vision_res,
         "sensor_result": sensor_res,

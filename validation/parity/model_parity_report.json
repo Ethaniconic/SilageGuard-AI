@@ -13,8 +13,8 @@
         "temp": 24.2,
         "ambient": 23.0
       },
-      "python_output": "Safe",
-      "mobile_output": "Safe",
+      "python_output": "SAFE",
+      "mobile_output": "SAFE",
       "probabilities": [
         1.0,
         0.0,
@@ -31,8 +31,8 @@
         "temp": 25.5,
         "ambient": 24.0
       },
-      "python_output": "Safe",
-      "mobile_output": "Safe",
+      "python_output": "SAFE",
+      "mobile_output": "SAFE",
       "probabilities": [
         1.0,
         0.0,
@@ -49,12 +49,12 @@
         "temp": 30.5,
         "ambient": 25.0
       },
-      "python_output": "Caution",
-      "mobile_output": "Caution",
+      "python_output": "CAUTION",
+      "mobile_output": "CAUTION",
       "probabilities": [
-        0.0003,
-        0.9972,
-        0.0025
+        0.0,
+        1.0,
+        0.0
       ],
       "absolute_difference": 0.0,
       "pass": true
@@ -67,12 +67,12 @@
         "temp": 32.0,
         "ambient": 26.0
       },
-      "python_output": "Caution",
-      "mobile_output": "Caution",
+      "python_output": "CAUTION",
+      "mobile_output": "CAUTION",
       "probabilities": [
         0.0,
-        0.9888,
-        0.0112
+        1.0,
+        0.0
       ],
       "absolute_difference": 0.0,
       "pass": true
@@ -85,8 +85,8 @@
         "temp": 39.5,
         "ambient": 27.0
       },
-      "python_output": "Unsafe",
-      "mobile_output": "Unsafe",
+      "python_output": "UNSAFE",
+      "mobile_output": "UNSAFE",
       "probabilities": [
         0.0,
         0.0,
@@ -103,8 +103,8 @@
         "temp": 45.0,
         "ambient": 28.0
       },
-      "python_output": "Unsafe",
-      "mobile_output": "Unsafe",
+      "python_output": "UNSAFE",
+      "mobile_output": "UNSAFE",
       "probabilities": [
         0.0,
         0.0,
@@ -121,12 +121,12 @@
         "temp": 28.0,
         "ambient": 25.0
       },
-      "python_output": "Caution",
-      "mobile_output": "Caution",
+      "python_output": "SAFE",
+      "mobile_output": "SAFE",
       "probabilities": [
-        0.4684,
-        0.5306,
-        0.0009
+        0.56,
+        0.44,
+        0.0
       ],
       "absolute_difference": 0.0,
       "pass": true
@@ -139,12 +139,12 @@
         "temp": 35.0,
         "ambient": 27.0
       },
-      "python_output": "Unsafe",
-      "mobile_output": "Unsafe",
+      "python_output": "UNSAFE",
+      "mobile_output": "UNSAFE",
       "probabilities": [
         0.0,
-        0.0,
-        1.0
+        0.36,
+        0.64
       ],
       "absolute_difference": 0.0,
       "pass": true

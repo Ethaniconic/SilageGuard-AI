@@ -118,14 +118,95 @@ export interface FusionInputV3 {
 
 export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionOutput {
   const { sensorResult, visionResult, iqaPassed = true } = input;
+  const isVisionRetake = !!(
+    visionResult &&
+    (visionResult.needRetake ||
+      visionResult.iqaPassed === false ||
+      (visionResult.prediction as string) === "RETAKE_REQUIRED" ||
+      visionResult.requiresRecapture)
+  );
+  const effectiveIqaPassed = iqaPassed && !isVisionRetake;
+
   const hasSensor = !!sensorResult;
   const hasVision = !!visionResult;
+
+  // Case: Vision-Only and image failed quality assessment (black screen / covered lens)
+  if (hasVision && isVisionRetake && !hasSensor) {
+    const retakeReason =
+      visionResult?.iqaReason ||
+      (visionResult?.reasons && visionResult.reasons[0]) ||
+      "Silage photograph is too dark, covered, or unreadable. Please capture silage under proper lighting.";
+
+    const retakeChain: ExplainabilityPoint[] = [
+      {
+        parameter: "Silage Camera Photo",
+        measuredValue: "RETAKE REQUIRED",
+        status: "ALERT",
+        assessment: retakeReason
+      }
+    ];
+
+    return {
+      decision: "CAUTION",
+      finalVerdict: "INSUFFICIENT DATA",
+      fusionScore: 0,
+      sensorScore: null,
+      visionScore: 0,
+      finalConfidence: 0,
+      confidenceLevel: "RETAKE_REQUIRED",
+      sensorConfidence: null,
+      visionConfidence: 0,
+      modalityState: "VISION_ONLY",
+      needRetake: true,
+      needProbe: true,
+      ruleOverride: false,
+      ruleId: null,
+      ruleReason: null,
+      triggeredRules: [],
+      summaryReason: `PHOTO RETAKE REQUIRED: ${retakeReason}`,
+      reasons: [retakeReason],
+      evidenceList: ["Image quality rejection: Dark frame / black screen detected."],
+      explainabilityChain: retakeChain,
+      breakdown: {
+        sensorSafetyScore: 0,
+        visionSafetyScore: 0,
+        mouldProbability: 0
+      },
+      metadata: {
+        sensorModelVersion: "sensor_rf_v3",
+        visionModelVersion: "mobilenetv3_silage_v3",
+        fusionVersion: FUSION_CONFIG.VERSION,
+        ruleVersion: "rules_v3.0",
+        advisoryVersion: "advisory_v3.0",
+        modalityState: "VISION_ONLY",
+        disclaimer: FUSION_CONFIG.DISCLAIMER
+      },
+      mssiScore: 0,
+      confidence: 0,
+      explanations: [retakeReason],
+      sensor_score: null,
+      vision_score: 0,
+      fusion_score: 0,
+      sensor_confidence: null,
+      vision_confidence: 0,
+      final_confidence: 0,
+      confidence_level: "RETAKE_REQUIRED",
+      modality_state: "VISION_ONLY",
+      rule_override: false,
+      rule_id: null,
+      rule_reason: null,
+      final_verdict: "INSUFFICIENT DATA",
+      summary_reason: `PHOTO RETAKE REQUIRED: ${retakeReason}`,
+      explainability_chain: retakeChain
+    };
+  }
 
   // 1. Determine Modality State
   let modalityState: ModalityState = "MULTIMODAL";
   if (!hasSensor && !hasVision) {
     modalityState = "INSUFFICIENT_DATA";
-  } else if (hasSensor && !hasVision) {
+  } else if (hasSensor && (!hasVision || isVisionRetake)) {
+    // If photo failed IQA, fallback safely to sensor-only analysis with retake flag
     modalityState = "SENSOR_ONLY";
   } else if (!hasSensor && hasVision) {
     modalityState = "VISION_ONLY";
@@ -278,7 +359,7 @@ export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionO
   }
 
   // Penalty if image quality did not cleanly pass IQA
-  if (!iqaPassed) {
+  if (!effectiveIqaPassed || isVisionRetake) {
     rawConfidence = Math.max(20, rawConfidence - 20);
   }
 
@@ -288,7 +369,7 @@ export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionO
   let confidenceLevel: ConfidenceTier = "HIGH";
   let needRetake = false;
 
-  if (!iqaPassed || rawConfidence < 45) {
+  if (!effectiveIqaPassed || rawConfidence < 45 || isVisionRetake) {
     confidenceLevel = "RETAKE_REQUIRED";
     needRetake = true;
   } else if (rawConfidence < 65) {
@@ -305,8 +386,8 @@ export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionO
     moisture: hasSensor ? moisture : null,
     deltaTemp: hasSensor ? deltaTemp : null,
     coreTemp: hasSensor ? coreTemp : null,
-    mouldProbability: hasVision ? mouldProb : null,
-    iqaPassed
+    mouldProbability: hasVision && !isVisionRetake ? mouldProb : null,
+    iqaPassed: effectiveIqaPassed
   });
 
   // Base verdict from continuous fusion score
@@ -469,7 +550,18 @@ export function computeMultimodalFusion(input: FusionInputV3): MultimodalFusionO
 
   // (d) Visual Mold Pattern
   if (hasVision) {
-    if (mouldProb > 0.40) {
+    if (isVisionRetake) {
+      explainabilityChain.push({
+        parameter: "Silage Camera Photo",
+        measuredValue: "RETAKE REQUIRED",
+        status: "ALERT",
+        assessment:
+          visionResult?.iqaReason ||
+          "Silage photo was too dark or camera was covered. Surface visual quality could not be inspected."
+      });
+      reasons.push("Silage photo was too dark or covered; visual screening requires retake.");
+      evidenceList.push("Vision: Retake required (Black or dark frame)");
+    } else if (mouldProb > 0.40) {
       explainabilityChain.push({
         parameter: "Visible Fungal Colony",
         measuredValue: `${(mouldProb * 100).toFixed(0)}% signal`,

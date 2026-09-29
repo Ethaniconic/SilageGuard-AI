@@ -29,27 +29,34 @@ export const TrafficLightCard: React.FC<Props> = ({
   const { theme } = useTheme();
   const { language } = useAppStore();
 
-  const isSafe = decision === "SAFE";
-  const isCaution = decision === "CAUTION";
-  const isUnsafe = decision === "UNSAFE";
+  const isRetake = confidence === 0 && mssiScore === 0;
+  const isSafe = !isRetake && decision === "SAFE";
+  const isCaution = !isRetake && decision === "CAUTION";
+  const isUnsafe = !isRetake && decision === "UNSAFE";
 
-  const mainColor = isSafe ? theme.safe : isCaution ? theme.caution : theme.unsafe;
-  const bgColor = isSafe ? theme.safeBg : isCaution ? theme.cautionBg : theme.unsafeBg;
-  const borderColor = isSafe ? theme.safeBorder : isCaution ? theme.cautionBorder : theme.unsafeBorder;
+  const mainColor = isRetake ? theme.caution : isSafe ? theme.safe : isCaution ? theme.caution : theme.unsafe;
+  const bgColor = isRetake ? theme.cautionBg : isSafe ? theme.safeBg : isCaution ? theme.cautionBg : theme.unsafeBg;
+  const borderColor = isRetake ? theme.cautionBorder : isSafe ? theme.safeBorder : isCaution ? theme.cautionBorder : theme.unsafeBorder;
 
-  const decisionLabel = isSafe
+  const decisionLabel = isRetake
+    ? "PHOTO RETAKE NEEDED"
+    : isSafe
     ? t("safe", language)
     : isCaution
     ? t("caution", language)
     : t("unsafe", language);
 
-  const decisionSubtext = isSafe
+  const decisionSubtext = isRetake
+    ? "Image was too dark or camera was covered • Please retake with proper lighting"
+    : isSafe
     ? t("goodSilage", language)
     : isCaution
     ? t("warningSilage", language)
     : t("badSilage", language);
 
-  const thresholdText = isSafe
+  const thresholdText = isRetake
+    ? "Image Quality Assessment Rejection (Retake Required)"
+    : isSafe
     ? "Optimal Fermentation (MSSI ≥ 72)"
     : isCaution
     ? "Aerobic Heating Risk (MSSI 40-71)"

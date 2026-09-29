@@ -176,7 +176,7 @@ export const Header: React.FC<Props> = ({
               { color: isConnected ? theme.accent : theme.textMuted }
             ]}
           >
-            {isConnected && telemetry.battery !== null ? `${telemetry.battery}%` : t("bluetooth", language).toUpperCase()}
+            {isConnected && telemetry.battery !== null ? `${telemetry.battery}%` : "PROBE"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -189,87 +189,82 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1
+    paddingHorizontal: 8,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    width: "100%",
+    maxWidth: "100%",
+    zIndex: 100
   },
   leftRow: {
     flexDirection: "row",
     alignItems: "center",
-    flex: 1
+    flex: 1,
+    minWidth: 0,
+    marginRight: 6
   },
   backButton: {
-    marginRight: 10,
-    width: 34,
-    height: 34,
+    marginRight: 6,
+    width: 32,
+    height: 32,
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center"
   },
   title: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: "900",
-    letterSpacing: 0.3
+    letterSpacing: 0.2,
+    flexShrink: 1
   },
   rightRow: {
     flexDirection: "row",
-    alignItems: "center"
+    alignItems: "center",
+    flexShrink: 0
   },
   iconButton: {
-    width: 32,
-    height: 32,
+    width: 30,
+    height: 30,
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 6
-  },
-  offlineBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    paddingHorizontal: 7,
-    paddingVertical: 4,
-    marginRight: 6
-  },
-  offlineText: {
-    fontSize: 9,
-    fontWeight: "900",
-    letterSpacing: 0.5,
-    marginLeft: 4
+    marginRight: 4
   },
   probePill: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     paddingVertical: 4,
     borderWidth: 1
   },
   probeText: {
     fontSize: 10,
     fontWeight: "800",
-    marginLeft: 4
+    marginLeft: 3
   },
   brandRow: {
     flexDirection: "row",
-    alignItems: "center"
+    alignItems: "center",
+    flexShrink: 1,
+    minWidth: 0
   },
   logoImage: {
-    width: 28,
-    height: 28,
-    marginRight: 8,
-    borderRadius: 6
+    width: 24,
+    height: 24,
+    marginRight: 6,
+    borderRadius: 4
   },
   langPill: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 5,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
     borderWidth: 1,
-    marginRight: 6
+    marginRight: 4
   },
   langText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "800",
-    marginLeft: 4
+    marginLeft: 3
   }
 });

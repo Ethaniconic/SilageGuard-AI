@@ -150,3 +150,33 @@ def explain_prediction(features_dict: Dict[str, float], importances: Dict[str, f
     # Sort by absolute contribution
     factors.sort(key=lambda x: abs(x["contribution_percent"]), reverse=True)
     return factors
+
+
+def engineer_single_reading(
+    ph: float,
+    moisture: float,
+    temperature: float,
+    ambient: float,
+    storage_type: int = 0,
+    crop_type: int = 0,
+    depth_bucket: int = 1
+) -> List[float]:
+    """Engineers the 11-feature vector from a single raw sensor reading."""
+    moisture_adc = moisture_pct_to_adc(moisture)
+    delta_temp = temperature - ambient
+    ph_dev = abs(ph - OPTIMAL_PH)
+    moisture_dev = abs(moisture - OPTIMAL_MOISTURE)
+    heat_rise = max(0.0, delta_temp)
+    return [
+        float(ph),
+        float(moisture_adc),
+        float(temperature),
+        float(ambient),
+        float(delta_temp),
+        float(ph_dev),
+        float(moisture_dev),
+        float(heat_rise),
+        float(storage_type),
+        float(crop_type),
+        float(depth_bucket)
+    ]

@@ -64,9 +64,9 @@ def run_tests():
     print(f"Loaded forest with {forest['n_estimators']} trees, classes: {forest['classes']}")
     
     test_cases = [
-        {"name": "Ideal Corn Silage (Safe)", "ph": 3.95, "moisture": 64.0, "temp": 24.5, "ambient": 23.5, "expected": "Safe"},
-        {"name": "High Moisture Sub-optimal (Caution)", "ph": 4.50, "moisture": 70.0, "temp": 31.0, "ambient": 25.0, "expected": "Caution"},
-        {"name": "Severe Spoilage / Butyric (Unsafe)", "ph": 6.20, "moisture": 77.0, "temp": 42.0, "ambient": 27.0, "expected": "Unsafe"}
+        {"name": "Ideal Corn Silage (Safe)", "ph": 3.95, "moisture": 64.0, "temp": 24.5, "ambient": 23.5, "expected": "SAFE"},
+        {"name": "High Moisture Sub-optimal (Caution)", "ph": 4.50, "moisture": 70.0, "temp": 31.0, "ambient": 25.0, "expected": "CAUTION"},
+        {"name": "Severe Spoilage / Butyric (Unsafe)", "ph": 6.20, "moisture": 77.0, "temp": 42.0, "ambient": 27.0, "expected": "UNSAFE"}
     ]
     
     all_passed = True
