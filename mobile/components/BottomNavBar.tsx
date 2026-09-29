@@ -14,24 +14,24 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme } from "../features/ble/bleManager";
+import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { AppIcon, IconName } from "./AppIcon";
 import { safeNavigate } from "../utils/navigation";
+import { t, TranslationKey } from "../utils/i18n";
 
 interface TabItem {
   key: string;
-  label: string;
+  labelKey: TranslationKey;
   route: string;
   icon: IconName;
   isPrimary?: boolean;
 }
 
 const TABS: TabItem[] = [
-  { key: "home", label: "Home", route: "/home", icon: "home" },
-  { key: "history", label: "History", route: "/history", icon: "history" },
-  { key: "scan", label: "Scan", route: "/camera", icon: "camera", isPrimary: true },
-  { key: "insights", label: "Insights", route: "/insights", icon: "analytics" },
-  { key: "settings", label: "Settings", route: "/settings", icon: "settings" }
+  { key: "home", labelKey: "home", route: "/home", icon: "home" },
+  { key: "history", labelKey: "history", route: "/history", icon: "history" },
+  { key: "scan", labelKey: "scan", route: "/camera", icon: "camera", isPrimary: true },
+  { key: "settings", labelKey: "settings", route: "/settings", icon: "settings" }
 ];
 
 export const BottomNavBar: React.FC = () => {
@@ -39,6 +39,7 @@ export const BottomNavBar: React.FC = () => {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { language } = useAppStore();
 
   return (
     <View
@@ -71,7 +72,7 @@ export const BottomNavBar: React.FC = () => {
               activeOpacity={0.8}
             >
               <AppIcon name={tab.icon} size={20} color="#0B130E" strokeWidth={2.5} />
-              <Text style={styles.primaryLabel}>SCAN</Text>
+              <Text style={styles.primaryLabel}>{t(tab.labelKey, language).toUpperCase()}</Text>
             </TouchableOpacity>
           );
         }
@@ -100,7 +101,7 @@ export const BottomNavBar: React.FC = () => {
                 }
               ]}
             >
-              {tab.label}
+              {t(tab.labelKey, language)}
             </Text>
             {isActive && (
               <View

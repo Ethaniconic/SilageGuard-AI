@@ -547,4 +547,32 @@ export const batchRepository = {
     };
     dbInstance.calibrations.unshift(fullCal);
   },
+
+  /**
+   * Purge all local cached scans, telemetry readings, predictions, media and sync queue
+   */
+  async clearAllBatches(): Promise<boolean> {
+    try {
+      dbInstance.batches = [];
+      dbInstance.sensorReadings = [];
+      dbInstance.visionPredictions = [];
+      dbInstance.fusionResults = [];
+      dbInstance.batchMedia = [];
+      dbInstance.syncQueue = [];
+      
+      const nativeDb = getNativeDb();
+      if (nativeDb) {
+        nativeDb.execSync("DELETE FROM sync_queue;");
+        nativeDb.execSync("DELETE FROM batch_media;");
+        nativeDb.execSync("DELETE FROM fusion_results;");
+        nativeDb.execSync("DELETE FROM vision_predictions;");
+        nativeDb.execSync("DELETE FROM sensor_readings;");
+        nativeDb.execSync("DELETE FROM batches;");
+      }
+      return true;
+    } catch (err) {
+      console.warn("clearAllBatches error:", err);
+      return false;
+    }
+  },
 };

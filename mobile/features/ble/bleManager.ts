@@ -46,6 +46,7 @@ interface AppState {
   latestFusionResult: FusionResult | null;
   latestAdvisory: FarmerAdvisory | null;
   setLatestResult: (fusion: FusionResult, advisory: FarmerAdvisory) => void;
+  clearHistory: () => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => {
@@ -127,7 +128,13 @@ export const useAppStore = create<AppState>((set, get) => {
     latestFusionResult: null,
     latestAdvisory: null,
     setLatestResult: (latestFusionResult, latestAdvisory) =>
-      set({ latestFusionResult, latestAdvisory })
+      set({ latestFusionResult, latestAdvisory }),
+    clearHistory: () =>
+      set({
+        latestFusionResult: null,
+        latestAdvisory: null,
+        scanImages: []
+      })
   };
 });
 

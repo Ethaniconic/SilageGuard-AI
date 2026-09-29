@@ -26,6 +26,9 @@ import { AppIcon } from "../components/AppIcon";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { BottomNavBar } from "../components/BottomNavBar";
 
+import { batchRepository } from "../sqlite/batchRepository";
+import { t } from "../utils/i18n";
+
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { theme, isDark, toggleTheme } = useTheme();
@@ -36,21 +39,28 @@ export default function SettingsScreen() {
     isDemoMode,
     setDemoMode,
     demoPreset,
-    setDemoPreset
+    setDemoPreset,
+    clearHistory
   } = useAppStore();
 
   const [speechRate, setSpeechRate] = useState<"normal" | "slow">("normal");
 
   const handleClearDatabase = () => {
     Alert.alert(
-      "Reset Local Scans?",
-      "Are you sure you want to clear cached test scans? This cannot be undone.",
+      t("resetConfirmTitle", language),
+      t("resetConfirmBody", language),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("cancel", language), style: "cancel" },
         {
-          text: "Reset",
+          text: t("reset", language),
           style: "destructive",
-          onPress: () => Alert.alert("Reset", "Local scan history cleared.")
+          onPress: async () => {
+            const success = await batchRepository.clearAllBatches();
+            if (clearHistory) clearHistory();
+            if (success) {
+              Alert.alert(t("reset", language), t("resetSuccess", language));
+            }
+          }
         }
       ]
     );

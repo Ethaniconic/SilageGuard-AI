@@ -17,7 +17,10 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity
+  TouchableOpacity,
+  Share,
+  Alert,
+  Clipboard
 } from "react-native";
 import { useRouter, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -29,6 +32,7 @@ import { AnimatedPressable } from "../components/AnimatedPressable";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { generateSilageQRPayload } from "../utils/qrGenerator";
 import { safeNavigate } from "../utils/navigation";
+import { t } from "../utils/i18n";
 
 export default function ResultScreen() {
   const router = useRouter();
@@ -37,6 +41,7 @@ export default function ResultScreen() {
   const { theme } = useTheme();
 
   const {
+    language,
     latestFusionResult,
     latestAdvisory,
     telemetry,
@@ -50,6 +55,37 @@ export default function ResultScreen() {
   const mssiScore = latestFusionResult?.mssiScore ?? 0;
   const ruleOverride = latestFusionResult?.rule_override || false;
   const ruleReason = latestFusionResult?.rule_reason || null;
+
+  const qrPayload = generateSilageQRPayload({
+    batchId: "BATCH-CURR",
+    decision,
+    mssiScore,
+    ph: telemetry.ph ?? 0,
+    moisture: telemetry.moisture ?? 0,
+    temp: telemetry.temp ?? 0,
+    cropType,
+    timestamp: new Date().toISOString()
+  });
+
+  const handleShareQR = async () => {
+    try {
+      if (Share && Share.share) {
+        const result = await Share.share({
+          message: `[SILAGEGUARD AI CERTIFICATE]\nPayload: ${qrPayload}\nDecision: ${decision}\nMSSI Quality Score: ${mssiScore}/100`,
+          title: "Silage Audit QR Payload"
+        });
+      } else if (navigator && navigator.clipboard) {
+        await navigator.clipboard.writeText(qrPayload);
+        Alert.alert("QR Payload Shared", t("qrCopied", language));
+      } else {
+        Clipboard.setString(qrPayload);
+        Alert.alert("QR Payload Shared", t("qrCopied", language));
+      }
+    } catch (err) {
+      console.warn("Share QR Error:", err);
+      Alert.alert("QR Payload Shared", t("qrCopied", language));
+    }
+  };
 
   const hasProbeData =
     telemetry.ph !== null &&
@@ -341,7 +377,7 @@ export default function ResultScreen() {
         )}
 
         {/* QR Verification Card */}
-        <View
+        <TouchableOpacity
           style={[
             styles.qrCard,
             {
@@ -350,6 +386,8 @@ export default function ResultScreen() {
               borderRadius: theme.radiusMd
             }
           ]}
+          onPress={handleShareQR}
+          activeOpacity={0.85}
         >
           <View style={styles.qrHeader}>
             <View
@@ -363,9 +401,10 @@ export default function ResultScreen() {
             <View style={styles.qrHeaderText}>
               <Text style={[styles.qrTitle, { color: theme.text }]}>DIGITAL BATCH CERTIFICATE</Text>
               <Text style={[styles.qrSub, { color: theme.textMuted }]}>
-                Verifiable QR for Dairy Co-operatives & Milk Unions
+                {t("shareQR", language)}
               </Text>
             </View>
+            <AppIcon name="share" size={18} color={theme.accent} />
           </View>
 
           <View style={styles.qrContainer}>
@@ -382,19 +421,10 @@ export default function ResultScreen() {
               <Text style={[styles.qrMockCode, { color: theme.primary }]}>[#  #  #  #  #]</Text>
             </View>
             <Text style={[styles.qrHash, { color: theme.textMuted }]}>
-              {generateSilageQRPayload({
-                batchId: "BATCH-CURR",
-                decision,
-                mssiScore,
-                ph: telemetry.ph ?? 0,
-                moisture: telemetry.moisture ?? 0,
-                temp: telemetry.temp ?? 0,
-                cropType,
-                timestamp: new Date().toISOString()
-              })}
+              {qrPayload}
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* Explainability & PDF Buttons */}
         <AnimatedPressable
