@@ -1,5 +1,10 @@
-OneWire
-DallasTemperature
-ArduinoJson
+# Wokwi Library List
+# See https://docs.wokwi.com/guides/libraries
+
+# Automatically added based on includes:
 Adafruit GFX Library
+
+ArduinoJson
+DallasTemperature
+OneWire
 Adafruit SSD1306
