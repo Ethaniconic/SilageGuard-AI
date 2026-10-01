@@ -1,0 +1,10 @@
+[project]
+name = "silageguard-backend"
+version = "0.1.0"
+description = "SilageGuard AI backend"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]

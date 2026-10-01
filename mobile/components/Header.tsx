@@ -9,33 +9,64 @@
  */
 
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { useRouter, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppStore, useTheme } from "../features/ble/bleManager";
 import { AppIcon } from "./AppIcon";
+import { safeNavigate, safeGoBack } from "../utils/navigation";
+import { LanguageCode } from "../utils/constants";
+import { t } from "../utils/i18n";
+
+const LANG_OPTIONS: { code: LanguageCode; label: string }[] = [
+  { code: "en", label: "EN" },
+  { code: "hi", label: "हिन्दी" },
+  { code: "mr", label: "मराठी" },
+  { code: "kn", label: "ಕನ್ನಡ" },
+  { code: "te", label: "తెలుగు" },
+];
 
 interface Props {
   title?: string;
   showBack?: boolean;
+  onBack?: () => void;
+  fallbackRoute?: string;
 }
 
-export const Header: React.FC<Props> = ({ title, showBack = false }) => {
+export const Header: React.FC<Props> = ({
+  title,
+  showBack = false,
+  onBack,
+  fallbackRoute = "/home"
+}) => {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
-  const { bleStatus, telemetry } = useAppStore();
+  const { bleStatus, telemetry, language, setLanguage } = useAppStore();
   const { theme, isDark, toggleTheme } = useTheme();
 
   const isConnected = bleStatus === "CONNECTED";
   const isOnBleScreen = pathname === "/ble";
 
-  const handleProbePress = () => {
-    // Once on the probe screen, no further duplicate redirections
-    if (!isOnBleScreen) {
-      router.push("/ble" as any);
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
     }
+    safeGoBack(router, fallbackRoute);
   };
+
+  const handleProbePress = () => {
+    safeNavigate(router, "/ble", pathname);
+  };
+
+  const cycleLanguage = () => {
+    const currentIndex = LANG_OPTIONS.findIndex((l) => l.code === language);
+    const nextIndex = (currentIndex + 1) % LANG_OPTIONS.length;
+    setLanguage(LANG_OPTIONS[nextIndex].code);
+  };
+
+  const currentLangLabel = LANG_OPTIONS.find((l) => l.code === language)?.label || "EN";
 
   return (
     <View
@@ -59,18 +90,47 @@ export const Header: React.FC<Props> = ({ title, showBack = false }) => {
                 borderRadius: theme.radiusSm
               }
             ]}
-            onPress={() => router.back()}
+            onPress={handleBack}
             activeOpacity={0.7}
           >
             <AppIcon name="arrow-back" size={16} color={theme.text} />
           </TouchableOpacity>
         )}
-        <View>
-          <Text style={[styles.title, { color: theme.text }]}>SilageGuard AI</Text>
-        </View>
+        <TouchableOpacity
+          style={styles.brandRow}
+          onPress={() => safeNavigate(router, "/home", pathname)}
+          activeOpacity={0.8}
+        >
+          <Image
+            source={require("../assets/icon-logo.png")}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          <Text style={[styles.title, { color: theme.text }]}>SilageGuard</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.rightRow}>
+        {/* Instant Farmer Language Switcher */}
+        <TouchableOpacity
+          style={[
+            styles.langPill,
+            {
+              backgroundColor: theme.primary + "1A",
+              borderColor: theme.primary,
+              borderRadius: theme.radiusSm
+            }
+          ]}
+          onPress={cycleLanguage}
+          activeOpacity={0.7}
+          accessibilityLabel="Switch Language"
+        >
+          <AppIcon name="settings" size={12} color={theme.primary} />
+          <Text style={[styles.langText, { color: theme.primary }]}>
+            {currentLangLabel}
+          </Text>
+        </TouchableOpacity>
+
         {/* Theme Toggle Button (Light/Dark mode) */}
         <TouchableOpacity
           style={[
@@ -91,21 +151,6 @@ export const Header: React.FC<Props> = ({ title, showBack = false }) => {
             color={isDark ? theme.caution : theme.accent}
           />
         </TouchableOpacity>
-
-        {/* Offline Badge */}
-        <View
-          style={[
-            styles.offlineBadge,
-            {
-              backgroundColor: theme.safeBg,
-              borderColor: theme.safeBorder,
-              borderRadius: theme.radiusSm
-            }
-          ]}
-        >
-          <AppIcon name="cloud-offline" size={11} color={theme.safe} strokeWidth={2.2} />
-          <Text style={[styles.offlineText, { color: theme.safe }]}>OFFLINE</Text>
-        </View>
 
         {/* Probe Battery & Status */}
         <TouchableOpacity
@@ -144,64 +189,82 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1
+    paddingHorizontal: 8,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    width: "100%",
+    maxWidth: "100%",
+    zIndex: 100
   },
   leftRow: {
     flexDirection: "row",
     alignItems: "center",
-    flex: 1
+    flex: 1,
+    minWidth: 0,
+    marginRight: 6
   },
   backButton: {
-    marginRight: 10,
-    width: 34,
-    height: 34,
+    marginRight: 6,
+    width: 32,
+    height: 32,
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center"
   },
   title: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: "900",
-    letterSpacing: 0.3
+    letterSpacing: 0.2,
+    flexShrink: 1
   },
   rightRow: {
     flexDirection: "row",
-    alignItems: "center"
+    alignItems: "center",
+    flexShrink: 0
   },
   iconButton: {
-    width: 32,
-    height: 32,
+    width: 30,
+    height: 30,
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 6
-  },
-  offlineBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    paddingHorizontal: 7,
-    paddingVertical: 4,
-    marginRight: 6
-  },
-  offlineText: {
-    fontSize: 9,
-    fontWeight: "900",
-    letterSpacing: 0.5,
-    marginLeft: 4
+    marginRight: 4
   },
   probePill: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     paddingVertical: 4,
     borderWidth: 1
   },
   probeText: {
     fontSize: 10,
     fontWeight: "800",
-    marginLeft: 4
+    marginLeft: 3
+  },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexShrink: 1,
+    minWidth: 0
+  },
+  logoImage: {
+    width: 24,
+    height: 24,
+    marginRight: 6,
+    borderRadius: 4
+  },
+  langPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderWidth: 1,
+    marginRight: 4
+  },
+  langText: {
+    fontSize: 10,
+    fontWeight: "800",
+    marginLeft: 3
   }
 });
