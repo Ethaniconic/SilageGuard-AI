@@ -254,6 +254,8 @@ export function CheckScreen({ onBack, onComplete }) {
         crop_type: cropType,
         storageType,
         storage_type: storageType,
+        originalPhoto: response.result?.originalPhoto || photoBase64,
+        image_base64: response.result?.originalPhoto || photoBase64,
       };
       // Persist real observation atomically into local SQLite & cloud sync queue
       await localDb.saveObservation(r);

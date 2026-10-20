@@ -39,6 +39,11 @@ class DatabaseService {
           confidence INTEGER,
           summary TEXT,
           next_step TEXT,
+          image_base64 TEXT,
+          gradcam_image TEXT,
+          hotspot_bbox TEXT,
+          hotspot_description TEXT,
+          vision_class TEXT,
           sync_status TEXT DEFAULT 'SAVED_LOCAL',
           created_at TEXT NOT NULL,
           FOREIGN KEY (client_batch_id) REFERENCES batches(client_batch_id)
@@ -53,6 +58,22 @@ class DatabaseService {
           created_at TEXT NOT NULL
         );
       `);
+
+      // Seamless schema migration for existing SQLite production tables
+      const migrations = [
+        "ALTER TABLE observations ADD COLUMN image_base64 TEXT;",
+        "ALTER TABLE observations ADD COLUMN gradcam_image TEXT;",
+        "ALTER TABLE observations ADD COLUMN hotspot_bbox TEXT;",
+        "ALTER TABLE observations ADD COLUMN hotspot_description TEXT;",
+        "ALTER TABLE observations ADD COLUMN vision_class TEXT;",
+      ];
+      for (const sql of migrations) {
+        try {
+          this.db.execSync(sql);
+        } catch (_) {
+          // Column already exists, safe to ignore
+        }
+      }
     } catch (err) {
       console.warn("SQLite database init error:", err.message);
     }
@@ -139,10 +160,41 @@ class DatabaseService {
       storageType,
     });
 
+    const imageBase64 = obs.originalPhoto || obs.image_base64 || obs.imageBase64 || null;
+    const gradcamImage = obs.gradcamImage || obs.gradcam_image || null;
+    const hotspotBbox = obs.hotspotBbox
+      ? (typeof obs.hotspotBbox === "object" ? JSON.stringify(obs.hotspotBbox) : obs.hotspotBbox)
+      : (obs.hotspot_bbox ? (typeof obs.hotspot_bbox === "object" ? JSON.stringify(obs.hotspot_bbox) : obs.hotspot_bbox) : null);
+    const hotspotDesc = obs.hotspotDescription || obs.hotspot_description || null;
+    const visionClass = obs.visionResult?.detected_class || obs.visionClass || obs.vision_class || null;
+
     if (Platform.OS === "web" && typeof window !== "undefined") {
       try {
         const stored = JSON.parse(window.localStorage.getItem("sg_observations") || "[]");
-        stored.unshift({ ...obs, id, client_batch_id: batchId, crop_type: cropType, storage_type: storageType, sync_status: "SAVED_LOCAL", created_at: now });
+        const normalized = {
+          ...obs,
+          id,
+          client_batch_id: batchId,
+          batchId,
+          crop_type: cropType,
+          cropType,
+          storage_type: storageType,
+          storageType,
+          image_base64: imageBase64,
+          originalPhoto: imageBase64,
+          imageBase64,
+          gradcam_image: gradcamImage,
+          gradcamImage,
+          hotspot_bbox: hotspotBbox ? (typeof hotspotBbox === "string" ? JSON.parse(hotspotBbox) : hotspotBbox) : null,
+          hotspotBbox: hotspotBbox ? (typeof hotspotBbox === "string" ? JSON.parse(hotspotBbox) : hotspotBbox) : null,
+          hotspot_description: hotspotDesc,
+          hotspotDescription: hotspotDesc,
+          vision_class: visionClass,
+          visionClass,
+          sync_status: "SAVED_LOCAL",
+          created_at: now,
+        };
+        stored.unshift(normalized);
         window.localStorage.setItem("sg_observations", JSON.stringify(stored));
         this.flushSyncQueue().catch(() => {});
         return { success: true, id };
@@ -156,8 +208,8 @@ class DatabaseService {
     try {
       this.db.runSync(
         `INSERT OR REPLACE INTO observations (
-          id, client_batch_id, ph, moisture, temperature, ambient, decision, mssi_score, confidence, summary, next_step, sync_status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'SAVED_LOCAL', ?)`,
+          id, client_batch_id, ph, moisture, temperature, ambient, decision, mssi_score, confidence, summary, next_step, image_base64, gradcam_image, hotspot_bbox, hotspot_description, vision_class, sync_status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'SAVED_LOCAL', ?)`,
         [
           id,
           batchId,
@@ -170,6 +222,11 @@ class DatabaseService {
           obs.confidence !== undefined ? obs.confidence : null,
           obs.summary || "Screening complete.",
           obs.nextStep || "Continue standard bunker monitoring.",
+          imageBase64,
+          gradcamImage,
+          hotspotBbox,
+          hotspotDesc,
+          visionClass,
           now,
         ]
       );
@@ -178,7 +235,7 @@ class DatabaseService {
       this.db.runSync(
         `INSERT OR REPLACE INTO sync_queue (id, observation_id, payload_json, status, created_at)
          VALUES (?, ?, ?, 'PENDING', ?)`,
-        [`SYNC-${Date.now()}`, id, JSON.stringify({ ...obs, id, client_batch_id: batchId, crop_type: cropType, storage_type: storageType, created_at: now }), now]
+        [`SYNC-${Date.now()}`, id, JSON.stringify({ ...obs, id, client_batch_id: batchId, crop_type: cropType, storage_type: storageType, image_base64: imageBase64, gradcam_image: gradcamImage, hotspot_bbox: hotspotBbox, hotspot_description: hotspotDesc, created_at: now }), now]
       );
 
       this.flushSyncQueue().catch(() => {});
@@ -209,7 +266,29 @@ class DatabaseService {
         ? "SELECT * FROM observations WHERE client_batch_id = ? ORDER BY created_at DESC"
         : "SELECT * FROM observations ORDER BY created_at DESC";
       const params = batchId ? [batchId] : [];
-      return this.db.getAllSync(query, params);
+      const rows = this.db.getAllSync(query, params) || [];
+
+      return rows.map((r) => {
+        let parsedBbox = null;
+        if (r.hotspot_bbox) {
+          try {
+            parsedBbox = typeof r.hotspot_bbox === "string" ? JSON.parse(r.hotspot_bbox) : r.hotspot_bbox;
+          } catch (_) {
+            parsedBbox = null;
+          }
+        }
+        return {
+          ...r,
+          batchId: r.client_batch_id,
+          mssiScore: r.mssi_score,
+          originalPhoto: r.image_base64,
+          imageBase64: r.image_base64,
+          gradcamImage: r.gradcam_image,
+          hotspotBbox: parsedBbox,
+          hotspotDescription: r.hotspot_description,
+          visionClass: r.vision_class,
+        };
+      });
     } catch (err) {
       console.warn("getObservations error:", err.message);
       return [];
@@ -355,7 +434,8 @@ class DatabaseService {
         fused_decision: obs.verdict || obs.decision || "SAFE",
         fused_score: ((obs.mssiScore ?? obs.mssi_score ?? 85) / 100.0),
         advisory_text: obs.summary || "Screening complete.",
-        image_count: obs.originalPhoto ? 1 : 0,
+        image_count: (obs.originalPhoto || obs.image_base64) ? 1 : 0,
+        image_urls: (obs.originalPhoto || obs.image_base64) ? [obs.originalPhoto || obs.image_base64] : null,
       }));
 
       const syncRes = await syncBatches(batchPayloads);
@@ -389,7 +469,8 @@ class DatabaseService {
           fused_decision: obs.verdict || obs.decision || "SAFE",
           fused_score: ((obs.mssiScore ?? obs.mssi_score ?? 85) / 100.0),
           advisory_text: obs.summary || "Screening complete.",
-          image_count: obs.originalPhoto ? 1 : 0,
+          image_count: (obs.originalPhoto || obs.image_base64) ? 1 : 0,
+          image_urls: (obs.originalPhoto || obs.image_base64) ? [obs.originalPhoto || obs.image_base64] : null,
         });
       }
 

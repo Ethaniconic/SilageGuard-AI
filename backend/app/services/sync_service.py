@@ -27,6 +27,7 @@ class SyncService:
             now_utc = datetime.now(timezone.utc)
             batches_list = payload.get("batches", [])
             inserted = 0
+            skipped = 0
 
             for item in batches_list:
                 client_batch_id = item["client_batch_id"]
@@ -76,9 +77,22 @@ class SyncService:
                     await session.flush()
                     target_batch_id = new_batch.id
                     inserted += 1
+
+                    # Record continuous digital twin observation
+                    obs = BatchObservation(
+                        id=uuid4(),
+                        batch_id=target_batch_id,
+                        observed_at=scanned_dt,
+                        ph=item.get("ph"),
+                        moisture_pct=item.get("moisture_pct"),
+                        temperature_c=item.get("temperature_c"),
+                        ambient_temp_c=item.get("ambient_temp_c"),
+                        decision=item.get("fused_decision") or "SAFE",
+                        mssi_score=int(float(item.get("fused_score") or 0.85) * 100),
+                    )
+                    session.add(obs)
                 else:
                     target_batch_id = existing.id
-                    existing.scanned_at = scanned_dt
                     existing.synced_at = now_utc
                     if item.get("storage_type") is not None: existing.storage_type = item.get("storage_type")
                     if item.get("ph") is not None: existing.ph = item.get("ph")
@@ -90,21 +104,8 @@ class SyncService:
                     if item.get("fused_decision") is not None: existing.fused_decision = item.get("fused_decision")
                     if item.get("fused_score") is not None: existing.fused_score = item.get("fused_score")
                     if item.get("advisory_text") is not None: existing.advisory_text = item.get("advisory_text")
-                    inserted += 1
-
-                # Record continuous digital twin observation
-                obs = BatchObservation(
-                    id=uuid4(),
-                    batch_id=target_batch_id,
-                    observed_at=scanned_dt,
-                    ph=item.get("ph"),
-                    moisture_pct=item.get("moisture_pct"),
-                    temperature_c=item.get("temperature_c"),
-                    ambient_temp_c=item.get("ambient_temp_c"),
-                    decision=item.get("fused_decision") or "SAFE",
-                    mssi_score=int(float(item.get("fused_score") or 0.85) * 100),
-                )
-                session.add(obs)
+                    if item.get("image_urls") is not None: existing.image_urls = item.get("image_urls")
+                    skipped += 1
 
             await session.commit()
 
@@ -119,7 +120,7 @@ class SyncService:
                 )
             )
             await session.commit()
-            return {"inserted": inserted, "skipped": 0, "total": len(batches_list), "user_id": user_id}
+            return {"inserted": inserted, "skipped": skipped, "total": len(batches_list), "user_id": user_id}
 
     async def list_batches(self, user_id: str, since: str | None, limit: int):
         user_uuid = UUID(user_id)

@@ -27,6 +27,8 @@ export function BatchCard({ batch, onPress }) {
     return t("storageBunker");
   };
 
+  const hasPhoto = Boolean(batch.image_base64 || batch.originalPhoto || batch.gradcam_image || batch.gradcamImage);
+
   return (
     <TouchableOpacity
       activeOpacity={0.75}
@@ -50,6 +52,7 @@ export function BatchCard({ batch, onPress }) {
           </Text>
           <Text style={[typography.caption, { color: theme.textSecondary, marginTop: 2 }]}>
             {getTranslatedCrop(batch.crop_type || batch.cropType)} • {getTranslatedStorage(batch.storage_type || batch.storageType)}
+            {hasPhoto ? " • 📷 Photo & AI Heatmap" : ""}
           </Text>
         </View>
         <StatusBadge status={batch.decision || batch.fused_decision || "GOOD"} />

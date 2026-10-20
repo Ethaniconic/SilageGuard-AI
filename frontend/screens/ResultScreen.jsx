@@ -393,9 +393,24 @@ export function ResultScreen({ result: initialResult, onDone, onViewHistory }) {
                   <View style={[styles.scaleSegment, { backgroundColor: "#7F0000" }]} />
                 </View>
                 <View style={styles.scaleLabelsRow}>
-                  <Text style={[typography.caption, { color: theme.textSecondary, fontSize: 10 }]}>{t("scaleSafe")}</Text>
-                  <Text style={[typography.caption, { color: theme.textSecondary, fontSize: 10 }]}>{t("scaleElevated")}</Text>
-                  <Text style={[typography.caption, { color: theme.highRisk, fontSize: 10, fontWeight: "700" }]}>{t("scalePeak")}</Text>
+                  <View style={styles.scaleMarkerLeft}>
+                    <Text style={[typography.caption, { color: theme.textSecondary, fontSize: 11, fontWeight: "700" }]}>0.0</Text>
+                    <Text style={[typography.caption, { color: theme.textMuted, fontSize: 9 }]} numberOfLines={1}>
+                      {t("scaleSafeShort") || t("scaleSafe")}
+                    </Text>
+                  </View>
+                  <View style={styles.scaleMarkerCenter}>
+                    <Text style={[typography.caption, { color: theme.textSecondary, fontSize: 11, fontWeight: "700" }]}>0.5</Text>
+                    <Text style={[typography.caption, { color: theme.textMuted, fontSize: 9 }]} numberOfLines={1}>
+                      {t("scaleElevatedShort") || t("scaleElevated")}
+                    </Text>
+                  </View>
+                  <View style={styles.scaleMarkerRight}>
+                    <Text style={[typography.caption, { color: theme.highRisk, fontSize: 11, fontWeight: "800" }]}>1.0</Text>
+                    <Text style={[typography.caption, { color: theme.highRisk, fontSize: 9, fontWeight: "700" }]} numberOfLines={1} ellipsizeMode="tail">
+                      {t("scalePeakShort") || t("scalePeak")}
+                    </Text>
+                  </View>
                 </View>
               </View>
             )}
@@ -759,8 +774,21 @@ const styles = StyleSheet.create({
   },
   scaleLabelsRow: {
     flexDirection: "row",
+    alignItems: "flex-start",
     justifyContent: "space-between",
-    marginTop: 4,
+    marginTop: 6,
+  },
+  scaleMarkerLeft: {
+    flex: 1,
+    alignItems: "flex-start",
+  },
+  scaleMarkerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  scaleMarkerRight: {
+    flex: 1.2,
+    alignItems: "flex-end",
   },
   hotspotBox: {
     borderWidth: 1,

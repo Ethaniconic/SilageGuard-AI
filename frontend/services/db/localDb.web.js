@@ -59,6 +59,12 @@ class DatabaseWebService {
     const cropType = obs.cropType || obs.crop_type || "Corn Silage";
     const storageType = obs.storageType || obs.storage_type || "Bunker Pit";
 
+    const imageBase64 = obs.originalPhoto || obs.image_base64 || obs.imageBase64 || null;
+    const gradcamImage = obs.gradcamImage || obs.gradcam_image || null;
+    const hotspotBbox = obs.hotspotBbox || obs.hotspot_bbox || null;
+    const hotspotDesc = obs.hotspotDescription || obs.hotspot_description || null;
+    const visionClass = obs.visionResult?.detected_class || obs.visionClass || obs.vision_class || null;
+
     await this.createOrGetBatch({
       id: batchId,
       cropType,
@@ -68,7 +74,30 @@ class DatabaseWebService {
     if (typeof window !== "undefined" && window.localStorage) {
       try {
         const stored = JSON.parse(window.localStorage.getItem("sg_observations") || "[]");
-        stored.unshift({ ...obs, id, client_batch_id: batchId, crop_type: cropType, storage_type: storageType, sync_status: "SAVED_LOCAL", created_at: now });
+        const normalized = {
+          ...obs,
+          id,
+          client_batch_id: batchId,
+          batchId,
+          crop_type: cropType,
+          cropType,
+          storage_type: storageType,
+          storageType,
+          image_base64: imageBase64,
+          originalPhoto: imageBase64,
+          imageBase64,
+          gradcam_image: gradcamImage,
+          gradcamImage,
+          hotspot_bbox: hotspotBbox,
+          hotspotBbox,
+          hotspot_description: hotspotDesc,
+          hotspotDescription: hotspotDesc,
+          vision_class: visionClass,
+          visionClass,
+          sync_status: "SAVED_LOCAL",
+          created_at: now,
+        };
+        stored.unshift(normalized);
         window.localStorage.setItem("sg_observations", JSON.stringify(stored));
         this.flushSyncQueue().catch(() => {});
         return { success: true, id };
@@ -227,7 +256,8 @@ class DatabaseWebService {
         fused_decision: obs.verdict || obs.decision || "SAFE",
         fused_score: ((obs.mssiScore ?? obs.mssi_score ?? 85) / 100.0),
         advisory_text: obs.summary || "Screening complete.",
-        image_count: obs.originalPhoto ? 1 : 0,
+        image_count: (obs.originalPhoto || obs.image_base64) ? 1 : 0,
+        image_urls: (obs.originalPhoto || obs.image_base64) ? [obs.originalPhoto || obs.image_base64] : null,
       }));
 
       const syncRes = await syncBatches(batchPayloads);

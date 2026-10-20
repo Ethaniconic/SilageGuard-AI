@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Alert, Platform } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useTheme } from "../theme";
 import { useTranslation } from "../i18n";
 import { AppButton } from "./AppButton";
@@ -17,10 +17,8 @@ export function ProbeConnectionGateway({
   const { theme, spacing, radius, typography } = useTheme();
   const { t } = useTranslation();
 
-  const [activeTab, setActiveTab] = useState("BLE"); // "BLE" | "WIFI"
   const [isScanning, setIsScanning] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
-  const [espIp, setEspIp] = useState("192.168.4.1");
 
   const handleStartBleScan = async () => {
     setIsScanning(true);
@@ -33,24 +31,6 @@ export function ProbeConnectionGateway({
       if (onDeviceConnected) onDeviceConnected();
     } else {
       setErrorMessage(res.error || "No physical ESP32 probe paired.");
-    }
-  };
-
-  const handleConnectWifi = async () => {
-    if (!espIp.trim()) {
-      Alert.alert("Input Error", "Please enter the IP address of your ESP32 probe.");
-      return;
-    }
-    setIsScanning(true);
-    setErrorMessage(null);
-
-    const res = await bleManager.connectHttpProbe(espIp.trim());
-    setIsScanning(false);
-
-    if (res.success) {
-      if (onDeviceConnected) onDeviceConnected();
-    } else {
-      setErrorMessage(res.error || "Failed to reach ESP32 module.");
     }
   };
 
@@ -119,114 +99,30 @@ export function ProbeConnectionGateway({
           </View>
         </View>
       ) : (
-        /* DISCONNECTED / REAL SCAN VIEW */
+        /* DISCONNECTED / REAL SCAN VIEW — DIRECT BLE HARDWARE PROBE */
         <View style={{ marginTop: spacing.md }}>
-          {/* HARDWARE CONNECTION METHOD TABS */}
-          <View style={[styles.tabsRow, { backgroundColor: theme.surfaceSoft, borderRadius: radius.medium }]}>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => {
-                setActiveTab("BLE");
-                setErrorMessage(null);
-              }}
-              style={[
-                styles.tabBtn,
-                activeTab === "BLE" && {
-                  backgroundColor: theme.primary,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.08,
-                  shadowRadius: 2,
-                  elevation: 2,
-                },
-              ]}
-            >
-              <Text style={[typography.caption, { color: activeTab === "BLE" ? "#FFFFFF" : theme.textSecondary, fontWeight: "700", textAlign: "center", lineHeight: 18 }]}>
-                {t("tabBle")}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => {
-                setActiveTab("WIFI");
-                setErrorMessage(null);
-              }}
-              style={[
-                styles.tabBtn,
-                activeTab === "WIFI" && {
-                  backgroundColor: theme.primary,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.08,
-                  shadowRadius: 2,
-                  elevation: 2,
-                },
-              ]}
-            >
-              <Text style={[typography.caption, { color: activeTab === "WIFI" ? "#FFFFFF" : theme.textSecondary, fontWeight: "700", textAlign: "center", lineHeight: 18 }]}>
-                {t("tabWifi")}
-              </Text>
-            </TouchableOpacity>
+          <View style={[styles.radarBox, { backgroundColor: theme.surfaceSoft, borderColor: theme.border, borderRadius: radius.medium, padding: spacing.lg, alignItems: "center" }]}>
+            {isScanning ? (
+              <ActivityIndicator size="large" color={theme.primary} style={{ marginBottom: 10 }} />
+            ) : (
+              <Text style={{ fontSize: 42, marginBottom: 8 }}>📡</Text>
+            )}
+            <Text style={[typography.bodyBold, { color: theme.textPrimary, textAlign: "center" }]}>
+              {isScanning ? t("waitingEsp32Selection") : t("connectRealEsp32Title")}
+            </Text>
+            <Text style={[typography.caption, { color: theme.textSecondary, textAlign: "center", marginTop: 4, lineHeight: 18 }]}>
+              {t("genuineEsp32OnlyNotice")}
+            </Text>
           </View>
 
-          {/* TAB 1: REAL BLUETOOTH LE PAIRING */}
-          {activeTab === "BLE" && (
-            <View style={{ marginTop: spacing.md }}>
-              <View style={[styles.radarBox, { backgroundColor: theme.surfaceSoft, borderColor: theme.border, borderRadius: radius.medium, padding: spacing.lg, alignItems: "center" }]}>
-                {isScanning ? (
-                  <ActivityIndicator size="large" color={theme.primary} style={{ marginBottom: 10 }} />
-                ) : (
-                  <Text style={{ fontSize: 38, marginBottom: 8 }}>📡</Text>
-                )}
-                <Text style={[typography.bodyBold, { color: theme.textPrimary, textAlign: "center" }]}>
-                  {isScanning ? t("waitingEsp32Selection") : t("connectRealEsp32Title")}
-                </Text>
-                <Text style={[typography.caption, { color: theme.textSecondary, textAlign: "center", marginTop: 4, lineHeight: 18 }]}>
-                  {t("genuineEsp32OnlyNotice")}
-                </Text>
-              </View>
-
-              <AppButton
-                title={isScanning ? t("connectingGatt") : t("pairBleProbe")}
-                loading={isScanning}
-                variant="primary"
-                size="large"
-                style={{ marginTop: spacing.md }}
-                onPress={handleStartBleScan}
-              />
-            </View>
-          )}
-
-          {/* TAB 2: ESP32 WI-FI / LOCAL IP */}
-          {activeTab === "WIFI" && (
-            <View style={{ marginTop: spacing.md }}>
-              <View style={[styles.radarBox, { backgroundColor: theme.surfaceSoft, borderColor: theme.border, borderRadius: radius.medium, padding: spacing.md }]}>
-                <Text style={[typography.caption, { color: theme.textSecondary, marginBottom: 6 }]}>
-                  {t("wifiPrompt")}
-                </Text>
-                <Text style={[typography.caption, { color: theme.textPrimary, fontWeight: "700" }]}>
-                  {t("esp32IpLabel")}
-                </Text>
-                <TextInput
-                  value={espIp}
-                  onChangeText={setEspIp}
-                  placeholder="e.g. 192.168.4.1 or 192.168.1.100"
-                  placeholderTextColor={theme.textMuted}
-                  keyboardType="numeric"
-                  style={[styles.ipInput, { backgroundColor: theme.background, borderColor: theme.border, color: theme.textPrimary }]}
-                />
-              </View>
-
-              <AppButton
-                title={isScanning ? t("connectingEsp32") : t("connectViaIp")}
-                loading={isScanning}
-                variant="primary"
-                size="large"
-                style={{ marginTop: spacing.md }}
-                onPress={handleConnectWifi}
-              />
-            </View>
-          )}
+          <AppButton
+            title={isScanning ? t("connectingGatt") : t("pairBleProbe")}
+            loading={isScanning}
+            variant="primary"
+            size="large"
+            style={{ marginTop: spacing.md }}
+            onPress={handleStartBleScan}
+          />
 
           {/* REAL ERROR BANNER (SHOWN WHEN HARDWARE CANNOT BE FOUND) */}
           {errorMessage && (
@@ -275,31 +171,8 @@ const styles = StyleSheet.create({
   streamStrip: {
     borderWidth: 1,
   },
-  tabsRow: {
-    flexDirection: "row",
-    padding: 6,
-    gap: 8,
-  },
-  tabBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 46,
-  },
   radarBox: {
     borderWidth: 1,
-  },
-  ipInput: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginTop: 6,
-    fontSize: 14,
-    fontWeight: "700",
   },
   errorBox: {
     borderWidth: 1,
@@ -308,3 +181,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+

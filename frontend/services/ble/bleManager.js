@@ -140,70 +140,9 @@ class BleHardwareManager {
     }
 
     this.isScanning = false;
-    const msg = "Bluetooth scanning requires Web Bluetooth support in your browser (Chrome / Edge or Android Chrome) or direct ESP32 Wi-Fi connection.";
+    const msg = "Bluetooth scanning requires Web Bluetooth support in your browser (Chrome / Edge or Android Chrome) or native BLE permissions.";
     this.notifyListeners({ type: "ERROR", error: msg });
     return { success: false, error: msg };
-  }
-
-  /**
-   * Connect to real physical ESP32 via local network / Wi-Fi IP (e.g. 192.168.4.1 or LAN IP)
-   */
-  async connectHttpProbe(ipAddress) {
-    const cleanIp = (ipAddress || "").trim().replace("http://", "").replace("/", "");
-    if (!cleanIp) {
-      return { success: false, error: "Please enter a valid ESP32 IP address (e.g. 192.168.4.1)" };
-    }
-
-    this.isScanning = true;
-    this.notifyListeners({ type: "SCANNING" });
-
-    try {
-      const url = `http://${cleanIp}/telemetry`;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
-      const res = await fetch(url, { method: "GET", signal: controller.signal });
-      clearTimeout(timeoutId);
-
-      if (!res.ok) {
-        throw new Error(`ESP32 returned HTTP ${res.status}`);
-      }
-      const rawJson = await res.text();
-      const parsed = TelemetryParser.parse(rawJson);
-      if (!parsed.isValid) {
-        throw new Error(parsed.error || "Device did not return SilageGuard ESP32 probe telemetry format");
-      }
-
-      this.isConnected = true;
-      this.isScanning = false;
-      this.notifyListeners({ type: "CONNECTED", deviceName: `ESP32 (${cleanIp})` });
-      this.notifyListeners({ type: "TELEMETRY", telemetry: parsed.telemetry, timestamp: parsed.timestamp });
-
-      // Poll real physical ESP32 HTTP endpoint at 1 Hz
-      if (this.networkPollInterval) clearInterval(this.networkPollInterval);
-      this.networkPollInterval = setInterval(async () => {
-        if (!this.isConnected) return;
-        try {
-          const pollRes = await fetch(url, { method: "GET" });
-          if (pollRes.ok) {
-            const pollData = await pollRes.text();
-            const p = TelemetryParser.parse(pollData);
-            if (p.isValid) {
-              this.notifyListeners({ type: "TELEMETRY", telemetry: p.telemetry, timestamp: p.timestamp });
-            }
-          }
-        } catch (e) {
-          console.warn("ESP32 network poll error:", e.message);
-        }
-      }, 1000);
-
-      return { success: true };
-    } catch (err) {
-      this.isScanning = false;
-      this.isConnected = false;
-      const errorMsg = `Could not reach ESP32 at ${cleanIp}: ${err.message}`;
-      this.notifyListeners({ type: "ERROR", error: errorMsg });
-      return { success: false, error: errorMsg };
-    }
   }
 
   startStaleWatchdog() {
@@ -220,7 +159,6 @@ class BleHardwareManager {
 
   disconnect() {
     if (this.staleChecker) clearInterval(this.staleChecker);
-    if (this.networkPollInterval) clearInterval(this.networkPollInterval);
     if (this.device && this.device.gatt && this.device.gatt.connected) {
       try {
         this.device.gatt.disconnect();
