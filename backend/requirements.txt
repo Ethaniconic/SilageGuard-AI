@@ -25,6 +25,6 @@ pytest-asyncio==1.4.0
 # backend's model tooling and scripts/verify_models.py need the runtime
 # locally. The sensor Random Forest ships as plain JSON and is evaluated by
 # the app's own TypeScript interpreter, so it needs no ML runtime.
-onnxruntime==1.30.0
-numpy==2.5.3
-pillow==12.3.0
+onnxruntime>=1.20.0
+numpy>=2.0.0,<3.0.0
+pillow>=10.0.0
