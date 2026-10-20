@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # =========================================================================
+  # SilageGuard AI — FastAPI & Multimodal Inference Backend
+  # =========================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: silageguard-backend
+    # Keeps container running continuously without touching Docker Engine:
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:////data/silageguard.db
+      - ENVIRONMENT=production
+      - CORS_ORIGINS=*
+      - MODELS_DIR=/app/models
+    volumes:
+      # Persistent storage for SQLite database and uploads
+      - silageguard-data:/data
+      # Mount trained models into the container
+      - ./models:/app/models:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/inference/warmup"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # =========================================================================
+  # SilageGuard AI — Progressive Web Frontend (Nginx Reverse Proxy)
+  # =========================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: silageguard-frontend
+    # Keeps container running continuously without touching Docker Engine:
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  silageguard-data:
+    name: silageguard-data

@@ -44,7 +44,17 @@ def _workspace_root() -> Path:
 
 
 def _models_dir() -> Path:
-    return _workspace_root() / "models"
+    import os
+    env_dir = os.environ.get("MODELS_DIR")
+    if env_dir:
+        return Path(env_dir)
+    ws = _workspace_root() / "models"
+    if ws.exists():
+        return ws
+    fallback = Path("/app/models")
+    if fallback.exists():
+        return fallback
+    return ws
 
 
 @lru_cache(maxsize=1)

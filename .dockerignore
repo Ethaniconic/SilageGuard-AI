@@ -1,0 +1,13 @@
+node_modules
+__pycache__
+*.pyc
+.git
+.agents
+.expo
+dist
+web-build
+*.zip
+*.tar.gz
+datasets/
+logs/
+*.log
