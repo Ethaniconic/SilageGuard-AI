@@ -59,8 +59,14 @@ models/sensor/runs/
 # PlatformIO & Embedded
 .pio/
 
+# Datasets and archives
+datasets/
+*.zip
+*.tar.gz
+
 # OS & Editor
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+

@@ -1,2 +1,5 @@
-NO_MOLD
-VISIBLE_MOLD
+Abnormal_appearance
+Foreign_object
+Healthy
+Mould
+Spoilage

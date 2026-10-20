@@ -43,6 +43,8 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
+#include <WiFi.h>
+#include <WebServer.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <ArduinoJson.h>
@@ -57,6 +59,10 @@
 #define BLE_CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
 #define BLE_DEVICE_NAME         "SilageGuard-Probe"
 #define PROBE_ID                "SILAGE-ESP32-PROBE"
+
+// ─── WI-FI SOFTAP & HTTP CONFIGURATION ──────────────────────────────────────
+#define WIFI_AP_SSID            "SilageGuard-Probe"
+#define WIFI_AP_PASS            "" // Open AP for field testing (connect directly to 192.168.4.1)
 
 // ─── CALIBRATION CONSTANTS ──────────────────────────────────────────────────
 // Capacitive Moisture Sensor v1.2 ADC mapping (12-bit ADC: 0 - 4095)
@@ -73,9 +79,11 @@ const float AMBIENT_TEMP_REF = 25.0f;
 OneWire oneWire(PIN_ONEWIRE_TEMP);
 DallasTemperature ds18b20(&oneWire);
 
-// ─── BLE STATE ──────────────────────────────────────────────────────────────
+// ─── NETWORKING & BLE STATE ─────────────────────────────────────────────────
 BLEServer* pServer = nullptr;
 BLECharacteristic* pCharacteristic = nullptr;
+WebServer httpServer(80);
+char latestJsonBuf[384] = "{\"status\":\"starting\"}";
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 uint32_t sampleSeq = 0;
@@ -211,7 +219,28 @@ void setup() {
   Serial.printf("[BLE] Broadcasting as '%s'\n", BLE_DEVICE_NAME);
   Serial.printf("[BLE] Service UUID : %s\n", BLE_SERVICE_UUID);
   Serial.printf("[BLE] Char UUID    : %s\n", BLE_CHARACTERISTIC_UUID);
-  Serial.println("[SYSTEM] Ready! Open SilageGuard AI app and click 'PAIR & CONNECT VIA BLE'.\n");
+
+  // Initialize Wi-Fi SoftAP (for direct IP connection e.g. 192.168.4.1)
+  Serial.println("[INIT] Initializing Wi-Fi SoftAP...");
+  WiFi.softAP(WIFI_AP_SSID, WIFI_AP_PASS);
+  IPAddress apIP = WiFi.softAPIP();
+  Serial.printf("[WIFI] SoftAP '%s' active! Connect phone Wi-Fi to this network.\n", WIFI_AP_SSID);
+  Serial.printf("[WIFI] ESP32 Probe IP: %s\n", apIP.toString().c_str());
+
+  // Configure /telemetry HTTP REST endpoint
+  httpServer.on("/telemetry", HTTP_GET, []() {
+    httpServer.sendHeader("Access-Control-Allow-Origin", "*");
+    httpServer.sendHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    httpServer.sendHeader("Access-Control-Allow-Headers", "*");
+    httpServer.send(200, "application/json", latestJsonBuf);
+  });
+  httpServer.onNotFound([]() {
+    httpServer.sendHeader("Access-Control-Allow-Origin", "*");
+    httpServer.send(404, "text/plain", "SilageGuard ESP32 Probe: Use GET /telemetry");
+  });
+  httpServer.begin();
+  Serial.println("[HTTP] WebServer listening at http://192.168.4.1/telemetry\n");
+  Serial.println("[SYSTEM] Ready! Connect via BLE or connect to Wi-Fi 'SilageGuard-Probe'.\n");
 }
 
 // ─── MAIN LOOP ──────────────────────────────────────────────────────────────
@@ -256,6 +285,9 @@ void loop() {
   char jsonBuf[384];
   serializeJson(doc, jsonBuf, sizeof(jsonBuf));
 
+  // Store for Wi-Fi HTTP clients
+  strncpy(latestJsonBuf, jsonBuf, sizeof(latestJsonBuf));
+
   // 5. Print to Serial Monitor
   Serial.printf("[%04d] Moist: %5.1f%% (ADC: %4d) | Temp: %4.1f C | pH: %s | BLE: %s\n",
     sampleSeq,
@@ -283,5 +315,10 @@ void loop() {
     oldDeviceConnected = deviceConnected;
   }
 
-  delay(1000); // 1 Hz stream interval
+  // Non-blocking 1-second interval: actively service incoming HTTP / Wi-Fi requests
+  unsigned long startWait = millis();
+  while (millis() - startWait < 1000) {
+    httpServer.handleClient();
+    delay(10);
+  }
 }

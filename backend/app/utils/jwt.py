@@ -6,16 +6,33 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
 from jose import JWTError, jwt
 
+from pathlib import Path
 from app.config import settings
 
 
+def _resolve_key_path(path_str: str) -> Path:
+    p = Path(path_str)
+    if p.is_file():
+        return p
+    backend_dir = Path(__file__).resolve().parents[2]
+    candidate1 = backend_dir / path_str.lstrip("./")
+    if candidate1.is_file():
+        return candidate1
+    candidate2 = backend_dir / "keys" / p.name
+    if candidate2.is_file():
+        return candidate2
+    return p
+
+
 def _read_private_key():
-    with open(settings.JWT_PRIVATE_KEY_PATH, "r", encoding="utf-8") as fh:
+    key_path = _resolve_key_path(settings.JWT_PRIVATE_KEY_PATH)
+    with open(key_path, "r", encoding="utf-8") as fh:
         return fh.read()
 
 
 def _read_public_key():
-    with open(settings.JWT_PUBLIC_KEY_PATH, "r", encoding="utf-8") as fh:
+    key_path = _resolve_key_path(settings.JWT_PUBLIC_KEY_PATH)
+    with open(key_path, "r", encoding="utf-8") as fh:
         return fh.read()
 
 

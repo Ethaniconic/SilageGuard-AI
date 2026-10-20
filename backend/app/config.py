@@ -1,7 +1,9 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
+
     ENVIRONMENT: str = "development"
     DATABASE_URL: str = "sqlite+aiosqlite:///:memory:"
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -15,13 +17,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "*"
     LOG_LEVEL: str = "INFO"
     SENTRY_DSN: str = ""
-    # Shared secret allowing the offline-first app to obtain a device-scoped
-    # token without a login screen. Empty disables POST /api/v1/auth/device.
     DEVICE_PROVISIONING_SECRET: str = ""
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
 
 
 settings = Settings()

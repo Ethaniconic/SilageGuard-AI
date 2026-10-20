@@ -48,3 +48,10 @@ async def test_qr_public_lookup(async_client):
     assert public_response.status_code == 200
     body = public_response.json()
     assert body["batch"]["client_batch_id"] == "qr-batch"
+
+    report_res = await async_client.get("/api/v1/qr/public-qr-token-123/report", headers=headers)
+    assert report_res.status_code == 200
+    rep = report_res.json()
+    assert rep["verification_status"] == "AUTHENTIC_RECORD"
+    assert rep["token"] == "public-qr-token-123"
+

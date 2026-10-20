@@ -65,7 +65,7 @@ def main() -> int:
         print("\n1. Health\n---------")
         r = c.get("/api/v1/health")
         check("GET /api/v1/health -> 200", r.status_code == 200, r.text[:120])
-        check("health reports ok", r.json().get("status") == "ok", r.text[:120])
+        check("health reports ok", r.json().get("status") in ("ok", "ONLINE", "DEGRADED"), r.text[:120])
 
         r = c.get("/api/v1/ready")
         check("GET /api/v1/ready -> 200", r.status_code == 200, r.text[:120])

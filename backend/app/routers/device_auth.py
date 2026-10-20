@@ -73,7 +73,8 @@ async def device_auth(payload: DeviceAuthRequest):
 
     # One stable principal per device, stored as a User row so the existing
     # ownership scoping in the sync/analytics services keeps working unchanged.
-    phone = f"dev-{hashlib.sha256(payload.device_id.encode()).hexdigest()[:12]}"
+    # Note: users.phone column is VARCHAR(15), so total length must be <= 15 chars.
+    phone = f"d_{hashlib.sha256(payload.device_id.encode()).hexdigest()[:13]}"
 
     async with AsyncSessionLocal() as session:
         result = await session.execute(select(User).where(User.phone == phone))

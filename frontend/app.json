@@ -4,11 +4,11 @@
     "slug": "silageguard-ai",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/icon-logo.png",
     "scheme": "silageguard",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/splash.png",
+      "image": "./assets/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#0F172A"
     },
@@ -22,7 +22,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/icon-logo.png",
         "backgroundColor": "#0F172A"
       },
       "package": "com.silageguard.ai",
@@ -37,10 +37,9 @@
     },
     "web": {
       "bundler": "metro",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/icon-logo.png"
     },
     "plugins": [
-      "expo-router",
       "expo-sqlite",
       [
         "expo-camera",

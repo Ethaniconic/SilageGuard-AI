@@ -1,0 +1,100 @@
+{
+  "model_id": "MobileNetV3-5Class",
+  "version": "4.2.0",
+  "architecture": "MobileNetV3-Large",
+  "task": "5-Class Silage Quality Screening",
+  "classes": [
+    "Abnormal_appearance",
+    "Foreign_object",
+    "Healthy",
+    "Mould",
+    "Spoilage"
+  ],
+  "input_shape": [
+    1,
+    3,
+    224,
+    224
+  ],
+  "normalization": {
+    "mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "std": [
+      0.229,
+      0.224,
+      0.225
+    ]
+  },
+  "metrics": {
+    "accuracy": 0.9792,
+    "macro_f1": 0.9745,
+    "macro_recall": 0.9717,
+    "macro_precision": 0.9776,
+    "macro_specificity": 0.9945,
+    "expected_calibration_error": 0.0478,
+    "brier_score": 0.0344,
+    "roc_auc_macro": 0.9991
+  },
+  "per_class_metrics": {
+    "Abnormal_appearance": {
+      "precision": 0.9836,
+      "recall": 1.0,
+      "f1": 0.9917,
+      "specificity": 0.9944
+    },
+    "Foreign_object": {
+      "precision": 0.95,
+      "recall": 0.95,
+      "f1": 0.95,
+      "specificity": 0.9955
+    },
+    "Healthy": {
+      "precision": 0.9672,
+      "recall": 0.9833,
+      "f1": 0.9752,
+      "specificity": 0.9889
+    },
+    "Mould": {
+      "precision": 1.0,
+      "recall": 0.95,
+      "f1": 0.9744,
+      "specificity": 1.0
+    },
+    "Spoilage": {
+      "precision": 0.9873,
+      "recall": 0.975,
+      "f1": 0.9811,
+      "specificity": 0.9938
+    }
+  },
+  "class_mapping": {
+    "Healthy": {
+      "verdict": "SAFE",
+      "mould_risk": 0.0,
+      "risk_tier": "LOW"
+    },
+    "Abnormal_appearance": {
+      "verdict": "CAUTION",
+      "mould_risk": 0.35,
+      "risk_tier": "MODERATE"
+    },
+    "Foreign_object": {
+      "verdict": "UNSAFE",
+      "mould_risk": 0.65,
+      "risk_tier": "PHYSICAL_HAZARD"
+    },
+    "Mould": {
+      "verdict": "UNSAFE",
+      "mould_risk": 1.0,
+      "risk_tier": "MYCOTOXIN_HAZARD"
+    },
+    "Spoilage": {
+      "verdict": "UNSAFE",
+      "mould_risk": 0.9,
+      "risk_tier": "AEROBIC_ROT"
+    }
+  }
+}

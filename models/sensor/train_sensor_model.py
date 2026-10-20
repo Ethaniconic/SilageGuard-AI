@@ -47,9 +47,9 @@ from sensor_pipeline import engineer_features, FEATURE_COLUMNS, LABEL_MAPPING, R
 from export_rf_json import export_random_forest_to_json
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
+PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
 DATA_PATH = os.path.join(PROJECT_ROOT, "datasets", "sensor", "combined_silage_dataset.csv")
-EXPORT_JSON_DIR = os.path.join(PROJECT_ROOT, "mobile", "assets", "models")
+EXPORT_JSON_DIR = os.path.join(PROJECT_ROOT, "frontend", "assets", "models")
 LOCAL_EXPORT_PATH = os.path.join(BASE_DIR, "sensor_rf_model.json")
 MOBILE_EXPORT_PATH = os.path.join(EXPORT_JSON_DIR, "sensor_rf_model.json")
 METRICS_PATH = os.path.join(BASE_DIR, "sensor_model_metrics.json")

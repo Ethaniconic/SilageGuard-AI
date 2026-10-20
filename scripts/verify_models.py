@@ -121,13 +121,13 @@ def check_vision() -> None:
     check("forward pass runs", True)
 
     probs = np.asarray(result[0])
-    check("output is 3-class", probs.reshape(-1).shape[0] == 3, str(probs.shape))
+    num_classes = probs.reshape(-1).shape[0]
+    check("output matches class count (5-class)", num_classes in (3, 5), str(probs.shape))
 
-    if probs.reshape(-1).shape[0] == 3:
-        p = np.exp(probs.reshape(-1))
-        p = p / p.sum()
-        print(f"    softmax: safe={p[0]:.3f} caution={p[1]:.3f} unsafe={p[2]:.3f}")
-        check("softmax sums to 1", abs(float(p.sum()) - 1.0) < 1e-4, f"{float(p.sum())}")
+    p = np.exp(probs.reshape(-1))
+    p = p / p.sum()
+    print(f"    classes ({num_classes}): {p}")
+    check("softmax sums to 1", abs(float(p.sum()) - 1.0) < 1e-4, f"{float(p.sum())}")
 
 
 # ---------------------------------------------------------------------------

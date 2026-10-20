@@ -76,26 +76,30 @@ Open **Tools -> Serial Monitor** at **115200 baud**. You should see:
 
 ---
 
-## 4. Connecting in the App
+## 4. Connecting Real Hardware in SilageGuard AI
 
-1. Ensure Bluetooth is enabled on your laptop or mobile phone.
-2. In the SilageGuard AI app, open the **Probe (BLE)** screen.
-3. The demo switch will be on **REAL HARDWARE** by default.
-4. Click **PAIR & CONNECT VIA BLE**.
-5. Your browser's native Bluetooth pairing prompt will open:
-   - Select **`SilageGuard-Probe`** (or your ESP32 board).
-   - Click **Pair**.
-6. The app will immediately show:
-   - **Status:** `CONNECTED`
-   - **Mode:** `MODE: REAL_SENSOR`
-   - **Live Gauges:** Real moisture % and real core temperature from your physical hardware!
-   - **pH:** Shows `--` (`NO PROBE / UNMEASURED`) honestly without faking data.
+SilageGuard AI accepts **ONLY** real physical ESP32 SilageGuard probe modules.
+
+### Option A: Bluetooth Low Energy (BLE GATT)
+1. Turn on Bluetooth on your device (Chrome / Edge / Android Chrome).
+2. Tap **"Pair Real ESP32 Probe (Bluetooth)"**.
+3. Select your ESP32 board in the native Bluetooth chooser.
+4. The app verifies the GATT Service UUID (`4fafc201-1fb5-459e-8fcc-c5c9c331914b`) and begins streaming live physical telemetry. Non-matching devices are strictly rejected.
+
+### Option B: Wi-Fi SoftAP / Local IP
+1. On your phone or laptop, open Wi-Fi settings and connect to the ESP32's network:
+   - **Network SSID:** `SilageGuard-Probe`
+   - **Password:** *(None / Open)*
+2. In the SilageGuard AI app, switch to the **"ESP32 Wi-Fi / IP"** tab.
+3. Keep the default IP `192.168.4.1` (or enter your LAN IP).
+4. Tap **"Connect via IP Address"**.
+5. The app begins polling `http://192.168.4.1/telemetry` at 1 Hz for live physical sensor data.
 
 ---
 
 ## 5. Moisture Sensor Quick Calibration
 
-In [`esp32_sensor_probe.ino`](file:///E:/silageguard-ai/hardware/esp32_sensor_probe/esp32_sensor_probe.ino#L45-L55):
+In [`esp32_sensor_probe.ino`](file:///E:/silageguard-ai/hardware/esp32_sensor_probe/esp32_sensor_probe.ino):
 - Note the raw ADC in dry air from the Serial Monitor (usually `~3100-3300`). Set `MOIST_DRY_ADC = 3200`.
 - Submerge the probe in water up to the white boundary line and note the ADC (usually `~1200-1400`). Set `MOIST_WET_ADC = 1250`.
 - Re-upload for precision calibration.

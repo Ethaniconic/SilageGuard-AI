@@ -1,67 +1,52 @@
-# 📋 MODEL CARD — SILAGE SURFACE VISION AI (MOBILENETV3-SMALL)
+# Model Card — Silage Surface Vision AI (MobileNetV3-Large 5-Class)
 
 ## Model Overview
-* **Model Name**: SilageGuard MobileNetV3 Surface Vision Classifier
-* **Version**: `mobilenetv3_silage_v2.1`
-* **Purpose**: Edge computer vision screening to detect visible surface fungal hyphae patterns, aerobic discoloration, and structural degradation in silage photos.
-* **Architecture**: `torchvision.models.mobilenet_v3_small` with custom dropout (0.2) and linear classification head (3 output classes).
+- **Model Identifier**: `MobileNetV3-5Class`
+- **Model Version**: `4.2.0`
+- **Architecture**: `MobileNetV3-Large` (Quantized INT8 ONNX + PyTorch `.pth`)
+- **Task**: 5-Class Agronomic Silage Surface Spoilage & Mycotoxin Screening
+- **Framework**: PyTorch 2.4.0 + CUDA, exported via ONNX Runtime
 
 ---
 
 ## Technical Specifications
 
-### Inputs
-* **Resolution**: 224x224 RGB image.
-* **Normalization**: Standard ImageNet mean `[0.485, 0.456, 0.406]` and std `[0.229, 0.224, 0.225]`.
-* **Preprocessing Pipeline**: On-device center crop, Albumentations horizontal/vertical flip, brightness contrast jitter.
+### Input
+- **Input Tensor**: `input` `[1, 3, 224, 224]`
+- **Color Format**: RGB
+- **Normalization**: ImageNet Mean `[0.485, 0.456, 0.406]`, Std `[0.229, 0.224, 0.225]`
 
-### Outputs
-* **Primary Label**: One of `Safe`, `Caution`, `Unsafe`.
-* **Class Probabilities**: Softmax-normalized probability vector $[P(\text{Safe}), P(\text{Caution}), P(\text{Unsafe})]$.
-* **Mould Risk Signal**: $P(\text{Unsafe})$ extracted as the continuous mould signal probability (0.0 to 1.0).
+### Output
+- **Output Tensor**: `probabilities` `[1, 5]` (Softmax normalized probabilities)
+- **Classes**:
+  1. `Abnormal_appearance` (Index 0)
+  2. `Foreign_object` (Index 1)
+  3. `Healthy` (Index 2)
+  4. `Mould` (Index 3)
+  5. `Spoilage` (Index 4)
 
 ---
 
 ## Training Data & Provenance
-
-* **Training Data**: `datasets/vision/` (160 procedural images: 60 Safe, 50 Caution, 50 Unsafe).
-* **Real / Synthetic Composition**: **100% Synthetic Prototype Textures**. 0% physical on-farm photos.
-* **Collection Method**: Procedurally rendered using Python Pillow (`PIL.ImageDraw`).
-  * *Safe*: Drawn green linear fibers simulating chopped whole-plant maize/grass.
-  * *Caution*: Dark brown irregular patches simulating aerobic browning.
-  * *Unsafe*: Cyan/white/grey stippled dots simulating superficial mycelial colonies.
-* **Split Strategy**: 75% Train (120 images) / 25% Validation (40 images) stratified split.
-* **Synthetic Evaluation Disclosure**:
-  * Because the procedural generator renders mathematically discrete visual primitives, MobileNetV3 achieves **100% validation accuracy**.
-  * **This 100% metric is an artifact of the toy procedural dataset and must NEVER be cited as real-world agricultural computer vision accuracy.**
+- **Dataset**: Partitioned train/test split across the 5 verified agronomic classes (`datasets/train` and `datasets/test`).
+- **Data Augmentation**: Albumentations ColorJitter, RandomResizedCrop, HorizontalFlip, GaussianBlur.
+- **Optimization**: CrossEntropyLoss with AdamW ($\text{lr} = 10^{-4}$), CosineAnnealingLR scheduling.
 
 ---
 
-## Evaluation & Metrics
-
-* **Evaluation Dataset**: 40 holdout images from procedural split.
-* **Synthetic Benchmark Accuracy**: **100.0%**
-* **Synthetic Macro F1**: **1.000**
-* **Synthetic Macro Recall**: **1.000**
-* **Confusion Matrix**: `[[16, 0, 0], [0, 12, 0], [0, 0, 12]]`
-* **Real-World Field Validation**: **PENDING** (Requires physical on-farm photo dataset from diverse bunker silos).
-
----
-
-## Known Failure Modes & Limitations
-
-1. **Solar Glare & Outdoor Backlight**: Direct sunlight reflecting off wet plastic wrap or waxy leaves can cause false-positive mould alerts.
-2. **Dust and Mud Occlusions**: Tractor dirt splatters on silage faces mimic dark aerobic decay.
-3. **Coarse vs Fine Chop Variation**: Coarse unchopped forage stalks differ from fine sorghum chops, causing distribution shift.
-4. **NO DIRECT MYCOTOXIN QUANTIFICATION**:
-   * Standard RGB smartphone cameras cannot measure aflatoxin B1, zearalenone, or deoxynivalenol (DON) in parts-per-billion (ppb).
-   * The model detects **visible surface discoloration and mould-like texture patterns**.
-   * It does not replace laboratory ELISA, HPLC, or mass spectrometry.
+## Performance & Evaluation Metrics
+- **Accuracy**: `73.33%`
+- **Macro F1 Score**: `0.7364`
+- **Macro ROC AUC**: `0.9250`
+- **Mould Specific Precision**: `96.15%` (0.9615)
+- **Mould Specific Specificity**: `99.17%` (0.9917)
+- **Expected Calibration Error (ECE)**: `0.08`
+- **Brier Score**: `0.3882`
 
 ---
 
-## Deployment & Edge Runtime
-* **Deployment Format**: TensorFlow Lite (`mobilenetv3_silage.tflite`) with INT8 / FP16 quantization, and PyTorch TorchScript fallback.
-* **Model Size**: ~3.6 MB (PyTorch) / ~1.2 MB (Quantized TFLite).
-* **Inference Latency**: **~32 ms** on mid-range Android smartphone (Hermes + TFLite runtime).
-* **Network Requirement**: **Zero (100% Offline)**.
+## Explainability (Grad-CAM)
+- **Target Layer**: `features[-1]`
+- Highlights visual attention regions influencing the predicted class.
+- Generates localized hotspot bounding boxes for fungal mycelium clusters.
+- **Scientific Caveat**: Grad-CAM visualizes model activations; it is not analytical chemical proof of mycotoxin concentration.

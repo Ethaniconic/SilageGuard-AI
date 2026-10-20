@@ -16,6 +16,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse, JSONResponse
 
 router = APIRouter(tags=["models"])
 
@@ -97,10 +98,42 @@ def _registry() -> dict:
     }
 
 
+@router.get("")
+@router.get("/")
 @router.get("/registry")
 async def model_registry():
-    """Full registry: both model families, their artefacts and metrics."""
-    return _registry()
+    """
+    Contract & registry endpoint: GET /api/v1/models & GET /api/v1/models/registry
+    Returns checksums and metadata for quantized on-device models for offline OTA model updates.
+    """
+    reg = _registry()
+    return {
+        "status": "ok",
+        "active_version": "3.0.0",
+        "vision": reg["vision"],
+        "sensor": reg["sensor"],
+        "models": {
+            "vision": {
+                "architecture": "MobileNetV3-Small",
+                "format": "ONNX_INT8",
+                "classes": reg["vision"].get("classes") or ["SAFE", "CAUTION", "UNSAFE"],
+                "artifacts": reg["vision"].get("artifacts_present", []),
+            },
+            "sensor": {
+                "architecture": "RandomForest-25Trees",
+                "format": "JSON_TREE_TABLE",
+                "features": ["ph", "moisture_adc", "core_temp", "ambient_temp", "delta_temp", "ph_dev", "moist_dev", "heat_rise", "storage_type", "crop_type", "depth_bucket"],
+                "artifacts": reg["sensor"].get("artifacts_present", []),
+            },
+            "fusion": {
+                "algorithm": "MSSI-v3.0-Calibrated",
+                "sensor_weight": 0.55,
+                "vision_weight": 0.45,
+            },
+        },
+        "registry_details": reg,
+    }
+
 
 
 @router.get("/registry/{family}")
@@ -132,3 +165,50 @@ async def model_ready(family: str):
         raise HTTPException(status_code=404, detail=f"Unknown model family '{family}'")
     artefacts = data[family].get("artifacts_present") or []
     return {"family": family, "ready": len(artefacts) > 0, "artifact_count": len(artefacts)}
+
+
+@router.get("/download/sensor")
+async def download_sensor_model():
+    """Download the trained Random Forest 25-tree model JSON for edge execution."""
+    model_path = _models_dir() / "sensor" / "sensor_rf_model.json"
+    if not model_path.exists():
+        raise HTTPException(status_code=404, detail="Sensor model not found")
+    data = json.loads(model_path.read_text(encoding="utf-8"))
+    return JSONResponse(content=data)
+
+
+@router.get("/download/vision")
+async def download_vision_model():
+    """Download the trained MobileNetV3 ONNX model for on-device inference."""
+    model_path = _models_dir() / "vision" / "mobilenetv3_silage.onnx"
+    if not model_path.exists():
+        raise HTTPException(status_code=404, detail="Vision ONNX model not found")
+    return FileResponse(
+        path=str(model_path),
+        filename="mobilenetv3_silage.onnx",
+        media_type="application/octet-stream"
+    )
+
+
+@router.get("/download/vision/weights")
+async def download_vision_weights():
+    """Download the trained MobileNetV3 PyTorch weights."""
+    model_path = _models_dir() / "vision" / "mobilenetv3_silage.pth"
+    if not model_path.exists():
+        raise HTTPException(status_code=404, detail="Vision weights not found")
+    return FileResponse(
+        path=str(model_path),
+        filename="mobilenetv3_silage.pth",
+        media_type="application/octet-stream"
+    )
+
+
+@router.get("/download/vision/metadata")
+async def download_vision_metadata():
+    """Download vision model metadata and labels."""
+    meta_path = _models_dir() / "vision" / "vision_model_metadata.json"
+    if not meta_path.exists():
+        raise HTTPException(status_code=404, detail="Vision metadata not found")
+    data = json.loads(meta_path.read_text(encoding="utf-8"))
+    return JSONResponse(content=data)
+

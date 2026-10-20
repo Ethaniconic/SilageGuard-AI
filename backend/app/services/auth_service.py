@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from fastapi import HTTPException, status
@@ -28,11 +28,17 @@ class AuthService:
         if count > 5:
             raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many OTP requests")
 
-        otp = "123456"
-        if settings.OTP_PROVIDER == "msg91":
+        if settings.ENVIRONMENT in ("development", "testing") or settings.OTP_PROVIDER == "mock":
             otp = "123456"
+        else:
+            import secrets
+            otp = f"{secrets.randbelow(900000) + 100000:06d}"
+
         client.set(key, otp, ex=settings.OTP_EXPIRE_SECONDS)
-        return {"status": "success", "otp": otp}
+        response = {"status": "success"}
+        if settings.ENVIRONMENT in ("development", "testing") or settings.OTP_PROVIDER == "mock":
+            response["otp"] = otp
+        return response
 
     async def verify_otp(self, phone: str, otp: str):
         client = get_redis_client()
@@ -43,6 +49,7 @@ class AuthService:
         async with AsyncSessionLocal() as session:
             result = await session.execute(select(User).where(User.phone == phone))
             user = result.scalar_one_or_none()
+            now = datetime.now(timezone.utc)
             if user is None:
                 user = User(
                     id=uuid4(),
@@ -50,13 +57,16 @@ class AuthService:
                     name=None,
                     role="farmer",
                     language="hi",
-                    created_at=datetime.utcnow(),
-                    last_active_at=datetime.utcnow(),
+                    created_at=now,
+                    last_active_at=now,
                     is_active=True,
                 )
                 session.add(user)
                 await session.commit()
                 await session.refresh(user)
+            else:
+                user.last_active_at = now
+                await session.commit()
 
             refresh_token = create_refresh_token()
             client.set(f"refresh:{refresh_token}", str(user.id), ex=30 * 24 * 60 * 60)

@@ -12,6 +12,7 @@ import io
 import json
 import time
 from functools import lru_cache
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -20,8 +21,18 @@ from pydantic import BaseModel
 import numpy as np
 from PIL import Image
 
+logger = logging.getLogger("uvicorn.error")
 router = APIRouter(tags=["inference"])
 
+from app.services.safety_rules import evaluate_safety_rules
+
+VISION_5_CLASSES = [
+    "Abnormal_appearance",
+    "Foreign_object",
+    "Healthy",
+    "Mould",
+    "Spoilage"
+]
 CLASS_NAMES = ["SAFE", "CAUTION", "UNSAFE"]
 IMAGE_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
 IMAGE_STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
@@ -52,6 +63,89 @@ def _get_sensor_forest() -> dict:
         return {}
     with open(forest_path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+@lru_cache(maxsize=1)
+def _get_pytorch_model():
+    import sys
+    import torch
+    vision_dir = str(_models_dir() / "vision")
+    if vision_dir not in sys.path:
+        sys.path.insert(0, vision_dir)
+    from train_mobilenetv3 import MobileNetV3Silage
+
+    device = torch.device("cpu")
+    model = MobileNetV3Silage(num_classes=5, pretrained=False, architecture="large").to(device)
+    pth_path = _models_dir() / "vision" / "mobilenetv3_silage.pth"
+    if pth_path.exists():
+        sd = torch.load(str(pth_path), map_location=device)
+        model.load_state_dict(sd)
+    model.eval()
+    return model
+
+
+def _generate_gradcam(pil_img: Image.Image, target_class: int = 0) -> tuple[str | None, dict | None, str]:
+    """
+    Computes class-specific Grad-CAM activation heatmap overlay on silage face.
+    Returns: (base64_jpeg_overlay, hotspot_bbox, hotspot_description)
+    """
+    try:
+        import sys
+        import cv2
+        import torch
+        vision_dir = str(_models_dir() / "vision")
+        if vision_dir not in sys.path:
+            sys.path.insert(0, vision_dir)
+        from gradcam import GradCAM
+
+        model = _get_pytorch_model()
+        target_layer = model.features[-1]
+        gcam = GradCAM(model, target_layer)
+
+        # Preprocess PIL image for PyTorch (224x224 RGB, ImageNet normalization)
+        img_rgb = pil_img.convert("RGB").resize((224, 224), Image.Resampling.BILINEAR)
+        arr = np.array(img_rgb, dtype=np.float32) / 255.0
+        norm = (arr - IMAGE_MEAN) / IMAGE_STD
+        tensor = torch.from_numpy(np.transpose(norm, (2, 0, 1))).unsqueeze(0).float()
+
+        cam, _ = gcam.generate_heatmap(tensor, target_class=target_class)
+
+        # Generate JET heatmap overlay blended with original image
+        img_bgr = cv2.cvtColor(np.array(img_rgb), cv2.COLOR_RGB2BGR)
+        heatmap = cv2.resize(cam, (224, 224))
+        heatmap_uint8 = np.uint8(255 * heatmap)
+        colored_heatmap = cv2.applyColorMap(heatmap_uint8, cv2.COLORMAP_JET)
+
+        overlay = cv2.addWeighted(colored_heatmap, 0.55, img_bgr, 0.45, 0)
+
+        # Calculate bounding box of primary activation hotspot (> 65% max activation)
+        hotspots = np.where(heatmap > 0.65)
+        bbox = None
+        if len(hotspots[0]) > 0:
+            ymin, ymax = int(np.min(hotspots[0])), int(np.max(hotspots[0]))
+            xmin, xmax = int(np.min(hotspots[1])), int(np.max(hotspots[1]))
+            bbox = {"xmin": xmin, "ymin": ymin, "xmax": xmax, "ymax": ymax}
+
+        # Encode overlay to base64 JPEG
+        success, buffer = cv2.imencode(".jpg", overlay, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
+        if not success:
+            return None, None, "Encoding failed"
+
+        b64_str = base64.b64encode(buffer).decode("utf-8")
+        gradcam_b64 = f"data:image/jpeg;base64,{b64_str}"
+
+        class_name = VISION_5_CLASSES[target_class] if target_class < len(VISION_5_CLASSES) else "Silage"
+        if class_name in ["Mould", "Spoilage"]:
+            desc = f"Heatmap activations ({class_name}) localize fungal mycelium, aerobic heating, and surface spoilage."
+        elif class_name in ["Abnormal_appearance", "Foreign_object"]:
+            desc = f"Heatmap activations ({class_name}) localize dark discoloration, ash contamination, or texture abnormality."
+        else:
+            desc = "Even, low-intensity activations confirm uniform olive-green forage with healthy lactic fermentation."
+
+        return gradcam_b64, bbox, desc
+    except Exception as exc:
+        logger.warning(f"GradCAM generation error: {exc}")
+        return None, None, f"GradCAM unavailable: {exc}"
 
 
 class VisionPayload(BaseModel):
@@ -236,24 +330,57 @@ def _run_vision_onnx(pil_img: Image.Image) -> dict[str, Any]:
     probs = exp / np.sum(exp)
 
     pred_idx = int(np.argmax(probs))
-    pred_class = CLASS_NAMES[pred_idx]
     confidence = int(np.clip(np.round(float(np.max(probs)) * 100), 0, 100))
     latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
+    if len(probs) == 5:
+        sub_class = VISION_5_CLASSES[pred_idx]
+        # Index 0: Abnormal_appearance -> CAUTION
+        # Index 1: Foreign_object -> UNSAFE (physical contaminant)
+        # Index 2: Healthy -> SAFE
+        # Index 3: Mould -> UNSAFE (mycotoxin risk)
+        # Index 4: Spoilage -> UNSAFE (aerobic spoilage)
+        if pred_idx == 2:
+            pred_class = "SAFE"
+        elif pred_idx == 0:
+            pred_class = "CAUTION"
+        else:
+            pred_class = "UNSAFE"
+
+        safe_prob = round(float(probs[2]), 4)
+        caution_prob = round(float(probs[0]), 4)
+        unsafe_prob = round(float(probs[1] + probs[3] + probs[4]), 4)
+        mould_prob = round(float(probs[3]), 4)
+        class_distribution = {VISION_5_CLASSES[i]: round(float(probs[i]), 4) for i in range(5)}
+    else:
+        pred_class = CLASS_NAMES[pred_idx]
+        sub_class = pred_class
+        safe_prob = round(float(probs[0]), 4)
+        caution_prob = round(float(probs[1]), 4)
+        unsafe_prob = round(float(probs[2]), 4)
+        mould_prob = round(float(probs[2]), 4)
+    # Generate transparent Grad-CAM activation heatmap overlay
+    gradcam_b64, hotspot_bbox, hotspot_desc = _generate_gradcam(pil_img, pred_idx)
+
     return {
         "prediction": pred_class,
+        "detected_class": sub_class,
         "confidence": confidence,
         "probabilities": {
-            "safe": round(float(probs[0]), 4),
-            "caution": round(float(probs[1]), 4),
-            "unsafe": round(float(probs[2]), 4),
+            "safe": safe_prob,
+            "caution": caution_prob,
+            "unsafe": unsafe_prob,
         },
-        "mould_probability": round(float(probs[2]), 4),
+        "class_probabilities": class_distribution,
+        "mould_probability": mould_prob,
+        "gradcam_heatmap_b64": gradcam_b64,
+        "hotspot_bbox": hotspot_bbox,
+        "hotspot_description": hotspot_desc,
         "iqa_passed": True,
         "iqa_report": iqa,
         "need_retake": False,
         "latency_ms": latency_ms,
-        "model_version": "MobileNetV3-Small-INT8-v4.1",
+        "model_version": "MobileNetV3-Small-5Class-ONNX",
         "disclaimer": "Rapid AI Screening Tool — Not a laboratory diagnostic device.",
     }
 
@@ -338,16 +465,26 @@ def _run_sensor_rf(telemetry: SensorPayload) -> dict[str, Any] | None:
 @router.post("/vision")
 async def predict_vision(payload: VisionPayload):
     """
-    Run real MobileNetV3-Small ONNX inference on a base64 encoded silage photograph,
+    Run real MobileNetV3 ONNX inference on a base64 encoded silage photograph,
     local image path, or asset URI.
     Returns real prediction, class probabilities, mould probability, and measured latency.
     """
+    logger.info("[AI-VISION-INFERENCE] Received POST /api/v1/inference/vision")
+    print(f"\n=======================================================", flush=True)
+    print(f"[AI-VISION-INFERENCE] Received POST /api/v1/inference/vision", flush=True)
     pil_img = _load_image_from_input(
         image_base64=payload.image_base64,
         image_path=payload.image_path,
         uri=payload.uri,
     )
-    return _run_vision_onnx(pil_img)
+    print(f"[AI-VISION-INFERENCE] Image Dimensions: {pil_img.size} | Mode: {pil_img.mode}", flush=True)
+    result = _run_vision_onnx(pil_img)
+    logger.info(f"[AI-VISION-INFERENCE] Verdict: {result.get('prediction')} | Class: {result.get('detected_class')} | Conf: {result.get('confidence')}%")
+    print(f"[AI-VISION-INFERENCE] Verdict: {result.get('prediction')} | Class: {result.get('detected_class')}", flush=True)
+    print(f"[AI-VISION-INFERENCE] Confidence: {result.get('confidence')}% | Latency: {result.get('latency_ms')}ms", flush=True)
+    print(f"[AI-VISION-INFERENCE] Probabilities: {result.get('probabilities')}", flush=True)
+    print(f"=======================================================\n", flush=True)
+    return result
 
 
 @router.post("/vision/upload")
@@ -355,11 +492,24 @@ async def predict_vision_upload(file: UploadFile = File(...)):
     """
     Multipart file upload endpoint for real vision model inference on uploaded images.
     """
+    logger.info(f"[AI-VISION-INFERENCE] Received Multipart POST /api/v1/inference/vision/upload: {file.filename}")
+    print(f"\n=======================================================", flush=True)
+    print(f"[AI-VISION-INFERENCE] Received Multipart POST /api/v1/inference/vision/upload", flush=True)
     try:
         contents = await file.read()
+        print(f"[AI-VISION-INFERENCE] Uploaded File: {file.filename} ({len(contents)} bytes)", flush=True)
         pil_img = Image.open(io.BytesIO(contents))
-        return _run_vision_onnx(pil_img)
+        print(f"[AI-VISION-INFERENCE] Image Dimensions: {pil_img.size} | Mode: {pil_img.mode}", flush=True)
+        result = _run_vision_onnx(pil_img)
+        logger.info(f"[AI-VISION-INFERENCE] Verdict: {result.get('prediction')} | Class: {result.get('detected_class')} | Conf: {result.get('confidence')}% | Latency: {result.get('latency_ms')}ms")
+        print(f"[AI-VISION-INFERENCE] Verdict: {result.get('prediction')} | Class: {result.get('detected_class')}", flush=True)
+        print(f"[AI-VISION-INFERENCE] Confidence: {result.get('confidence')}% | Latency: {result.get('latency_ms')}ms", flush=True)
+        print(f"[AI-VISION-INFERENCE] Probabilities: {result.get('probabilities')}", flush=True)
+        print(f"=======================================================\n", flush=True)
+        return result
     except Exception as exc:
+        logger.error(f"[AI-VISION-INFERENCE] Upload processing failed: {exc}")
+        print(f"[AI-VISION-INFERENCE] Upload processing failed: {exc}", flush=True)
         raise HTTPException(status_code=400, detail=f"Could not read uploaded image: {exc}")
 
 
@@ -369,12 +519,14 @@ async def predict_sensor(payload: SensorPayload):
     Run real 11-feature Random Forest inference on physical probe telemetry.
     Returns real prediction, class probabilities, confidence, and measured latency.
     """
+    print(f"\n[AI-SENSOR-INFERENCE] Received POST /api/v1/inference/sensor", flush=True)
     res = _run_sensor_rf(payload)
     if res is None:
         raise HTTPException(
             status_code=400,
             detail="Sensor telemetry is empty or probe is disconnected."
         )
+    print(f"[AI-SENSOR-INFERENCE] Verdict: {res.get('prediction')} | Confidence: {res.get('confidence')}%", flush=True)
     return res
 
 
@@ -385,6 +537,8 @@ async def predict_multimodal(payload: MultimodalPayload):
     Runs ONNX vision model on photo and Random Forest on physical probe telemetry.
     If probe telemetry is disconnected/omitted, executes honest Vision-Only screening without fake sensor latencies.
     """
+    print(f"\n=======================================================", flush=True)
+    print(f"⚡ [MULTIMODAL FUSION INFERENCE] Received POST /api/v1/inference/predict", flush=True)
     start_total = time.perf_counter()
 
     vision_res = None
@@ -450,14 +604,71 @@ async def predict_multimodal(payload: MultimodalPayload):
         total_latency_ms = vision_res["latency_ms"]
         decision = vision_res["prediction"]
 
+    # Evaluate deterministic agronomic safety rules
+    t_ph = payload.telemetry.ph if payload.telemetry else None
+    t_moist = payload.telemetry.moisture if payload.telemetry else None
+    t_temp = payload.telemetry.temperature if payload.telemetry else None
+    t_amb = payload.telemetry.ambient if payload.telemetry else 25.0
+    v_pred = vision_res.get("prediction") if vision_res else None
+    v_class = vision_res.get("detected_class") if vision_res else None
+
+    safety_check = evaluate_safety_rules(
+        ph=t_ph,
+        moisture=t_moist,
+        temperature=t_temp,
+        ambient=t_amb,
+        vision_prediction=v_pred,
+        detected_class=v_class,
+    )
+
+    if safety_check["triggered"] and safety_check["override_verdict"]:
+        decision = safety_check["override_verdict"]
+
     return {
         "decision": decision,
         "mssi_score": fusion_score,
         "confidence": confidence,
         "need_retake": False,
         "modality_state": modality_state,
+        "safety_rules": safety_check,
         "vision_result": vision_res,
         "sensor_result": sensor_res,
+        "gradcam_heatmap_b64": vision_res.get("gradcam_heatmap_b64") if vision_res else None,
+        "hotspot_bbox": vision_res.get("hotspot_bbox") if vision_res else None,
+        "hotspot_description": vision_res.get("hotspot_description") if vision_res else None,
         "total_latency_ms": total_latency_ms,
         "disclaimer": "Rapid AI Screening Tool — Not a laboratory diagnostic device.",
     }
+
+
+@router.get("/warmup")
+async def warmup_models():
+    """
+    Explicitly pre-activates and warms up the MobileNetV3 ONNX model,
+    PyTorch Grad-CAM network, and Random Forest sensor model on startup.
+    Ensures zero cold-start latency when a farmer captures a silage photo.
+    """
+    start = time.perf_counter()
+    session = _get_onnx_session()
+    pytorch_model = _get_pytorch_model()
+    forest = _get_sensor_forest()
+
+    # Fast warm-up pass with dummy tensor
+    try:
+        dummy_img = Image.new("RGB", (224, 224), color=(128, 140, 60))
+        gradcam_b64, bbox, desc = _generate_gradcam(dummy_img, target_class=2)
+        gradcam_ready = bool(gradcam_b64)
+    except Exception as exc:
+        logger.warning(f"Grad-CAM warmup notice: {exc}")
+        gradcam_ready = False
+
+    latency_ms = round((time.perf_counter() - start) * 1000, 2)
+    return {
+        "status": "READY",
+        "onnx_ready": session is not None,
+        "pytorch_gradcam_ready": gradcam_ready,
+        "sensor_rf_ready": len(forest.get("trees", [])) > 0,
+        "warmup_latency_ms": latency_ms,
+        "message": "MobileNetV3 and Grad-CAM activation pipelines are fully initialized.",
+    }
+

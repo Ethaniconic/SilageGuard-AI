@@ -1,62 +1,101 @@
 {
-  "model_name": "SILAGEGUARD-AI-MobileNetV3-Small-v3.0",
-  "architecture": "MobileNetV3-Small",
-  "num_classes": 3,
+  "model_name": "SILAGEGUARD-AI-MobileNetV3-5Class",
+  "architecture": "MobileNetV3-Large",
+  "num_classes": 5,
   "classes": [
-    "SAFE",
-    "CAUTION",
-    "UNSAFE"
+    "Abnormal_appearance",
+    "Foreign_object",
+    "Healthy",
+    "Mould",
+    "Spoilage"
   ],
-  "test_samples": 33,
+  "test_samples": 240,
   "unrounded_metrics": {
-    "accuracy": 0.9091,
-    "macro_f1": 0.9077,
-    "macro_recall": 0.925,
-    "macro_precision": 0.9062,
-    "macro_specificity": 0.95,
-    "expected_calibration_error": 0.0872,
-    "brier_score": 0.1226,
-    "roc_auc_macro": NaN
+    "accuracy": 0.9792,
+    "macro_f1": 0.9745,
+    "macro_recall": 0.9717,
+    "macro_precision": 0.9776,
+    "macro_specificity": 0.9945,
+    "expected_calibration_error": 0.0478,
+    "brier_score": 0.0344,
+    "roc_auc_macro": 0.9991
   },
   "per_class_metrics": {
-    "SAFE": {
-      "precision": 0.8125,
+    "Abnormal_appearance": {
+      "precision": 0.9836,
       "recall": 1.0,
-      "specificity": 0.85
+      "f1": 0.9917,
+      "specificity": 0.9944
     },
-    "CAUTION": {
-      "precision": 0.0,
-      "recall": 0.0,
-      "specificity": 1.0
+    "Foreign_object": {
+      "precision": 0.95,
+      "recall": 0.95,
+      "f1": 0.95,
+      "specificity": 0.9955
     },
-    "UNSAFE": {
+    "Healthy": {
+      "precision": 0.9672,
+      "recall": 0.9833,
+      "f1": 0.9752,
+      "specificity": 0.9889
+    },
+    "Mould": {
       "precision": 1.0,
-      "recall": 0.85,
+      "recall": 0.95,
+      "f1": 0.9744,
       "specificity": 1.0
+    },
+    "Spoilage": {
+      "precision": 0.9873,
+      "recall": 0.975,
+      "f1": 0.9811,
+      "specificity": 0.9938
     }
   },
   "confusion_matrix": {
     "matrix": [
       [
-        13,
+        60,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        19,
+        1,
         0,
         0
       ],
       [
         0,
         0,
+        59,
+        0,
+        1
+      ],
+      [
+        0,
+        1,
+        0,
+        19,
         0
       ],
       [
-        3,
+        1,
         0,
-        17
+        1,
+        0,
+        78
       ]
     ],
     "labels": [
-      "SAFE",
-      "CAUTION",
-      "UNSAFE"
+      "Abnormal_appearance",
+      "Foreign_object",
+      "Healthy",
+      "Mould",
+      "Spoilage"
     ]
   },
   "zero_synthetic_data_guarantee": true
