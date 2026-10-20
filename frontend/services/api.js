@@ -13,8 +13,11 @@ let cachedLiveBaseUrl = null;
 export const getCandidateUrls = () => {
   const list = [];
 
-  // In Web browsers, localhost or current hostname is the most reliable endpoint
+  // In Web browsers, current origin (reverse proxy) or port 8000 is used
   if (Platform.OS === "web") {
+    if (typeof window !== "undefined" && window.location?.origin) {
+      list.push(window.location.origin);
+    }
     if (typeof window !== "undefined" && window.location?.hostname) {
       list.push(`http://${window.location.hostname}:8000`);
     }
