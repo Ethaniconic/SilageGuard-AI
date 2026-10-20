@@ -77,21 +77,25 @@ def _get_sensor_forest() -> dict:
 
 @lru_cache(maxsize=1)
 def _get_pytorch_model():
-    import sys
-    import torch
-    vision_dir = str(_models_dir() / "vision")
-    if vision_dir not in sys.path:
-        sys.path.insert(0, vision_dir)
-    from train_mobilenetv3 import MobileNetV3Silage
+    try:
+        import sys
+        import torch
+        vision_dir = str(_models_dir() / "vision")
+        if vision_dir not in sys.path:
+            sys.path.insert(0, vision_dir)
+        from train_mobilenetv3 import MobileNetV3Silage
 
-    device = torch.device("cpu")
-    model = MobileNetV3Silage(num_classes=5, pretrained=False, architecture="large").to(device)
-    pth_path = _models_dir() / "vision" / "mobilenetv3_silage.pth"
-    if pth_path.exists():
-        sd = torch.load(str(pth_path), map_location=device)
-        model.load_state_dict(sd)
-    model.eval()
-    return model
+        device = torch.device("cpu")
+        model = MobileNetV3Silage(num_classes=5, pretrained=False, architecture="large").to(device)
+        pth_path = _models_dir() / "vision" / "mobilenetv3_silage.pth"
+        if pth_path.exists():
+            sd = torch.load(str(pth_path), map_location=device)
+            model.load_state_dict(sd)
+        model.eval()
+        return model
+    except Exception as exc:
+        logger.warning(f"PyTorch Grad-CAM model unavailable: {exc}")
+        return None
 
 
 def _generate_gradcam(pil_img: Image.Image, target_class: int = 0) -> tuple[str | None, dict | None, str]:
@@ -664,13 +668,15 @@ async def warmup_models():
     forest = _get_sensor_forest()
 
     # Fast warm-up pass with dummy tensor
-    try:
-        dummy_img = Image.new("RGB", (224, 224), color=(128, 140, 60))
-        gradcam_b64, bbox, desc = _generate_gradcam(dummy_img, target_class=2)
-        gradcam_ready = bool(gradcam_b64)
-    except Exception as exc:
-        logger.warning(f"Grad-CAM warmup notice: {exc}")
-        gradcam_ready = False
+    gradcam_ready = False
+    if pytorch_model is not None:
+        try:
+            dummy_img = Image.new("RGB", (224, 224), color=(128, 140, 60))
+            gradcam_b64, bbox, desc = _generate_gradcam(dummy_img, target_class=2)
+            gradcam_ready = bool(gradcam_b64)
+        except Exception as exc:
+            logger.warning(f"Grad-CAM warmup notice: {exc}")
+            gradcam_ready = False
 
     latency_ms = round((time.perf_counter() - start) * 1000, 2)
     return {
@@ -679,6 +685,6 @@ async def warmup_models():
         "pytorch_gradcam_ready": gradcam_ready,
         "sensor_rf_ready": len(forest.get("trees", [])) > 0,
         "warmup_latency_ms": latency_ms,
-        "message": "MobileNetV3 and Grad-CAM activation pipelines are fully initialized.",
+        "message": "MobileNetV3 ONNX and activation pipelines are initialized.",
     }
 
