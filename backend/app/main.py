@@ -153,7 +153,7 @@ if has_prometheus:
     Instrumentator().instrument(app).expose(app)
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     return {"message": "SilageGuard AI backend", "version": "3.0.0", "status": "ONLINE"}
 
@@ -169,6 +169,6 @@ app.include_router(inference.router, prefix="/api/v1/inference")
 app.include_router(health.router, prefix="/api/v1")
 
 # Route aliases for root health and contract compatibility
-app.add_api_route("/health", health.health, methods=["GET"], operation_id="root_health")
-app.add_api_route("/ready", health.ready, methods=["GET"], operation_id="root_ready")
+app.add_api_route("/health", health.health, methods=["GET", "HEAD"], operation_id="root_health")
+app.add_api_route("/ready", health.ready, methods=["GET", "HEAD"], operation_id="root_ready")
 

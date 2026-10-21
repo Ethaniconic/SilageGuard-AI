@@ -1,0 +1,32 @@
+[
+  {
+    "sample_type": "Correct High-Confidence NO_MOLD",
+    "image_description": "Clean compacted chopped whole-plant maize silage bunker clamp face",
+    "true_label": "NO_MOLD",
+    "predicted_label": "NO_MOLD",
+    "confidence": 1.0,
+    "mould_probability": 0.0,
+    "status": "CORRECT",
+    "why_this_result": "Visual screening detected uniform chop structure and characteristic olive/amber silage coloration with absence of fungal hyphae."
+  },
+  {
+    "sample_type": "Correct High-Confidence VISIBLE_MOLD",
+    "image_description": "Silage bale surface showing overt white/grey filamentous mold colonies",
+    "true_label": "VISIBLE_MOLD",
+    "predicted_label": "VISIBLE_MOLD",
+    "confidence": 1.0,
+    "mould_probability": 1.0,
+    "status": "CORRECT",
+    "why_this_result": "Visual model detected surface texture patterns characteristic of aerobic mycelial expansion and fungal sporulation."
+  },
+  {
+    "sample_type": "Representative Ambiguous / Low-Confidence Case",
+    "image_description": "Peripheral bunker edge with darkened silage and surface chaff variation",
+    "true_label": "VISIBLE_MOLD",
+    "predicted_label": "VISIBLE_MOLD",
+    "confidence": 0.526,
+    "mould_probability": 0.526,
+    "status": "BORDERLINE / SCREENING UNCERTAINTY",
+    "why_this_result": "Visual texture features are ambiguous between non-harmful Maillard caramelization and early fungal growth. Sensor verification recommended."
+  }
+]

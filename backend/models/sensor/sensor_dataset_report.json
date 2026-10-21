@@ -1,0 +1,38 @@
+{
+  "dataset_name": "silage_sensor_v2.csv",
+  "total_records": 2400,
+  "pits_represented": 60,
+  "crops": [
+    "Corn Silage",
+    "Hybrid Napier Grass",
+    "Sorghum (Jowar)",
+    "Lucerne Mix"
+  ],
+  "class_counts": {
+    "Unsafe": 1091,
+    "Safe": 876,
+    "Caution": 433
+  },
+  "feature_ranges": {
+    "ph": {
+      "min": 3.47,
+      "max": 7.11,
+      "mean": 4.99
+    },
+    "moisture": {
+      "min": 43.2,
+      "max": 86.4,
+      "mean": 63.3
+    },
+    "temperature": {
+      "min": 21.8,
+      "max": 47.9,
+      "mean": 33.53
+    },
+    "ambient": {
+      "min": 20.5,
+      "max": 33.4,
+      "mean": 27.07
+    }
+  }
+}

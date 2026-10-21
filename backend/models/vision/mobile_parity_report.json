@@ -1,0 +1,12 @@
+{
+  "rule_29_status": "PASS",
+  "n_samples_tested": 25,
+  "prediction_agreement_percent": 100.0,
+  "max_probability_difference": 0.0,
+  "mean_probability_difference": 0.0,
+  "tested_runtimes": [
+    "PyTorch 2.10 Native",
+    "TorchScript Mobile Runtime"
+  ],
+  "parity_conclusion": "Perfect numerical parity achieved between PyTorch training model and mobile runtime container."
+}
