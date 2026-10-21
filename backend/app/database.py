@@ -34,9 +34,15 @@ class Base(DeclarativeBase):
     pass
 
 
-if settings.DATABASE_URL.startswith("sqlite"):
+db_url = settings.DATABASE_URL
+if db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+elif db_url.startswith("sqlite://") and not db_url.startswith("sqlite+aiosqlite://"):
+    db_url = db_url.replace("sqlite://", "sqlite+aiosqlite://", 1)
+
+if db_url.startswith("sqlite"):
     engine = create_async_engine(
-        settings.DATABASE_URL,
+        db_url,
         echo=False,
         pool_pre_ping=True,
         poolclass=StaticPool,
@@ -44,7 +50,7 @@ if settings.DATABASE_URL.startswith("sqlite"):
     )
 else:
     engine = create_async_engine(
-        settings.DATABASE_URL,
+        db_url,
         echo=False,
         pool_size=10,
         max_overflow=20,
