@@ -6,7 +6,9 @@ from sqlalchemy import case, func, select
 
 from app.database import AsyncSessionLocal
 from app.models.batch import Batch
+from app.models.digital_twin import BatchObservation
 from app.models.user import User
+from app.services.digital_twin_engine import derive_digital_twin
 
 
 class AnalyticsService:
@@ -89,4 +91,37 @@ class AnalyticsService:
                 "avg_ph": avg_ph,
                 "avg_moisture": avg_moisture,
             }
+
+    async def get_batch_digital_twin(self, client_batch_id: str, user_id: str | None = None):
+        async with AsyncSessionLocal() as session:
+            batch_query = select(Batch).where(Batch.client_batch_id == client_batch_id)
+            if user_id:
+                try:
+                    user_uuid = UUID(user_id)
+                    batch_query = batch_query.where(Batch.user_id == user_uuid)
+                except ValueError:
+                    pass
+            batch_res = await session.execute(batch_query)
+            batch = batch_res.scalar_one_or_none()
+
+            if not batch:
+                return derive_digital_twin([], {"client_batch_id": client_batch_id})
+
+            obs_query = (
+                select(BatchObservation)
+                .where(BatchObservation.batch_id == batch.id)
+                .order_by(BatchObservation.observed_at.asc())
+            )
+            obs_res = await session.execute(obs_query)
+            observations = obs_res.scalars().all()
+
+            if not observations:
+                observations = [batch]
+
+            batch_meta = {
+                "client_batch_id": batch.client_batch_id,
+                "crop_type": "Corn Silage",
+                "storage_type": batch.storage_type or "Bunker Pit",
+            }
+            return derive_digital_twin(observations, batch_meta)
 

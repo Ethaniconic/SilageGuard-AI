@@ -16,6 +16,7 @@ export function HomeScreen({ onNavigate }) {
   const [recentRecords, setRecentRecords] = useState([]);
   const [pendingSync, setPendingSync] = useState(0);
   const [isCloudOnline, setIsCloudOnline] = useState(false);
+  const [digitalTwin, setDigitalTwin] = useState(null);
   const [batchTrend, setBatchTrend] = useState({
     trendLabel: "Baseline established",
     warning: null,
@@ -37,16 +38,19 @@ export function HomeScreen({ onNavigate }) {
       setRecentRecords(records || []);
       if (records && records.length > 0) {
         const targetBatch = records[0].client_batch_id || records[0].id || records[0].batchId;
-        localDb.detectDeteriorationTrend(targetBatch).then((trendRes) => {
-          if (trendRes.hasTrend) {
+        localDb.getDigitalTwin(targetBatch).then((twin) => {
+          setDigitalTwin(twin);
+          if (twin.observationCount >= 2) {
             setBatchTrend({
               trendLabel:
-                trendRes.pattern === "EARLY_DETERIORATION"
+                twin.trendDirection === "DETERIORATING"
                   ? "Deteriorating"
-                  : trendRes.pattern === "EARLY_WATCH"
+                  : twin.trendDirection === "WATCH_SHIFT"
                   ? "Watch Shift"
+                  : twin.trendDirection === "IMPROVING"
+                  ? "Improving"
                   : "Stable",
-              warning: trendRes.pattern !== "STABLE" ? trendRes.message : null,
+              warning: twin.warningLevel !== "STABLE" && twin.warningReasons?.length > 0 ? twin.warningReasons[0] : null,
             });
           } else {
             setBatchTrend({
@@ -131,10 +135,13 @@ export function HomeScreen({ onNavigate }) {
               batchId={latest.client_batch_id || latest.id || latest.batchId}
               cropType={latest.crop_type || "Corn Silage"}
               healthState={latest.decision || latest.verdict || "GOOD"}
-              lastChecked={latest.created_at ? new Date(latest.created_at).toLocaleTimeString() : "Recently"}
+              lastChecked={latest.created_at ? new Date(latest.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Recently"}
               trend={batchTrend.trendLabel}
-              observationsCount={recentRecords.length}
+              observationsCount={digitalTwin?.observationCount || recentRecords.length}
               warningMessage={batchTrend.warning}
+              mssiScore={latest.mssi_score || latest.mssiScore || 85}
+              twin={digitalTwin}
+              onPress={() => onNavigate("RECORD_DETAIL", latest)}
             />
           ) : (
             <View style={[styles.emptyCard, { backgroundColor: theme.surface, borderColor: theme.border, borderRadius: radius.large, marginHorizontal: spacing.lg, padding: spacing.lg, marginTop: 8 }]}>

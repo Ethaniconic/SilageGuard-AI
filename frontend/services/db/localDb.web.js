@@ -2,6 +2,7 @@
 // Uses browser window.localStorage for real observation persistence, Digital Twin, and sync queue
 
 import { syncBatches } from "../api";
+import { deriveDigitalTwin } from "../ai/digitalTwinEngine";
 
 class DatabaseWebService {
   /**
@@ -140,97 +141,52 @@ class DatabaseWebService {
   }
 
   /**
-   * Detects simple early deterioration trends across multiple historical observations (Digital Twin)
+   * Derives complete longitudinal Digital Twin for a given batch from local observations (Web)
+   */
+  async getDigitalTwin(batchId = null) {
+    const observations = await this.getObservations(batchId);
+    let batchMeta = {};
+    if (batchId) {
+      try {
+        const batches = await this.getBatches();
+        batchMeta = (batches || []).find((b) => b.client_batch_id === batchId || b.id === batchId) || {};
+      } catch (_) {}
+    }
+    return deriveDigitalTwin(observations, batchMeta);
+  }
+
+  /**
+   * Detects longitudinal deterioration trends across multiple historical observations (Digital Twin)
    */
   async detectDeteriorationTrend(batchId = null) {
-    const observations = await this.getObservations(batchId);
-    if (!observations || observations.length < 2) {
-      return {
-        hasTrend: false,
-        pattern: "INSUFFICIENT_HISTORY",
-        message: "Not enough history to assess deterioration trend. Baseline established.",
-        triggers: [],
-        evidence: [],
-        severity: "NORMAL",
-      };
-    }
-
-    const sorted = [...observations].sort(
-      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    );
-    const latest = sorted[sorted.length - 1];
-    const prev = sorted[sorted.length - 2];
-
-    const triggers = [];
-    const evidence = [];
-
-    if (latest.ph != null && prev.ph != null) {
-      const phDiff = Number(latest.ph) - Number(prev.ph);
-      if (phDiff >= 0.20) {
-        triggers.push("pH increasing");
-        evidence.push(`pH rose by +${phDiff.toFixed(2)} (from ${Number(prev.ph).toFixed(2)} to ${Number(latest.ph).toFixed(2)})`);
-      }
-    }
-
-    if (latest.temperature != null && prev.temperature != null) {
-      const tempDiff = Number(latest.temperature) - Number(prev.temperature);
-      if (tempDiff >= 1.5) {
-        triggers.push("temperature increasing");
-        evidence.push(`Core temperature rose by +${tempDiff.toFixed(1)}°C (from ${Number(prev.temperature).toFixed(1)}°C to ${Number(latest.temperature).toFixed(1)}°C)`);
-      }
-    }
-
-    const latestScore = latest.mssi_score ?? latest.mssiScore;
-    const prevScore = prev.mssi_score ?? prev.mssiScore;
-    if (latestScore != null && prevScore != null) {
-      const scoreDiff = Number(prevScore) - Number(latestScore);
-      if (scoreDiff >= 8) {
-        triggers.push("safety score decreasing");
-        evidence.push(`Safety index dropped by -${scoreDiff} points (from ${prevScore} to ${latestScore})`);
-      }
-    }
-
-    const rank = { GOOD: 0, SAFE: 0, WATCH: 1, CAUTION: 1, "HIGH RISK": 2, UNSAFE: 2 };
-    const latestRank = rank[latest.decision || latest.verdict] || 0;
-    const prevRank = rank[prev.decision || prev.verdict] || 0;
-    if (latestRank > prevRank) {
-      triggers.push("visual condition worsening");
-      evidence.push(`Screening verdict shifted from ${prev.decision || prev.verdict} to ${latest.decision || latest.verdict}`);
-    }
-
-    if (triggers.length >= 2) {
-      return {
-        hasTrend: true,
-        pattern: "EARLY_DETERIORATION",
-        message: "Early deterioration pattern detected across repeated checks.",
-        triggers,
-        evidence,
-        severity: latestRank >= 2 ? "HIGH RISK" : "CAUTION",
-        latest,
-        previous: prev,
-      };
-    } else if (triggers.length === 1) {
-      return {
-        hasTrend: true,
-        pattern: "EARLY_WATCH",
-        message: `Watch trend: ${triggers[0]}.`,
-        triggers,
-        evidence,
-        severity: "CAUTION",
-        latest,
-        previous: prev,
-      };
-    }
-
+    const twin = await this.getDigitalTwin(batchId);
     return {
-      hasTrend: true,
-      pattern: "STABLE",
-      message: "Fermentation parameters are stable across repeated checks.",
-      triggers: [],
-      evidence: ["No adverse thermal, chemical, or visual trend detected."],
-      severity: "NORMAL",
-      latest,
-      previous: prev,
+      hasTrend: twin.observationCount >= 2,
+      pattern:
+        twin.warningLevel === "EARLY_DETERIORATION"
+          ? "EARLY_DETERIORATION"
+          : twin.warningLevel === "WATCH"
+          ? "EARLY_WATCH"
+          : twin.warningLevel === "HIGH_RISK"
+          ? "EARLY_DETERIORATION"
+          : twin.observationCount === 1
+          ? "INSUFFICIENT_HISTORY"
+          : "STABLE",
+      message:
+        twin.warningReasons && twin.warningReasons.length > 0
+          ? twin.warningReasons[0]
+          : "Fermentation parameters are stable across checks.",
+      triggers: twin.warningReasons || [],
+      evidence: twin.warningReasons || [],
+      severity:
+        twin.warningLevel === "HIGH_RISK"
+          ? "HIGH RISK"
+          : twin.warningLevel === "EARLY_DETERIORATION" || twin.warningLevel === "WATCH"
+          ? "CAUTION"
+          : "NORMAL",
+      latest: twin.latest,
+      previous: twin.previous,
+      twin,
     };
   }
 

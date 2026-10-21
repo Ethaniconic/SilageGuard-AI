@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
@@ -82,11 +82,13 @@ class SyncService:
                     obs = BatchObservation(
                         id=uuid4(),
                         batch_id=target_batch_id,
+                        observation_number=1,
                         observed_at=scanned_dt,
                         ph=item.get("ph"),
                         moisture_pct=item.get("moisture_pct"),
                         temperature_c=item.get("temperature_c"),
                         ambient_temp_c=item.get("ambient_temp_c"),
+                        delta_temp_c=(float(item.get("temperature_c")) - float(item.get("ambient_temp_c", 25.0))) if (item.get("temperature_c") is not None and item.get("ambient_temp_c") is not None) else None,
                         decision=item.get("fused_decision") or "SAFE",
                         mssi_score=int(float(item.get("fused_score") or 0.85) * 100),
                     )
@@ -106,6 +108,33 @@ class SyncService:
                     if item.get("advisory_text") is not None: existing.advisory_text = item.get("advisory_text")
                     if item.get("image_urls") is not None: existing.image_urls = item.get("image_urls")
                     skipped += 1
+
+                    # Check if this observation timestamp is new for the existing batch
+                    obs_check = await session.execute(
+                        select(BatchObservation).where(
+                            BatchObservation.batch_id == target_batch_id,
+                            BatchObservation.observed_at == scanned_dt,
+                        )
+                    )
+                    if not obs_check.scalar_one_or_none():
+                        cnt_res = await session.execute(
+                            select(func.count(BatchObservation.id)).where(BatchObservation.batch_id == target_batch_id)
+                        )
+                        next_num = (cnt_res.scalar() or 0) + 1
+                        subsequent_obs = BatchObservation(
+                            id=uuid4(),
+                            batch_id=target_batch_id,
+                            observation_number=next_num,
+                            observed_at=scanned_dt,
+                            ph=item.get("ph"),
+                            moisture_pct=item.get("moisture_pct"),
+                            temperature_c=item.get("temperature_c"),
+                            ambient_temp_c=item.get("ambient_temp_c"),
+                            delta_temp_c=(float(item.get("temperature_c")) - float(item.get("ambient_temp_c", 25.0))) if (item.get("temperature_c") is not None and item.get("ambient_temp_c") is not None) else None,
+                            decision=item.get("fused_decision") or "SAFE",
+                            mssi_score=int(float(item.get("fused_score") or 0.85) * 100),
+                        )
+                        session.add(subsequent_obs)
 
             await session.commit()
 

@@ -93,3 +93,8 @@ async def heatmap(user: dict = Depends(get_current_user)):
             })
         return {"heatmap": points, "total_points": len(points), "district": "all"}
 
+
+@router.get("/twin/{batch_id}")
+async def get_digital_twin(batch_id: str, user: dict = Depends(get_current_user)):
+    return await service.get_batch_digital_twin(client_batch_id=batch_id, user_id=user["id"])
+

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useTheme } from "../theme";
 import { useTranslation } from "../i18n";
 import { StatusBadge } from "./StatusBadge";
@@ -10,8 +10,10 @@ export function HealthStatusCard({
   healthState = "GOOD",
   lastChecked = "Today, 10:30 AM",
   trend = "Stable",
-  observationsCount = 4,
+  observationsCount = 1,
   warningMessage = null,
+  mssiScore = 85,
+  twin = null,
   onPress,
 }) {
   const { theme, radius, spacing, typography } = useTheme();
@@ -34,11 +36,29 @@ export function HealthStatusCard({
     if (trendStr === "Stable") return t("trendStable");
     if (trendStr === "Deteriorating") return t("trendDeteriorating");
     if (trendStr === "Watch Shift") return t("trendWatchShift");
+    if (trendStr === "Improving") return t("trendImproving");
     return trendStr;
   };
 
+  const effectiveMssi = twin?.latest?.mssiScore ?? mssiScore ?? 85;
+  const effectiveState = twin?.warningLevel === "HIGH_RISK" ? "HIGH RISK" : twin?.warningLevel === "EARLY_DETERIORATION" || twin?.warningLevel === "WATCH" ? "WATCH" : healthState;
+  const effectiveObsCount = twin?.observationCount ?? observationsCount;
+  const effectiveWarning = twin?.warningLevel !== "STABLE" && twin?.warningReasons?.length > 0 ? twin.warningReasons[0] : warningMessage;
+  const recommendedAction = twin?.recommendedAction;
+
+  const dMssi = twin?.changes?.fromPrevious?.mssi ?? twin?.changes?.fromBaseline?.mssi ?? null;
+  const dPh = twin?.changes?.fromPrevious?.ph ?? twin?.changes?.fromBaseline?.ph ?? null;
+  const dTemp = twin?.changes?.fromPrevious?.temperature ?? twin?.changes?.fromBaseline?.temperature ?? null;
+
+  const mssiColor = effectiveMssi >= 80 ? theme.good : effectiveMssi >= 65 ? theme.watch : theme.highRisk;
+  const mssiBg = effectiveMssi >= 80 ? theme.goodBg : effectiveMssi >= 65 ? theme.watchBg : theme.highRiskBg;
+
+  const CardWrapper = onPress ? TouchableOpacity : View;
+
   return (
-    <View
+    <CardWrapper
+      activeOpacity={onPress ? 0.85 : 1}
+      onPress={onPress}
       style={[
         styles.card,
         {
@@ -51,10 +71,11 @@ export function HealthStatusCard({
         },
       ]}
     >
+      {/* HEADER ROW */}
       <View style={styles.topRow}>
         <View style={{ flex: 1, paddingRight: spacing.sm }}>
           <Text style={[typography.caption, { color: theme.textMuted, textTransform: "uppercase", letterSpacing: 0.5 }]}>
-            {t("activeSilageBatch")}
+            {t("activeSilageBatch")} • {t("digitalTwinState")}
           </Text>
           <Text style={[typography.sectionTitle, { color: theme.textPrimary, marginTop: 4, marginBottom: 2 }]}>
             {batchId}
@@ -63,32 +84,95 @@ export function HealthStatusCard({
             {getTranslatedCrop(cropType)}
           </Text>
         </View>
-        <StatusBadge status={healthState} size="large" />
+
+        <View style={{ alignItems: "flex-end" }}>
+          <StatusBadge status={effectiveState} size="large" />
+          <View style={[styles.mssiPill, { backgroundColor: mssiBg, borderColor: mssiColor, marginTop: 6 }]}>
+            <Text style={[typography.caption, { color: mssiColor, fontWeight: "800", fontSize: 11 }]}>
+              MSSI {effectiveMssi}
+            </Text>
+          </View>
+        </View>
       </View>
 
-      {warningMessage ? (
+      {/* LONGITUDINAL TREND SIGNALS (When 2+ observations exist) */}
+      {effectiveObsCount >= 2 && (dMssi !== null || dPh !== null || dTemp !== null) && (
+        <View style={[styles.trendPillsRow, { backgroundColor: theme.surfaceSoft, borderColor: theme.borderSubtle, borderRadius: radius.medium, marginTop: spacing.md, padding: spacing.sm }]}>
+          <Text style={[typography.caption, { color: theme.textMuted, marginRight: 6, fontWeight: "700" }]}>
+            {t("trend")}:
+          </Text>
+          {dMssi !== null && (
+            <View style={styles.miniPill}>
+              <Text style={[styles.miniPillText, { color: dMssi < 0 ? theme.highRisk : theme.good }]}>
+                {dMssi > 0 ? "↑" : dMssi < 0 ? "↓" : "~"} MSSI {dMssi > 0 ? `+${dMssi}` : dMssi}
+              </Text>
+            </View>
+          )}
+          {dPh !== null && (
+            <View style={styles.miniPill}>
+              <Text style={[styles.miniPillText, { color: dPh > 0 ? theme.watch : theme.good }]}>
+                {dPh > 0 ? "↑" : dPh < 0 ? "↓" : "~"} pH {dPh > 0 ? `+${dPh.toFixed(2)}` : dPh.toFixed(2)}
+              </Text>
+            </View>
+          )}
+          {dTemp !== null && (
+            <View style={styles.miniPill}>
+              <Text style={[styles.miniPillText, { color: dTemp > 0 ? theme.highRisk : theme.good }]}>
+                {dTemp > 0 ? "↑" : dTemp < 0 ? "↓" : "~"} {dTemp > 0 ? `+${dTemp.toFixed(1)}` : dTemp.toFixed(1)}°C
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* TWIN INSIGHT / WARNING BOX */}
+      {effectiveWarning ? (
         <View
           style={[
             styles.warningBox,
             {
-              backgroundColor: theme.watchBg,
-              borderColor: theme.watchBorder,
+              backgroundColor: twin?.warningLevel === "HIGH_RISK" ? theme.highRiskBg : theme.watchBg,
+              borderColor: twin?.warningLevel === "HIGH_RISK" ? theme.highRiskBorder : theme.watchBorder,
               borderRadius: radius.medium,
               marginTop: spacing.md,
               padding: spacing.md,
             },
           ]}
         >
-          <Text style={[typography.bodyBold, { color: theme.watch }]}>
-            ⚠ {t("earlyWarning")}
+          <Text style={[typography.bodyBold, { color: twin?.warningLevel === "HIGH_RISK" ? theme.highRisk : theme.watch }]}>
+            ⚠ {t("twinInsight")}
           </Text>
           <Text style={[typography.secondary, { color: theme.textPrimary, marginTop: 4 }]}>
-            {warningMessage}
+            {effectiveWarning}
           </Text>
         </View>
       ) : null}
 
-      <View style={[styles.statsRow, { borderTopColor: theme.borderSubtle, marginTop: spacing.md + 4, paddingTop: spacing.md }]}>
+      {/* RECOMMENDED FARMER ACTION */}
+      {recommendedAction ? (
+        <View
+          style={[
+            styles.actionBox,
+            {
+              backgroundColor: theme.goodBg,
+              borderColor: theme.goodBorder,
+              borderRadius: radius.medium,
+              marginTop: spacing.sm,
+              padding: spacing.md,
+            },
+          ]}
+        >
+          <Text style={[typography.caption, { color: theme.good, fontWeight: "800", textTransform: "uppercase" }]}>
+            💡 {t("recommendedAction")}
+          </Text>
+          <Text style={[typography.secondary, { color: theme.textPrimary, marginTop: 3, fontSize: 13 }]}>
+            {recommendedAction}
+          </Text>
+        </View>
+      ) : null}
+
+      {/* BOTTOM STATS ROW */}
+      <View style={[styles.statsRow, { borderTopColor: theme.borderSubtle, marginTop: spacing.md, paddingTop: spacing.md }]}>
         <View style={styles.statItem}>
           <Text style={[typography.caption, { color: theme.textMuted }]}>{t("lastChecked")}</Text>
           <Text style={[typography.bodyBold, { color: theme.textPrimary, marginTop: 4 }]}>
@@ -104,11 +188,11 @@ export function HealthStatusCard({
         <View style={styles.statItem}>
           <Text style={[typography.caption, { color: theme.textMuted }]}>{t("observations")}</Text>
           <Text style={[typography.bodyBold, { color: theme.textPrimary, marginTop: 4 }]}>
-            {observationsCount}
+            {effectiveObsCount}
           </Text>
         </View>
       </View>
-    </View>
+    </CardWrapper>
   );
 }
 
@@ -126,7 +210,33 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  mssiPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  trendPillsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    borderWidth: 1,
+    gap: 6,
+  },
+  miniPill: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: "rgba(0,0,0,0.04)",
+  },
+  miniPillText: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
   warningBox: {
+    borderWidth: 1,
+  },
+  actionBox: {
     borderWidth: 1,
   },
   statsRow: {

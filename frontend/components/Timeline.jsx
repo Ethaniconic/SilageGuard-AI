@@ -55,9 +55,18 @@ export function Timeline({ events = [] }) {
               ]}
             >
               <View style={styles.headerRow}>
-                <Text style={[typography.bodyBold, { color: theme.textPrimary }]}>
-                  {event.timeLabel || event.observed_at || t("recentRecords")}
-                </Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flex: 1, flexWrap: "wrap" }}>
+                  {event.isBaseline ? (
+                    <View style={[styles.baselineBadge, { backgroundColor: theme.primarySoft, borderColor: theme.goodBorder }]}>
+                      <Text style={[typography.caption, { color: theme.primary, fontWeight: "800", fontSize: 10 }]}>
+                        📍 BASELINE
+                      </Text>
+                    </View>
+                  ) : null}
+                  <Text style={[typography.bodyBold, { color: theme.textPrimary }]}>
+                    {event.date ? `${event.date} ${event.time || ""}` : event.timeLabel || event.observed_at || t("recentRecords")}
+                  </Text>
+                </View>
                 <StatusBadge status={event.decision || "GOOD"} size="small" />
               </View>
 
@@ -68,6 +77,11 @@ export function Timeline({ events = [] }) {
               ) : null}
 
               <View style={styles.readingsRow}>
+                {event.mssiScore !== undefined && event.mssiScore !== null ? (
+                  <Text style={[typography.caption, { color: theme.primary, fontWeight: "700", marginRight: 12 }]}>
+                    MSSI: {event.mssiScore}
+                  </Text>
+                ) : null}
                 {event.ph ? (
                   <Text style={[typography.caption, { color: theme.textMuted, marginRight: 12 }]}>
                     pH: {event.ph}
@@ -127,5 +141,11 @@ const styles = StyleSheet.create({
   readingsRow: {
     flexDirection: "row",
     marginTop: 8,
+  },
+  baselineBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+    borderWidth: 1,
   },
 });
