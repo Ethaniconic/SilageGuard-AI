@@ -1,16 +1,23 @@
-// SILAGEGUARD AI — Native Mobile & Web BLE Hardware Manager
-// Exclusively connects to real physical ESP32 sensor probe modules.
-// Uses react-native-ble-plx for 100% offline Native Android/iOS Bluetooth,
-// and gracefully falls back to Web Bluetooth API when running in desktop/mobile browsers.
+// SILAGEGUARD AI — Native Mobile & Hardware Probe Manager
+// Connects to real physical ESP32 sensor probe modules via:
+// 1. Native Mobile BLE (via react-native-ble-plx in standalone APK builds)
+// 2. Direct Offline Wi-Fi SoftAP (via 192.168.4.1/telemetry in Expo Go and all mobile devices)
+// 3. Web Bluetooth GATT API (when running in desktop/mobile Chrome & Edge)
+// ZERO simulated data. ZERO artificial mock telemetry loops.
 
-import { Platform } from "react-native";
+import { Platform, NativeModules } from "react-native";
 import { BLE_CONFIG } from "./bleConstants";
 import { TelemetryParser } from "./bleParser";
 import { requestNativeBlePermissions } from "./nativeBlePermissions";
 
-// Guarded import of react-native-ble-plx for native platforms
+// Guarded check: Only load react-native-ble-plx if the native C++/Java driver exists in host binary
+const isNativeBleAvailable =
+  Platform.OS !== "web" &&
+  typeof NativeModules !== "undefined" &&
+  Boolean(NativeModules.BleClientManager);
+
 let NativeBleManager = null;
-if (Platform.OS !== "web") {
+if (isNativeBleAvailable) {
   try {
     NativeBleManager = require("react-native-ble-plx").BleManager;
   } catch (err) {
@@ -71,19 +78,28 @@ class BleHardwareManager {
     this.isScanning = false;
     this.device = null;
     this.characteristic = null;
+    this.connectionType = null; // "BLE_NATIVE" | "BLE_WEB" | "WIFI_SOFTAP"
     this.listeners = new Set();
     this.staleChecker = null;
     this.nativeManager = null;
     this.subscription = null;
     this.scanTimeout = null;
+    this.wifiPollInterval = null;
 
-    if (NativeBleManager && Platform.OS !== "web") {
+    if (isNativeBleAvailable && NativeBleManager) {
       try {
         this.nativeManager = new NativeBleManager();
       } catch (e) {
-        console.warn("[BLE] Could not initialize native BleManager instance:", e.message);
+        console.warn("[BLE] Notice initializing native BleManager:", e.message);
       }
     }
+  }
+
+  /**
+   * Returns true if native Android/iOS BLE driver is compiled into the running app (e.g., in APK)
+   */
+  get isNativeDriverAvailable() {
+    return Boolean(isNativeBleAvailable && this.nativeManager);
   }
 
   /**
@@ -99,16 +115,19 @@ class BleHardwareManager {
       try {
         cb(event);
       } catch (err) {
-        console.warn("[BLE] Listener error:", err.message);
+        console.warn("[Probe Hardware] Listener error:", err.message);
       }
     }
   }
 
   /**
    * Scans and connects to the physical SilageGuard ESP32 probe.
-   * Uses Native OS Bluetooth on mobile devices, or Web Bluetooth in browsers.
+   * Auto-negotiates best available connection:
+   * 1. Native Mobile BLE (if APK has native driver)
+   * 2. Web Bluetooth GATT (if in browser)
+   * 3. Direct Wi-Fi SoftAP at http://192.168.4.1/telemetry (works 100% offline in Expo Go and all devices)
    */
-  async connect() {
+  async connect(preferredMode = "auto") {
     if (this.isConnected) {
       return { success: true, deviceName: this.device?.name || BLE_CONFIG.DEVICE_NAME };
     }
@@ -116,24 +135,126 @@ class BleHardwareManager {
     this.isScanning = true;
     this.notifyListeners({ type: "SCANNING" });
 
-    // ─────────────────────────────────────────────────────────────
-    // PATH 1: NATIVE MOBILE BLUETOOTH (ANDROID & iOS)
-    // ─────────────────────────────────────────────────────────────
-    if (Platform.OS !== "web" && this.nativeManager) {
-      return await this._connectNativeMobile();
+    // Mode: Explicit Wi-Fi SoftAP requested
+    if (preferredMode === "wifi") {
+      const wifiRes = await this._connectWifiSoftAp();
+      this.isScanning = false;
+      if (!wifiRes.success) {
+        this.notifyListeners({ type: "ERROR", error: wifiRes.error });
+      }
+      return wifiRes;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // PATH 2: WEB BLUETOOTH API (CHROME / EDGE BROWSER FALLBACK)
-    // ─────────────────────────────────────────────────────────────
+    // Mode 1: Native Mobile Bluetooth (Available in standalone APK)
+    if (this.isNativeDriverAvailable) {
+      const bleRes = await this._connectNativeMobile();
+      if (bleRes.success) return bleRes;
+      console.log("[Probe Gateway] Native BLE did not find probe, checking Wi-Fi SoftAP...");
+    }
+
+    // Mode 2: Web Bluetooth API (Chrome / Edge browser)
     if (typeof navigator !== "undefined" && navigator.bluetooth) {
-      return await this._connectWebBluetooth();
+      const webRes = await this._connectWebBluetooth();
+      if (webRes.success) return webRes;
+    }
+
+    // Mode 3: Direct Wi-Fi SoftAP fallback (192.168.4.1)
+    console.log("[Probe Gateway] Checking direct offline Wi-Fi SoftAP connection (192.168.4.1)...");
+    const wifiRes = await this._connectWifiSoftAp();
+    if (wifiRes.success) {
+      return wifiRes;
     }
 
     this.isScanning = false;
-    const msg = "Native Bluetooth hardware is unavailable on this device. Please ensure Bluetooth is enabled in device settings.";
+    let msg = "";
+    if (!this.isNativeDriverAvailable && Platform.OS !== "web") {
+      msg = "Expo Go does not include custom native Bluetooth drivers. Connect your phone Wi-Fi to 'SilageGuard-Probe' for 100% offline direct probe telemetry, or use the standalone APK build.";
+    } else {
+      msg = "ESP32 probe not found. Please ensure probe is powered on, and either enable Bluetooth or connect to 'SilageGuard-Probe' Wi-Fi.";
+    }
+
     this.notifyListeners({ type: "ERROR", error: msg });
     return { success: false, error: msg };
+  }
+
+  /**
+   * Connects directly to the ESP32 Probe's built-in offline Wi-Fi SoftAP (http://192.168.4.1/telemetry).
+   * Works in Expo Go, native APK, and web browsers with ZERO native module requirements.
+   */
+  async _connectWifiSoftAp(ip = "192.168.4.1") {
+    const probeUrl = `http://${ip}/telemetry`;
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 3500);
+      const res = await fetch(probeUrl, { method: "GET", signal: ctrl.signal });
+      clearTimeout(tid);
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      const parsed = TelemetryParser.parse(typeof json === "string" ? json : JSON.stringify(json));
+      if (!parsed.isValid) throw new Error(parsed.error || "Invalid telemetry payload");
+
+      this.isConnected = true;
+      this.isScanning = false;
+      this.connectionType = "WIFI_SOFTAP";
+      this.device = { name: "SilageGuard-Probe (Direct Wi-Fi)", ip };
+
+      this._startWifiPolling(ip);
+      this.startStaleWatchdog();
+
+      this.notifyListeners({
+        type: "CONNECTED",
+        deviceName: "SilageGuard-Probe (Direct Wi-Fi)",
+        connectionType: "WIFI_SOFTAP",
+      });
+
+      this.notifyListeners({
+        type: "TELEMETRY",
+        telemetry: parsed.telemetry,
+        timestamp: parsed.timestamp,
+      });
+
+      console.log(`✓ [Wi-Fi SoftAP] Connected to ESP32 probe at http://${ip}/telemetry`);
+      return { success: true, deviceName: "SilageGuard-Probe (Direct Wi-Fi)" };
+    } catch (err) {
+      return {
+        success: false,
+        error: `Could not connect to probe at http://${ip}/telemetry. Connect your phone's Wi-Fi to 'SilageGuard-Probe' and try again.`,
+      };
+    }
+  }
+
+  /**
+   * Polls the probe's HTTP endpoint at 1 Hz (matching the firmware's 1Hz broadcast rate)
+   */
+  _startWifiPolling(ip = "192.168.4.1") {
+    if (this.wifiPollInterval) clearInterval(this.wifiPollInterval);
+    this.wifiPollInterval = setInterval(async () => {
+      if (!this.isConnected || this.connectionType !== "WIFI_SOFTAP") {
+        clearInterval(this.wifiPollInterval);
+        return;
+      }
+      try {
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 1500);
+        const res = await fetch(`http://${ip}/telemetry`, { method: "GET", signal: ctrl.signal });
+        clearTimeout(tid);
+
+        if (res.ok) {
+          const json = await res.json();
+          const parsed = TelemetryParser.parse(typeof json === "string" ? json : JSON.stringify(json));
+          if (parsed.isValid) {
+            this.notifyListeners({
+              type: "TELEMETRY",
+              telemetry: parsed.telemetry,
+              timestamp: parsed.timestamp,
+            });
+          }
+        }
+      } catch {
+        // Dropouts handled by stale watchdog
+      }
+    }, 1000);
   }
 
   /**
@@ -141,13 +262,11 @@ class BleHardwareManager {
    */
   async _connectNativeMobile() {
     try {
-      // 1. Request native runtime permissions (Android 12+ scan/connect, location)
       const hasPerms = await requestNativeBlePermissions();
       if (!hasPerms) {
         throw new Error("Bluetooth permissions were denied. Please grant Bluetooth and Location permissions in system settings.");
       }
 
-      // 2. Verify OS Bluetooth state is PoweredOn
       const state = await this.nativeManager.state();
       if (state !== "PoweredOn") {
         throw new Error(`Bluetooth adapter is currently "${state}". Please turn on Bluetooth in device settings.`);
@@ -158,20 +277,17 @@ class BleHardwareManager {
       return await new Promise((resolve) => {
         let isResolved = false;
 
-        // Auto-abort scan after 15 seconds if probe is not detected
         this.scanTimeout = setTimeout(() => {
           if (!isResolved) {
             isResolved = true;
             this.nativeManager.stopDeviceScan();
             this.isScanning = false;
-            const err = "Scan timed out. Probe not detected. Please verify ESP32 is powered on and within range.";
-            this.notifyListeners({ type: "ERROR", error: err });
-            resolve({ success: false, error: err });
+            resolve({ success: false, error: "Scan timed out. Probe not detected over Bluetooth." });
           }
-        }, 15000);
+        }, 12000);
 
         this.nativeManager.startDeviceScan(
-          null, // Scan all advertising packets to catch custom ESP32 advertisements
+          null,
           { allowDuplicates: false },
           async (error, scannedDevice) => {
             if (error) {
@@ -180,7 +296,6 @@ class BleHardwareManager {
                 clearTimeout(this.scanTimeout);
                 this.nativeManager.stopDeviceScan();
                 this.isScanning = false;
-                this.notifyListeners({ type: "ERROR", error: error.message });
                 resolve({ success: false, error: error.message });
               }
               return;
@@ -206,14 +321,9 @@ class BleHardwareManager {
               this.nativeManager.stopDeviceScan();
 
               try {
-                // Connect to the ESP32 probe
                 const connectedDevice = await scannedDevice.connect({ timeout: 8000 });
-                console.log(`[Native BLE] Connected to ${name}. Discovering services & characteristics...`);
-
-                // Discover GATT Services and Characteristics
                 const discoveredDevice = await connectedDevice.discoverAllServicesAndCharacteristics();
 
-                // Setup disconnection listener from hardware side
                 discoveredDevice.onDisconnected(() => {
                   console.log("[Native BLE] ESP32 probe disconnected.");
                   this.disconnect();
@@ -223,7 +333,6 @@ class BleHardwareManager {
                   });
                 });
 
-                // Monitor characteristic for real 1Hz telemetry packets
                 this.subscription = discoveredDevice.monitorCharacteristicForService(
                   BLE_CONFIG.SERVICE_UUID,
                   BLE_CONFIG.CHARACTERISTIC_UUID,
@@ -243,8 +352,6 @@ class BleHardwareManager {
                           telemetry: parsed.telemetry,
                           timestamp: parsed.timestamp,
                         });
-                      } else {
-                        console.warn("[Native BLE] Telemetry validation rejected packet:", parsed.error);
                       }
                     }
                   }
@@ -252,20 +359,21 @@ class BleHardwareManager {
 
                 this.isConnected = true;
                 this.isScanning = false;
+                this.connectionType = "BLE_NATIVE";
                 this.device = discoveredDevice;
                 this.startStaleWatchdog();
 
-                console.log(`✓ [Native BLE] Successfully paired and streaming telemetry from ${name || BLE_CONFIG.DEVICE_NAME}`);
+                console.log(`✓ [Native BLE] Successfully paired with ${name || BLE_CONFIG.DEVICE_NAME}`);
                 this.notifyListeners({
                   type: "CONNECTED",
                   deviceName: name || BLE_CONFIG.DEVICE_NAME,
+                  connectionType: "BLE_NATIVE",
                 });
 
                 resolve({ success: true, deviceName: name || BLE_CONFIG.DEVICE_NAME });
               } catch (connectErr) {
                 console.warn("[Native BLE] Connection failed:", connectErr.message);
                 this.disconnect();
-                this.notifyListeners({ type: "ERROR", error: connectErr.message });
                 resolve({ success: false, error: connectErr.message });
               }
             }
@@ -275,7 +383,6 @@ class BleHardwareManager {
     } catch (err) {
       this.isScanning = false;
       this.isConnected = false;
-      this.notifyListeners({ type: "ERROR", error: err.message });
       return { success: false, error: err.message };
     }
   }
@@ -340,16 +447,16 @@ class BleHardwareManager {
 
       this.isConnected = true;
       this.isScanning = false;
+      this.connectionType = "BLE_WEB";
       this.device = device;
       this.characteristic = char;
 
       this.startStaleWatchdog();
-      this.notifyListeners({ type: "CONNECTED", deviceName: device.name || BLE_CONFIG.DEVICE_NAME });
+      this.notifyListeners({ type: "CONNECTED", deviceName: device.name || BLE_CONFIG.DEVICE_NAME, connectionType: "BLE_WEB" });
       return { success: true, deviceName: device.name || BLE_CONFIG.DEVICE_NAME };
     } catch (err) {
       this.isScanning = false;
       this.isConnected = false;
-      this.notifyListeners({ type: "ERROR", error: err.message });
       return { success: false, error: err.message };
     }
   }
@@ -370,6 +477,10 @@ class BleHardwareManager {
     if (this.staleChecker) {
       clearInterval(this.staleChecker);
       this.staleChecker = null;
+    }
+    if (this.wifiPollInterval) {
+      clearInterval(this.wifiPollInterval);
+      this.wifiPollInterval = null;
     }
     if (this.scanTimeout) {
       clearTimeout(this.scanTimeout);
@@ -399,6 +510,7 @@ class BleHardwareManager {
     this.isScanning = false;
     this.device = null;
     this.characteristic = null;
+    this.connectionType = null;
     TelemetryParser.reset();
     this.notifyListeners({ type: "DISCONNECTED" });
   }
