@@ -47,7 +47,7 @@
       "expo-asset"
     ],
     "extra": {
-      "apiUrl": "http://localhost:8000",
+      "apiUrl": "https://silageguard-ai.onrender.com",
       "eas": {
         "projectId": "e5e9f0cf-4480-4410-89e4-d3797e477ab6"
       }

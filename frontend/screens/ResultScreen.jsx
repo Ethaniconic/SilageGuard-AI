@@ -260,42 +260,44 @@ export function ResultScreen({ result: initialResult, onDone, onViewHistory }) {
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                activeOpacity={0.75}
-                onPress={() => setActivePhotoTab("HOTSPOT")}
-                style={[
-                  styles.photoTabButton,
-                  activePhotoTab === "HOTSPOT"
-                    ? {
-                        backgroundColor: theme.primary,
-                        borderRadius: radius.medium,
-                        shadowColor: theme.primary,
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.28,
-                        shadowRadius: 5,
-                        elevation: 3,
-                      }
-                    : {
-                        backgroundColor: "transparent",
-                      },
-                ]}
-              >
-                <Text style={{ fontSize: 18, marginBottom: 3 }}>🎯</Text>
-                <Text
+              {Boolean(bbox) && (
+                <TouchableOpacity
+                  activeOpacity={0.75}
+                  onPress={() => setActivePhotoTab("HOTSPOT")}
                   style={[
-                    typography.caption,
-                    {
-                      color: activePhotoTab === "HOTSPOT" ? "#FFFFFF" : theme.textSecondary,
-                      fontWeight: activePhotoTab === "HOTSPOT" ? "800" : "600",
-                      fontSize: 12,
-                      letterSpacing: 0.2,
-                      textAlign: "center",
-                    },
+                    styles.photoTabButton,
+                    activePhotoTab === "HOTSPOT"
+                      ? {
+                          backgroundColor: theme.primary,
+                          borderRadius: radius.medium,
+                          shadowColor: theme.primary,
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.28,
+                          shadowRadius: 5,
+                          elevation: 3,
+                        }
+                      : {
+                          backgroundColor: "transparent",
+                        },
                   ]}
                 >
-                  {t("tabHotspot")}
-                </Text>
-              </TouchableOpacity>
+                  <Text style={{ fontSize: 18, marginBottom: 3 }}>🎯</Text>
+                  <Text
+                    style={[
+                      typography.caption,
+                      {
+                        color: activePhotoTab === "HOTSPOT" ? "#FFFFFF" : theme.textSecondary,
+                        fontWeight: activePhotoTab === "HOTSPOT" ? "800" : "600",
+                        fontSize: 12,
+                        letterSpacing: 0.2,
+                        textAlign: "center",
+                      },
+                    ]}
+                  >
+                    {t("tabHotspot")}
+                  </Text>
+                </TouchableOpacity>
+              )}
 
               <TouchableOpacity
                 activeOpacity={0.75}

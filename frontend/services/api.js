@@ -13,7 +13,21 @@ let cachedLiveBaseUrl = null;
 export const getCandidateUrls = () => {
   const list = [];
 
-  // In Web browsers, current origin (reverse proxy) or port 8000 is used
+  // 1. Explicit app config extra.apiUrl
+  const configApiUrl = Constants.expoConfig?.extra?.apiUrl || Constants.manifest2?.extra?.expoClient?.extra?.apiUrl;
+  if (configApiUrl) {
+    list.push(configApiUrl);
+  }
+
+  // 2. Explicit EXPO_PUBLIC_API_URL from environment
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    list.push(process.env.EXPO_PUBLIC_API_URL);
+  }
+
+  // 3. Primary production cloud endpoint (Render)
+  list.push("https://silageguard-ai.onrender.com");
+
+  // 4. In Web browsers, current origin or local port 8000
   if (Platform.OS === "web") {
     if (typeof window !== "undefined" && window.location?.origin) {
       list.push(window.location.origin);
@@ -25,12 +39,7 @@ export const getCandidateUrls = () => {
     list.push("http://127.0.0.1:8000");
   }
 
-  // Explicit EXPO_PUBLIC_API_URL from environment
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    list.push(process.env.EXPO_PUBLIC_API_URL);
-  }
-
-  // Expo mobile host URI
+  // 5. Expo mobile host URI (for physical devices testing over LAN via Metro)
   const hostUri = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoClient?.hostUri;
   if (hostUri) {
     const ip = hostUri.split(":")[0];
@@ -43,10 +52,9 @@ export const getCandidateUrls = () => {
     list.push("http://10.0.2.2:8000");
   }
 
-  // Fallback defaults
+  // Local development fallbacks
   list.push("http://localhost:8000");
   list.push("http://127.0.0.1:8000");
-  list.push("http://192.168.31.18:8000");
 
   return Array.from(new Set(list.filter(Boolean)));
 };
@@ -209,12 +217,22 @@ export async function runInference({
       const data = await res.json();
       cachedLiveBaseUrl = baseUrl;
 
+      // Handle Image Quality Assessment rejection directly from the model
+      if (data.decision === "RETAKE_REQUIRED" || data.need_retake) {
+        return {
+          success: false,
+          error: data.reasons?.[0] || "Image quality assessment rejected. Please ensure adequate lighting and retake photo.",
+          needRetake: true,
+          result: null,
+        };
+      }
+
       const vision = data.vision_result || {};
       const gradcam = data.gradcam_heatmap_b64 || vision.gradcam_heatmap_b64 || null;
       const hotspotBbox = data.hotspot_bbox || vision.hotspot_bbox || null;
       const hotspotDesc = data.hotspot_description || vision.hotspot_description || null;
 
-      console.log(`⚡ [INFERENCE SUCCESS] Received vision results from ${baseUrl} (Grad-CAM: ${Boolean(gradcam)})`);
+      console.log(`⚡ [INFERENCE SUCCESS] Received model predictions from ${baseUrl} (Grad-CAM: ${Boolean(gradcam)}, Hotspot Bbox: ${Boolean(hotspotBbox)})`);
 
       return {
         success: true,
@@ -255,9 +273,17 @@ export async function runInference({
     }
   }
 
-  console.log("⚡ [OFFLINE MODE ACTIVE] All server candidates unreachable, executing on-device Random Forest & Visual Analyzer:", lastError?.message);
+  console.log("⚡ [OFFLINE MODE ACTIVE] All server candidates unreachable:", lastError?.message);
 
-  // Fallback to real on-device engine (Random Forest + Visual Feature Analyzer)
+  if (!hasSensor) {
+    // Optical deep learning cannot be fabricated with dummy data. Report honest connection requirement.
+    return {
+      success: false,
+      error: "AI model server is unreachable. Optical deep-learning analysis with MobileNetV3 and Grad-CAM requires an active network connection. Please check your connection or connect probe for on-device screening.",
+    };
+  }
+
+  // Execute genuine on-device 25-tree Random Forest sensor model on physical telemetry
   const edgeResult = EdgeInferenceEngine.runOfflineFusion({
     ph,
     moisture,
@@ -276,9 +302,9 @@ export async function runInference({
       batchId: batchId || edgeResult.batchId,
       originalPhoto: imageBase64,
       gradcamImage: null,
-      hotspotBbox: edgeResult.hotspotBbox,
-      hotspotDescription: edgeResult.hotspotDescription,
-      visionResult: edgeResult.visionResult,
+      hotspotBbox: null,
+      hotspotDescription: "Sensor probe screening. No optical hotspot.",
+      visionResult: null,
       sensorResult: edgeResult.sensorResult,
     },
   };
@@ -369,7 +395,8 @@ export async function syncBatches(batches) {
  */
 export async function fetchAndSyncModels() {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/v1/models/download/sensor`, {
+    const baseUrl = await resolveLiveApiUrl();
+    const res = await fetch(`${baseUrl}/api/v1/models/download/sensor`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });

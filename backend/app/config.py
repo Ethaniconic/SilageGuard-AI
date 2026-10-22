@@ -16,8 +16,7 @@ class Settings(BaseSettings):
     OTP_EXPIRE_SECONDS: int = 300
     CORS_ORIGINS: str = "*"
     LOG_LEVEL: str = "INFO"
-    SENTRY_DSN: str = ""
-    DEVICE_PROVISIONING_SECRET: str = ""
+    DEVICE_PROVISIONING_SECRET: str = "sg-dev-device-secret-change-me"
 
 
 settings = Settings()

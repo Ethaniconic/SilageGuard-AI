@@ -137,125 +137,10 @@ export class EdgeInferenceEngine {
   }
 
   /**
-   * Real On-Device Visual Feature Analyzer & Sector Hotspot Extractor
-   * Evaluates silage forage photograph in pure client-side JavaScript without internet.
-   */
-  static runOfflineVision({ imageBase64, cropType = "Corn Silage" }) {
-    if (!imageBase64 || typeof imageBase64 !== "string") {
-      return null;
-    }
-
-    const start = Date.now();
-    const cleanB64 = imageBase64.replace(/^data:image\/[a-z]+;base64,/, "");
-
-    // 1. Sample byte sequence across base64 chunks for visual texture and color distribution
-    const sampleLen = Math.min(cleanB64.length, 16384);
-    let charSum = 0;
-    let highCharCount = 0; // indicates dark/dense or high-frequency textures
-    let altCharCount = 0;  // indicates fungal mycelial texture changes
-    const sectorVariances = new Array(16).fill(0);
-    const sectorSizes = Math.floor(sampleLen / 16);
-
-    for (let s = 0; s < 16; s++) {
-      let sSum = 0;
-      let sDiff = 0;
-      const offset = s * sectorSizes;
-      for (let i = 0; i < sectorSizes - 1; i++) {
-        const code = cleanB64.charCodeAt(offset + i);
-        const nextCode = cleanB64.charCodeAt(offset + i + 1);
-        sSum += code;
-        sDiff += Math.abs(code - nextCode);
-        if (code > 80 && code < 110) highCharCount++;
-        if (code % 3 === 0) altCharCount++;
-      }
-      charSum += sSum;
-      sectorVariances[s] = sDiff / Math.max(1, sectorSizes);
-    }
-
-    const avgVariance = sectorVariances.reduce((a, b) => a + b, 0) / 16;
-
-    // 2. Identify maximum anomaly sector on a 4x4 spatial grid
-    let maxSector = 0;
-    let maxDev = -1;
-    for (let s = 0; s < 16; s++) {
-      const dev = Math.abs(sectorVariances[s] - avgVariance);
-      if (dev > maxDev) {
-        maxDev = dev;
-        maxSector = s;
-      }
-    }
-
-    const row = Math.floor(maxSector / 4);
-    const col = maxSector % 4;
-    // Map 4x4 sector to normalized 224x224 bounding box coordinates
-    const xmin = Math.max(10, Math.min(150, col * 52 + 10));
-    const ymin = Math.max(10, Math.min(150, row * 52 + 10));
-    const xmax = Math.min(214, xmin + 64);
-    const ymax = Math.min(214, ymin + 64);
-
-    // 3. Classify visual quality into 3 standard states: Healthy, Abnormal_appearance, Mould
-    const textureRoughness = (highCharCount / sampleLen) * 100;
-    const patchRatio = altCharCount / sampleLen;
-
-    let detectedClass = "Healthy";
-    let predClass = "SAFE";
-    let safeProb = 0.91;
-    let cautionProb = 0.07;
-    let unsafeProb = 0.02;
-    let mouldProb = 0.02;
-    let hotspotDesc = "Even, uniform forage surface confirmed on device. Healthy lactic fermentation profile.";
-
-    if (textureRoughness > 58.0 && maxDev > 4.5) {
-      detectedClass = "Mould";
-      predClass = "UNSAFE";
-      safeProb = 0.06;
-      cautionProb = 0.18;
-      unsafeProb = 0.76;
-      mouldProb = 0.68;
-      hotspotDesc = `On-device visual analyzer flagged fungal mycelium cluster at sector [${col + 1},${row + 1}]. Aerobic exposure risk.`;
-    } else if (textureRoughness > 46.0 || maxDev > 2.8) {
-      detectedClass = "Abnormal_appearance";
-      predClass = "CAUTION";
-      safeProb = 0.22;
-      cautionProb = 0.68;
-      unsafeProb = 0.10;
-      mouldProb = 0.10;
-      hotspotDesc = `On-device visual analyzer detected dark caramelized patch or moisture void at sector [${col + 1},${row + 1}].`;
-    }
-
-    const confidence = Math.round(Math.max(safeProb, cautionProb, unsafeProb) * 100);
-
-    return {
-      prediction: predClass,
-      detected_class: detectedClass,
-      confidence,
-      probabilities: {
-        safe: safeProb,
-        caution: cautionProb,
-        unsafe: unsafeProb,
-      },
-      class_probabilities: {
-        Healthy: safeProb,
-        Abnormal_appearance: cautionProb,
-        Mould: detectedClass === "Mould" ? mouldProb : Math.round(unsafeProb * 0.6 * 100) / 100,
-        Spoilage: detectedClass === "Mould" ? Math.round((unsafeProb - mouldProb) * 100) / 100 : Math.round(unsafeProb * 0.4 * 100) / 100,
-        Foreign_object: 0.0,
-      },
-      mould_probability: mouldProb,
-      hotspot_bbox: { xmin, ymin, xmax, ymax },
-      hotspot_description: hotspotDesc,
-      iqa_passed: true,
-      latency_ms: Math.max(12, Date.now() - start),
-      model_version: "Edge-MobileNetV3-Visual-Analyzer-v1.0 (Offline Native)",
-      disclaimer: "Rapid AI Screening Tool — 100% On-Device Edge Mode.",
-    };
-  }
-
   /**
-   * Offline Multimodal Fusion
-   * Evaluates on-device 25-tree Random Forest when probe connected,
-   * evaluates on-device Visual Feature Analyzer when photo captured,
-   * and computes continuous MSSI v3.0 score 100% offline.
+   * Evaluates offline telemetry strictly using the trained 25-tree Random Forest model.
+   * Does NOT generate fake visual classifications or synthetic bounding boxes.
+   * Visual deep-learning (MobileNetV3 + Grad-CAM) is derived purely from the real model service.
    */
   static runOfflineFusion({
     ph = null,
@@ -269,105 +154,83 @@ export class EdgeInferenceEngine {
       (ph !== null && ph !== undefined) ||
       (moisture !== null && moisture !== undefined) ||
       (temperature !== null && temperature !== undefined);
-    const hasVision = Boolean(imageBase64);
 
-    const visionRes = hasVision ? this.runOfflineVision({ imageBase64, cropType }) : null;
-    const rfResult = hasSensor ? this.runSensorRF({ ph, moisture, temperature, ambient }) : null;
-
-    if (!hasSensor && !hasVision) {
+    if (!hasSensor) {
+      // No sensor attached and model server is unreachable
       return {
         batchId: `BATCH-OFFLINE-${Date.now()}`,
-        verdict: "GOOD",
-        mssiScore: 85,
-        confidence: 80,
+        verdict: "WATCH",
+        mssiScore: 50,
+        confidence: 0,
         hasSensor: false,
         modalityState: "STANDALONE",
-        summary: "Default screening complete. Connect probe or take photo for live evaluation.",
-        nextStep: "Insert probe into silage face to begin continuous monitoring.",
+        safetyRules: { triggered: false, rules: [] },
+        ph: null,
+        moisture: null,
+        temperature: null,
+        ambient,
+        visionResult: null,
+        sensorResult: null,
+        hotspotBbox: null,
+        hotspotDescription: "Visual deep-learning screening requires connection to the MobileNetV3 model service.",
+        originalPhoto: imageBase64,
+        gradcamImage: null,
+        summary: "Model server offline. Please connect to network to run MobileNetV3 visual inference.",
+        nextStep: "Connect probe to screen with on-device Random Forest, or connect to network for deep vision.",
         isOfflineInference: true,
-        modelType: "Offline Baseline Engine",
+        modelType: "No Model Available (Offline)",
       };
     }
 
-    let modalityState = "MULTIMODAL";
-    let fusionScore = 85;
-    let confidence = 85;
-    let rawVerdict = "GOOD";
-
-    if (hasSensor && hasVision) {
-      modalityState = "MULTIMODAL";
-      const sScore = Math.round(rfResult.probabilities.safe * 100 + rfResult.probabilities.caution * 50);
-      const vScore = Math.round(visionRes.probabilities.safe * 100 + visionRes.probabilities.caution * 50);
-      fusionScore = Math.round(0.55 * sScore + 0.45 * vScore);
-      confidence = Math.round(0.55 * rfResult.confidence + 0.45 * visionRes.confidence);
-
-      if (visionRes.prediction === "UNSAFE" || rfResult.prediction === "UNSAFE") {
-        rawVerdict = "HIGH RISK";
-      } else if (fusionScore >= 72 && visionRes.prediction === "SAFE" && rfResult.prediction === "SAFE") {
-        rawVerdict = "GOOD";
-      } else {
-        rawVerdict = "WATCH";
-      }
-    } else if (hasSensor) {
-      modalityState = "SENSOR_ONLY";
-      fusionScore = rfResult.mssiScore;
-      confidence = rfResult.confidence;
-      rawVerdict = rfResult.prediction === "SAFE" ? "GOOD" : rfResult.prediction === "CAUTION" ? "WATCH" : "HIGH RISK";
-    } else {
-      modalityState = "VISION_ONLY";
-      fusionScore = Math.round(visionRes.probabilities.safe * 100 + visionRes.probabilities.caution * 50);
-      confidence = visionRes.confidence;
-      rawVerdict = visionRes.prediction === "SAFE" ? "GOOD" : visionRes.prediction === "CAUTION" ? "WATCH" : "HIGH RISK";
-    }
-
-    // Evaluate deterministic agronomic safety rules
+    // Evaluate physical telemetry via genuine 25-tree Random Forest
+    const rfResult = this.runSensorRF({ ph, moisture, temperature, ambient });
     const safetyCheck = SafetyRuleEngine.evaluate({
       ph,
       moisture,
       temperature,
       ambient,
-      visionPrediction: visionRes ? visionRes.prediction : null,
-      detectedClass: visionRes ? visionRes.detected_class : null,
+      visionPrediction: null,
+      detectedClass: null,
     });
 
-    let finalVerdict = rawVerdict;
+    let finalVerdict = rfResult.prediction === "SAFE" ? "GOOD" : rfResult.prediction === "CAUTION" ? "WATCH" : "HIGH RISK";
     if (safetyCheck.triggered && safetyCheck.overrideVerdict) {
       finalVerdict = safetyCheck.overrideVerdict === "UNSAFE" ? "HIGH RISK" : "WATCH";
     }
 
-    let summary = "Local on-device screening complete. Silage preservation verified by edge engines.";
+    let summary = "Evaluated via trained 25-tree Random Forest sensor model.";
     let nextStep = "Feed according to standard daily ration. Record saved locally.";
 
     if (finalVerdict === "WATCH") {
-      summary = "Early warning detected by on-device model: Acidity, core temperature, or visual texture is shifting from baseline.";
+      summary = "Early warning: Telemetry indicates temperature rise or acidity deviation from standard baseline.";
       nextStep = "Monitor bunker face daily and inspect packing density in 24 hours.";
     } else if (finalVerdict === "HIGH RISK") {
-      summary = "High risk detected by on-device model: Thermal heat rise, elevated pH, or fungal spore growth.";
-      nextStep = "Do not feed spoiled section. Discard deteriorated surface layers immediately.";
+      summary = "High risk: Warning thresholds crossed for temperature, pH, or moisture balance.";
+      nextStep = "Do not feed spoiled section. Inspect silage face immediately.";
     }
 
     return {
       batchId: `BATCH-OFFLINE-${Date.now()}`,
       verdict: finalVerdict,
-      mssiScore: fusionScore,
-      confidence,
-      hasSensor,
-      modalityState,
+      mssiScore: rfResult.mssiScore,
+      confidence: rfResult.confidence,
+      hasSensor: true,
+      modalityState: "SENSOR_ONLY",
       safetyRules: safetyCheck,
-      ph: hasSensor ? rfResult.telemetry.ph : null,
-      moisture: hasSensor ? rfResult.telemetry.moisture : null,
-      temperature: hasSensor ? rfResult.telemetry.temperature : null,
+      ph: rfResult.telemetry.ph,
+      moisture: rfResult.telemetry.moisture,
+      temperature: rfResult.telemetry.temperature,
       ambient,
-      visionResult: visionRes,
+      visionResult: null,
       sensorResult: rfResult,
-      hotspotBbox: visionRes ? visionRes.hotspot_bbox : null,
-      hotspotDescription: visionRes ? visionRes.hotspot_description : "Probe sensor screening. No optical hotspot.",
+      hotspotBbox: null,
+      hotspotDescription: "Sensor probe screening. No optical hotspot.",
       originalPhoto: imageBase64,
       gradcamImage: null,
-      summary: `${summary} (Screened 100% Offline On Device)`,
+      summary: `${summary} (Edge Random Forest Model)`,
       nextStep,
       isOfflineInference: true,
-      modelType: "Client-Side Multimodal Engine v1.0 (Zero-Internet Mode)",
+      modelType: "RandomForest-25Trees (Pure Model Inference)",
     };
   }
 }

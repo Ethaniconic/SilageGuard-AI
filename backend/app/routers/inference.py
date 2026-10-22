@@ -48,13 +48,18 @@ def _models_dir() -> Path:
     env_dir = os.environ.get("MODELS_DIR")
     if env_dir and Path(env_dir).exists():
         return Path(env_dir)
+    # Check backend/models directory
+    backend_models = Path(__file__).resolve().parents[2] / "models"
+    if backend_models.exists():
+        return backend_models
+    # Check workspace root models directory
     ws = _workspace_root() / "models"
     if ws.exists():
         return ws
     fallback = Path("/app/models")
     if fallback.exists():
         return fallback
-    return ws
+    return backend_models
 
 
 @lru_cache(maxsize=1)
@@ -157,13 +162,18 @@ def _generate_gradcam(pil_img: Image.Image, target_class: int = 0) -> tuple[str 
 
         overlay = cv2.addWeighted(colored_heatmap, 0.55, img_bgr, 0.45, 0)
 
+        class_name = VISION_5_CLASSES[target_class] if target_class < len(VISION_5_CLASSES) else "Silage"
+        
         # Calculate bounding box of primary activation hotspot (> 65% max activation)
+        # ONLY if the model specifically detected an anomaly, mould, or spoilage.
+        # Healthy silage exhibits uniform green forage with no localized defect box.
         hotspots = np.where(heatmap > 0.65)
         bbox = None
-        if len(hotspots[0]) > 0:
+        if class_name in ["Mould", "Spoilage", "Abnormal_appearance", "Foreign_object"] and len(hotspots[0]) > 0:
             ymin, ymax = int(np.min(hotspots[0])), int(np.max(hotspots[0]))
             xmin, xmax = int(np.min(hotspots[1])), int(np.max(hotspots[1]))
-            bbox = {"xmin": xmin, "ymin": ymin, "xmax": xmax, "ymax": ymax}
+            if xmax > xmin and ymax > ymin:
+                bbox = {"xmin": xmin, "ymin": ymin, "xmax": xmax, "ymax": ymax}
 
         # Encode overlay to base64 JPEG
         success, buffer = cv2.imencode(".jpg", overlay, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
@@ -173,7 +183,6 @@ def _generate_gradcam(pil_img: Image.Image, target_class: int = 0) -> tuple[str 
         b64_str = base64.b64encode(buffer).decode("utf-8")
         gradcam_b64 = f"data:image/jpeg;base64,{b64_str}"
 
-        class_name = VISION_5_CLASSES[target_class] if target_class < len(VISION_5_CLASSES) else "Silage"
         if class_name in ["Mould", "Spoilage"]:
             desc = f"Heatmap activations ({class_name}) localize fungal mycelium, aerobic heating, and surface spoilage."
         elif class_name in ["Abnormal_appearance", "Foreign_object"]:

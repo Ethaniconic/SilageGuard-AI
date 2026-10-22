@@ -29,15 +29,18 @@ def _workspace_root() -> Path:
 def _models_dir() -> Path:
     import os
     env_dir = os.environ.get("MODELS_DIR")
-    if env_dir:
+    if env_dir and Path(env_dir).exists():
         return Path(env_dir)
+    backend_models = Path(__file__).resolve().parents[2] / "models"
+    if backend_models.exists():
+        return backend_models
     ws = _workspace_root() / "models"
     if ws.exists():
         return ws
     fallback = Path("/app/models")
     if fallback.exists():
         return fallback
-    return ws
+    return backend_models
 
 
 def _read_json(path: Path) -> dict | None:

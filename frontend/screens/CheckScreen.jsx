@@ -263,7 +263,7 @@ export function CheckScreen({ onBack, onComplete }) {
     } else {
       setStep(3);
       setAnalysisError(response.error || "Inference failed");
-      Alert.alert("Connection Alert", response.error || "Analysis failed");
+      Alert.alert(response.needRetake ? "Image Quality Notice" : "Inference Alert", response.error || "Analysis failed");
     }
   };
 
