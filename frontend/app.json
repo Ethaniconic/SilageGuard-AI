@@ -49,8 +49,9 @@
     "extra": {
       "apiUrl": "http://localhost:8000",
       "eas": {
-        "projectId": "8629d506-bef2-4e4c-990f-ac9ca7347e3d"
+        "projectId": "e5e9f0cf-4480-4410-89e4-d3797e477ab6"
       }
-    }
+    },
+    "owner": "ethaniconic"
   }
 }
