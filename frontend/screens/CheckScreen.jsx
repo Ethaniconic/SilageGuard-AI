@@ -155,7 +155,7 @@ export function CheckScreen({ onBack, onComplete }) {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ["images"],
         allowsEditing: false,
-        quality: 0.8,
+        quality: 0.6,
         base64: true,
       });
 
@@ -168,7 +168,7 @@ export function CheckScreen({ onBack, onComplete }) {
       const fallbackResult = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
         base64: true,
-        quality: 0.8,
+        quality: 0.6,
       });
       if (!fallbackResult.canceled && fallbackResult.assets && fallbackResult.assets[0]) {
         processCapturedPhoto(fallbackResult.assets[0]);
@@ -187,7 +187,7 @@ export function CheckScreen({ onBack, onComplete }) {
       const res = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
         base64: true,
-        quality: 0.8,
+        quality: 0.6,
       });
 
       if (!res.canceled && res.assets && res.assets[0]) {

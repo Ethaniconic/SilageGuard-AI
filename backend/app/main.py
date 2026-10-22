@@ -172,3 +172,9 @@ app.include_router(health.router, prefix="/api/v1")
 app.add_api_route("/health", health.health, methods=["GET", "HEAD"], operation_id="root_health")
 app.add_api_route("/ready", health.ready, methods=["GET", "HEAD"], operation_id="root_ready")
 
+
+if __name__ == "__main__":
+    import uvicorn
+    # Bind to 0.0.0.0 so mobile devices on the Wi-Fi network can connect directly
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+

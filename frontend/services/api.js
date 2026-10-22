@@ -13,48 +13,50 @@ let cachedLiveBaseUrl = null;
 export const getCandidateUrls = () => {
   const list = [];
 
-  // 1. Explicit app config extra.apiUrl
-  const configApiUrl = Constants.expoConfig?.extra?.apiUrl || Constants.manifest2?.extra?.expoClient?.extra?.apiUrl;
-  if (configApiUrl) {
-    list.push(configApiUrl);
-  }
-
-  // 2. Explicit EXPO_PUBLIC_API_URL from environment
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    list.push(process.env.EXPO_PUBLIC_API_URL);
-  }
-
-  // 3. Primary production cloud endpoint (Render)
-  list.push("https://silageguard-ai.onrender.com");
-
-  // 4. In Web browsers, current origin or local port 8000
+  // 1. In Web browsers: Localhost port 8000 is always the primary target
   if (Platform.OS === "web") {
-    if (typeof window !== "undefined" && window.location?.origin) {
-      list.push(window.location.origin);
-    }
+    list.push("http://localhost:8000");
+    list.push("http://127.0.0.1:8000");
     if (typeof window !== "undefined" && window.location?.hostname) {
       list.push(`http://${window.location.hostname}:8000`);
     }
+    // Remote cloud backend as web fallback
+    list.push("https://silageguard-ai.onrender.com");
+  } else {
+    // 2. On Mobile (Expo Go, EAS preview, Android, iOS):
+    // Check Metro Host IP (this is the exact Wi-Fi IP of your dev PC)
+    const hostUri = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoClient?.hostUri;
+    if (hostUri) {
+      const ip = hostUri.split(":")[0];
+      if (ip && ip !== "localhost" && ip !== "127.0.0.1") {
+        list.push(`http://${ip}:8000`);
+      }
+    }
+
+    // Direct Wi-Fi LAN IP candidate
+    list.push("http://192.168.31.18:8000");
+
+    // Android emulator alias
+    if (Platform.OS === "android") {
+      list.push("http://10.0.2.2:8000");
+    }
+
+    // Primary cloud backend for physical mobile phones outside LAN
+    list.push("https://silageguard-ai.onrender.com");
+
+    const configApiUrl = Constants.expoConfig?.extra?.apiUrl || Constants.manifest2?.extra?.expoClient?.extra?.apiUrl;
+    if (configApiUrl) {
+      list.push(configApiUrl);
+    }
+
     list.push("http://localhost:8000");
     list.push("http://127.0.0.1:8000");
   }
 
-  // 5. Expo mobile host URI (for physical devices testing over LAN via Metro)
-  const hostUri = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoClient?.hostUri;
-  if (hostUri) {
-    const ip = hostUri.split(":")[0];
-    if (ip && ip !== "localhost" && ip !== "127.0.0.1") {
-      list.push(`http://${ip}:8000`);
-    }
+  // Explicit EXPO_PUBLIC_API_URL from environment
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    list.unshift(process.env.EXPO_PUBLIC_API_URL);
   }
-
-  if (Platform.OS === "android") {
-    list.push("http://10.0.2.2:8000");
-  }
-
-  // Local development fallbacks
-  list.push("http://localhost:8000");
-  list.push("http://127.0.0.1:8000");
 
   return Array.from(new Set(list.filter(Boolean)));
 };
@@ -73,8 +75,9 @@ export const API_BASE_URL = getBaseUrl();
 export async function resolveLiveApiUrl() {
   if (cachedLiveBaseUrl) {
     try {
+      const probeTimeout = cachedLiveBaseUrl.includes("onrender.com") ? 5000 : 1500;
       const probeCtrl = new AbortController();
-      const probeTid = setTimeout(() => probeCtrl.abort(), 1500);
+      const probeTid = setTimeout(() => probeCtrl.abort(), probeTimeout);
       const res = await fetch(`${cachedLiveBaseUrl}/health`, {
         method: "GET",
         signal: probeCtrl.signal,
@@ -87,26 +90,35 @@ export async function resolveLiveApiUrl() {
   }
 
   const candidates = getCandidateUrls();
-  for (const url of candidates) {
+
+  // Probe candidates concurrently to discover the fastest responding live endpoint
+  const probeCandidate = async (url) => {
+    const probeTimeout = url.includes("onrender.com") ? 6000 : 2000;
+    const probeCtrl = new AbortController();
+    const probeTid = setTimeout(() => probeCtrl.abort(), probeTimeout);
     try {
-      const probeCtrl = new AbortController();
-      const probeTid = setTimeout(() => probeCtrl.abort(), 1500);
       const res = await fetch(`${url}/health`, {
         method: "GET",
         signal: probeCtrl.signal,
       });
       clearTimeout(probeTid);
-      if (res.ok) {
-        cachedLiveBaseUrl = url;
-        console.log(`[SilageGuard API] Connected to live backend at: ${url}`);
-        return url;
-      }
-    } catch {
-      // try next candidate
+      if (res.ok) return url;
+      throw new Error(`Endpoint ${url} returned ${res.status}`);
+    } catch (err) {
+      clearTimeout(probeTid);
+      throw err;
     }
-  }
+  };
 
-  return candidates[0] || "http://localhost:8000";
+  try {
+    const fastestLiveUrl = await Promise.any(candidates.map(probeCandidate));
+    cachedLiveBaseUrl = fastestLiveUrl;
+    console.log(`[SilageGuard API] Discovered fastest live backend: ${fastestLiveUrl}`);
+    return fastestLiveUrl;
+  } catch (err) {
+    console.warn("[SilageGuard API] All concurrent health probes failed, defaulting to cloud candidate.");
+    return candidates.find((u) => u.includes("onrender.com")) || candidates[0] || "https://silageguard-ai.onrender.com";
+  }
 }
 
 
@@ -193,15 +205,26 @@ export async function runInference({
     } : null,
   };
 
-    // Attempt live inference via discovered candidate endpoints
-  const candidates = getCandidateUrls();
+  // 1. Resolve active live reachable backend first via fast health check
+  const activeBaseUrl = await resolveLiveApiUrl();
+  console.log(`⚡ [INFERENCE] Active live candidate selected: ${activeBaseUrl}`);
+
+  // Build ordered candidates with active candidate first
+  const candidates = [
+    activeBaseUrl,
+    ...getCandidateUrls(),
+  ].filter((u, i, arr) => u && arr.indexOf(u) === i);
+
   let lastError = null;
 
   for (const baseUrl of candidates) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2500); // Fast 2.5s timeout per candidate
+      // Realistic timeouts: 12s for local PC, 35s for cloud Render (neural network upload & Grad-CAM)
+      const timeoutMs = baseUrl.includes("onrender.com") ? 35000 : 12000;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
+      console.log(`⚡ [INFERENCE] Sending POST to ${baseUrl}/api/v1/inference/predict (timeout: ${timeoutMs}ms)...`);
       const res = await fetch(`${baseUrl}/api/v1/inference/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -269,7 +292,11 @@ export async function runInference({
       };
     } catch (err) {
       lastError = err;
-      // Try next candidate endpoint before giving up
+      console.warn(`[INFERENCE] Attempt on ${baseUrl} failed (${err.message}), trying next candidate...`);
+      // Invalidate failed cache
+      if (cachedLiveBaseUrl === baseUrl) {
+        cachedLiveBaseUrl = null;
+      }
     }
   }
 
@@ -279,7 +306,7 @@ export async function runInference({
     // Optical deep learning cannot be fabricated with dummy data. Report honest connection requirement.
     return {
       success: false,
-      error: "AI model server is unreachable. Optical deep-learning analysis with MobileNetV3 and Grad-CAM requires an active network connection. Please check your connection or connect probe for on-device screening.",
+      error: `AI model server is unreachable (attempted ${candidates.slice(0, 3).join(", ")}). Error: ${lastError?.message || "Connection failed"}. Please verify your connection or backend server.`,
     };
   }
 
