@@ -66,7 +66,7 @@ export async function resolveLiveApiUrl() {
   if (cachedLiveBaseUrl) {
     try {
       const probeCtrl = new AbortController();
-      const probeTid = setTimeout(() => probeCtrl.abort(), 3500);
+      const probeTid = setTimeout(() => probeCtrl.abort(), 1500);
       const res = await fetch(`${cachedLiveBaseUrl}/health`, {
         method: "GET",
         signal: probeCtrl.signal,
@@ -82,7 +82,7 @@ export async function resolveLiveApiUrl() {
   for (const url of candidates) {
     try {
       const probeCtrl = new AbortController();
-      const probeTid = setTimeout(() => probeCtrl.abort(), 3500);
+      const probeTid = setTimeout(() => probeCtrl.abort(), 1500);
       const res = await fetch(`${url}/health`, {
         method: "GET",
         signal: probeCtrl.signal,
@@ -100,6 +100,7 @@ export async function resolveLiveApiUrl() {
 
   return candidates[0] || "http://localhost:8000";
 }
+
 
 /**
  * Checks backend health and database connectivity across live candidates
@@ -184,14 +185,14 @@ export async function runInference({
     } : null,
   };
 
-  // Attempt live inference via discovered candidate endpoints
+    // Attempt live inference via discovered candidate endpoints
   const candidates = getCandidateUrls();
   let lastError = null;
 
   for (const baseUrl of candidates) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout for vision + Grad-CAM
+      const timeoutId = setTimeout(() => controller.abort(), 2500); // Fast 2.5s timeout per candidate
 
       const res = await fetch(`${baseUrl}/api/v1/inference/predict`, {
         method: "POST",
@@ -254,15 +255,16 @@ export async function runInference({
     }
   }
 
-  console.log("⚡ [OFFLINE MODE ACTIVE] All server candidates unreachable, executing on-device Random Forest:", lastError?.message);
+  console.log("⚡ [OFFLINE MODE ACTIVE] All server candidates unreachable, executing on-device Random Forest & Visual Analyzer:", lastError?.message);
 
-  // Fallback to real on-device engine
+  // Fallback to real on-device engine (Random Forest + Visual Feature Analyzer)
   const edgeResult = EdgeInferenceEngine.runOfflineFusion({
     ph,
     moisture,
     temperature,
     ambient: ambientTemp,
-    hasImage: Boolean(imageBase64),
+    imageBase64,
+    cropType,
   });
 
   return {
@@ -271,13 +273,17 @@ export async function runInference({
     offlineReason: lastError?.message || "Backend server unreachable",
     result: {
       ...edgeResult,
+      batchId: batchId || edgeResult.batchId,
       originalPhoto: imageBase64,
       gradcamImage: null,
-      hotspotBbox: null,
-      hotspotDescription: "Grad-CAM heatmaps require server connection (FastAPI MobileNetV3). Connect to backend to view visual attention map.",
+      hotspotBbox: edgeResult.hotspotBbox,
+      hotspotDescription: edgeResult.hotspotDescription,
+      visionResult: edgeResult.visionResult,
+      sensorResult: edgeResult.sensorResult,
     },
   };
 }
+
 
 let cachedAuthToken = null;
 let authTokenExpiry = 0;
