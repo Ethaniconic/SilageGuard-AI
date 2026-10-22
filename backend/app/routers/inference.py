@@ -78,15 +78,39 @@ def _get_sensor_forest() -> dict:
 @lru_cache(maxsize=1)
 def _get_pytorch_model():
     try:
-        import sys
         import torch
-        vision_dir = str(_models_dir() / "vision")
-        if vision_dir not in sys.path:
-            sys.path.insert(0, vision_dir)
-        from train_mobilenetv3 import MobileNetV3Silage
+        import torchvision.models as tv_models
+
+        class _MobileNetV3Silage(torch.nn.Module):
+            def __init__(self, num_classes=5, architecture="large"):
+                super().__init__()
+                self.architecture = architecture
+                if architecture == "large":
+                    backbone = tv_models.mobilenet_v3_large(weights=None)
+                    in_features = 960
+                    self.classifier = torch.nn.Sequential(
+                        torch.nn.Linear(in_features, 512),
+                        torch.nn.Hardswish(),
+                        torch.nn.Dropout(p=0.35),
+                        torch.nn.Linear(512, num_classes),
+                    )
+                else:
+                    backbone = tv_models.mobilenet_v3_small(weights=None)
+                    in_features = 576
+                    self.classifier = torch.nn.Sequential(
+                        torch.nn.Linear(in_features, 256),
+                        torch.nn.Hardswish(),
+                        torch.nn.Dropout(p=0.3),
+                        torch.nn.Linear(256, num_classes),
+                    )
+                self.features = backbone.features
+                self.avgpool = backbone.avgpool
+
+            def forward(self, x):
+                return self.classifier(torch.flatten(self.avgpool(self.features(x)), 1))
 
         device = torch.device("cpu")
-        model = MobileNetV3Silage(num_classes=5, pretrained=False, architecture="large").to(device)
+        model = _MobileNetV3Silage(num_classes=5, architecture="large").to(device)
         pth_path = _models_dir() / "vision" / "mobilenetv3_silage.pth"
         if pth_path.exists():
             sd = torch.load(str(pth_path), map_location=device)
@@ -96,6 +120,7 @@ def _get_pytorch_model():
     except Exception as exc:
         logger.warning(f"PyTorch Grad-CAM model unavailable: {exc}")
         return None
+
 
 
 def _generate_gradcam(pil_img: Image.Image, target_class: int = 0) -> tuple[str | None, dict | None, str]:
