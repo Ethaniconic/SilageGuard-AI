@@ -7,11 +7,6 @@
     "icon": "./assets/icon-logo.png",
     "scheme": "silageguard",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/logo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0F172A"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.silageguard.ai",
