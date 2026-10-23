@@ -1,27 +1,75 @@
-// Resolve and advertise Metro packager on configured host IP (defaults to 192.168.31.18:8081)
+// Resolve and advertise Metro packager on active host IP across Ethernet, Wi-Fi, and Hotspot
 const os = require("os");
+const { execSync } = require("child_process");
 
-function getTargetHostIp() {
-  if (process.env.EXPO_PACKAGER_HOSTNAME) {
-    return process.env.EXPO_PACKAGER_HOSTNAME;
+function getActiveIPv4List() {
+  const interfaces = os.networkInterfaces();
+  const list = [];
+  for (const [name, addrs] of Object.entries(interfaces)) {
+    for (const iface of addrs || []) {
+      if (
+        iface.family === "IPv4" &&
+        !iface.internal &&
+        !iface.address.startsWith("127.") &&
+        !iface.address.startsWith("169.254.")
+      ) {
+        list.push({ name, address: iface.address });
+      }
+    }
   }
-  if (process.env.REACT_NATIVE_PACKAGER_HOSTNAME) {
-    return process.env.REACT_NATIVE_PACKAGER_HOSTNAME;
-  }
-  return "192.168.31.18";
+  return list;
 }
 
-const targetIp = getTargetHostIp();
+function resolveActiveHostIp() {
+  const activeIps = getActiveIPv4List();
+  const activeAddresses = activeIps.map((i) => i.address);
+
+  // If user explicitly passed an IP and it actually exists on an active interface, respect it
+  const explicitIp = process.env.EXPO_PACKAGER_HOSTNAME || process.env.REACT_NATIVE_PACKAGER_HOSTNAME;
+  if (explicitIp && activeAddresses.includes(explicitIp)) {
+    return explicitIp;
+  }
+
+  // 1. Try lan-network (Expo CLI's built-in resolver)
+  try {
+    const lan = require("lan-network").lanNetworkSync();
+    if (lan && lan.address && activeAddresses.includes(lan.address)) {
+      return lan.address;
+    }
+  } catch (_) {}
+
+  // 2. On Windows, query active default gateway interface
+  if (process.platform === "win32") {
+    try {
+      const routeOut = execSync("route print 0.0.0.0", { encoding: "utf8", timeout: 1500 });
+      const match = routeOut.match(/0\.0\.0\.0\s+0\.0\.0\.0\s+\S+\s+(\d+\.\d+\.\d+\.\d+)/);
+      if (match && match[1] && activeAddresses.includes(match[1])) {
+        return match[1];
+      }
+    } catch (_) {}
+  }
+
+  // 3. Filter out virtual / Hyper-V / WSL / container interfaces
+  const physicalCandidates = activeIps.filter(
+    (item) => !/vEthernet|wsl|hyper-v|virtualbox|vmware|docker|tailscale|loopback/i.test(item.name)
+  );
+
+  // 4. Prioritize Ethernet, Wi-Fi, or Hotspot
+  const preferred =
+    physicalCandidates.find((c) => /ethernet|eth|en\d/i.test(c.name)) ||
+    physicalCandidates.find((c) => /wi-?fi|wlan|wireless/i.test(c.name)) ||
+    physicalCandidates.find((c) => /hotspot|local area/i.test(c.name)) ||
+    physicalCandidates[0] ||
+    activeIps[0];
+
+  return preferred ? preferred.address : "127.0.0.1";
+}
+
+const targetIp = resolveActiveHostIp();
 process.env.REACT_NATIVE_PACKAGER_HOSTNAME = targetIp;
 process.env.EXPO_PACKAGER_HOSTNAME = targetIp;
 
-// Verify if configured IP is actually present on an active adapter
-const interfaces = os.networkInterfaces();
-const activeIps = Object.values(interfaces).flat().map((iface) => iface?.address);
-if (targetIp && !activeIps.includes(targetIp) && targetIp !== "localhost" && targetIp !== "127.0.0.1") {
-  console.warn(`\n⚠️  [Metro Interface Alert] ${targetIp} is not bound to any active network adapter (Ethernet may be disconnected).`);
-  console.warn(`   If mobile phone shows 'Site can't be reached', run 'npm run tunnel' or plug in the Ethernet cable.\n`);
-}
+console.log(`\n🌐 [SilageGuard Metro] Bound to active host IP: ${targetIp} (Port: 8081)\n`);
 
 const { getDefaultConfig } = require("expo/metro-config");
 

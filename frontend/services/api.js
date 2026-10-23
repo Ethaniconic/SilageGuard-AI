@@ -24,7 +24,7 @@ export const getCandidateUrls = () => {
     list.push("https://silageguard-ai.onrender.com");
   } else {
     // 2. On Mobile (Expo Go, EAS preview, Android, iOS):
-    // Check Metro Host IP (this is the exact Wi-Fi IP of your dev PC)
+    // Check Metro Host IP (dynamically matches dev PC on Ethernet, Wi-Fi, or Hotspot)
     const hostUri = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoClient?.hostUri;
     if (hostUri) {
       const ip = hostUri.split(":")[0];
@@ -32,9 +32,6 @@ export const getCandidateUrls = () => {
         list.push(`http://${ip}:8000`);
       }
     }
-
-    // Direct Wi-Fi LAN IP candidate
-    list.push("http://192.168.31.18:8000");
 
     // Android emulator alias
     if (Platform.OS === "android") {
