@@ -38,19 +38,16 @@ Write-Host "[frontend] npm  -> $npm" -ForegroundColor DarkGray
 Write-Host "[frontend] npx  -> $npx" -ForegroundColor DarkGray
 
 if (-not $env:PORT) { $env:PORT = "8081" }
-if (-not $env:REACT_NATIVE_PACKAGER_HOSTNAME) { $env:REACT_NATIVE_PACKAGER_HOSTNAME = "192.168.31.18" }
-if (-not $env:EXPO_PACKAGER_HOSTNAME) { $env:EXPO_PACKAGER_HOSTNAME = "192.168.31.18" }
 
 if ($ApiUrl -ne "") {
     # EXPO_PUBLIC_* vars are inlined at bundle time, so this must be set before
     # the bundler starts — a running dev server will not pick it up live.
     $env:EXPO_PUBLIC_API_URL = $ApiUrl
     Write-Host "[frontend] EXPO_PUBLIC_API_URL = $ApiUrl" -ForegroundColor Green
-} elseif (-not $env:EXPO_PUBLIC_API_URL) {
-    $env:EXPO_PUBLIC_API_URL = "http://192.168.31.18:8000"
-    Write-Host "[frontend] using EXPO_PUBLIC_API_URL http://192.168.31.18:8000" -ForegroundColor Green
-} else {
+} elseif ($env:EXPO_PUBLIC_API_URL) {
     Write-Host "[frontend] using EXPO_PUBLIC_API_URL from environment ($env:EXPO_PUBLIC_API_URL)" -ForegroundColor Green
+} else {
+    Write-Host "[frontend] host and backend dynamically resolved across Ethernet, Wi-Fi, and Hotspot" -ForegroundColor Green
 }
 
 if (-not (Test-Path "node_modules")) {
