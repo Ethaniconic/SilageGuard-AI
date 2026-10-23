@@ -127,7 +127,7 @@ class BleHardwareManager {
    * 2. Web Bluetooth GATT (if in browser)
    * 3. Direct Wi-Fi SoftAP at http://192.168.4.1/telemetry (works 100% offline in Expo Go and all devices)
    */
-  async connect(preferredMode = "auto") {
+  async connect(preferredMode = "ble") {
     if (this.isConnected) {
       return { success: true, deviceName: this.device?.name || BLE_CONFIG.DEVICE_NAME };
     }
@@ -135,42 +135,30 @@ class BleHardwareManager {
     this.isScanning = true;
     this.notifyListeners({ type: "SCANNING" });
 
-    // Mode: Explicit Wi-Fi SoftAP requested
-    if (preferredMode === "wifi") {
-      const wifiRes = await this._connectWifiSoftAp();
-      this.isScanning = false;
-      if (!wifiRes.success) {
-        this.notifyListeners({ type: "ERROR", error: wifiRes.error });
-      }
-      return wifiRes;
-    }
-
-    // Mode 1: Native Mobile Bluetooth (Available in standalone APK)
+    // Mode 1: Native Mobile Bluetooth (Available in standalone APK with compiled BLE drivers)
     if (this.isNativeDriverAvailable) {
       const bleRes = await this._connectNativeMobile();
       if (bleRes.success) return bleRes;
-      console.log("[Probe Gateway] Native BLE did not find probe, checking Wi-Fi SoftAP...");
+      this.isScanning = false;
+      this.notifyListeners({ type: "ERROR", error: bleRes.error });
+      return bleRes;
     }
 
-    // Mode 2: Web Bluetooth API (Chrome / Edge browser)
+    // Mode 2: Web Bluetooth API (Chrome / Edge browser on desktop & mobile)
     if (typeof navigator !== "undefined" && navigator.bluetooth) {
       const webRes = await this._connectWebBluetooth();
+      this.isScanning = false;
       if (webRes.success) return webRes;
-    }
-
-    // Mode 3: Direct Wi-Fi SoftAP fallback (192.168.4.1)
-    console.log("[Probe Gateway] Checking direct offline Wi-Fi SoftAP connection (192.168.4.1)...");
-    const wifiRes = await this._connectWifiSoftAp();
-    if (wifiRes.success) {
-      return wifiRes;
+      this.notifyListeners({ type: "ERROR", error: webRes.error });
+      return webRes;
     }
 
     this.isScanning = false;
     let msg = "";
-    if (!this.isNativeDriverAvailable && Platform.OS !== "web") {
-      msg = "Expo Go does not include custom native Bluetooth drivers. Connect your phone Wi-Fi to 'SilageGuard-Probe' for 100% offline direct probe telemetry, or use the standalone APK build.";
+    if (Platform.OS !== "web") {
+      msg = "Physical ESP32 probe requires standalone APK build with compiled Bluetooth drivers. Once installed via APK, Bluetooth connects directly to the ESP32 probe with zero Wi-Fi needed.";
     } else {
-      msg = "ESP32 probe not found. Please ensure probe is powered on, and either enable Bluetooth or connect to 'SilageGuard-Probe' Wi-Fi.";
+      msg = "ESP32 Bluetooth probe not found. Please ensure the probe is powered on and Bluetooth is enabled on your device.";
     }
 
     this.notifyListeners({ type: "ERROR", error: msg });
@@ -267,9 +255,25 @@ class BleHardwareManager {
         throw new Error("Bluetooth permissions were denied. Please grant Bluetooth and Location permissions in system settings.");
       }
 
-      const state = await this.nativeManager.state();
+      let state = await this.nativeManager.state();
       if (state !== "PoweredOn") {
-        throw new Error(`Bluetooth adapter is currently "${state}". Please turn on Bluetooth in device settings.`);
+        // Wait up to 2 seconds for adapter state transition
+        const statePromise = new Promise((res) => {
+          const sub = this.nativeManager.onStateChange((s) => {
+            if (s === "PoweredOn") {
+              sub.remove();
+              res(s);
+            }
+          }, true);
+          setTimeout(() => {
+            sub.remove();
+            res(state);
+          }, 2000);
+        });
+        state = await statePromise;
+      }
+      if (state !== "PoweredOn") {
+        throw new Error(`Bluetooth is currently "${state}". Please turn on Bluetooth in device settings.`);
       }
 
       console.log(`[Native BLE] Starting scan for SilageGuard ESP32 Probe (Service UUID: ${BLE_CONFIG.SERVICE_UUID})...`);
@@ -304,14 +308,16 @@ class BleHardwareManager {
             if (!scannedDevice) return;
 
             const name = scannedDevice.name || scannedDevice.localName || "";
+            const lowerName = name.toLowerCase();
             const serviceUUIDs = scannedDevice.serviceUUIDs || [];
             const matchesService = serviceUUIDs.some(
               (u) => u.toLowerCase() === BLE_CONFIG.SERVICE_UUID.toLowerCase()
             );
             const matchesName =
-              name === BLE_CONFIG.DEVICE_NAME ||
-              name.startsWith("Silage") ||
-              name.startsWith("ESP32");
+              lowerName === BLE_CONFIG.DEVICE_NAME.toLowerCase() ||
+              lowerName.includes("silage") ||
+              lowerName.includes("probe") ||
+              lowerName.includes("esp32");
 
             if (matchesService || matchesName) {
               console.log(`[Native BLE] Found candidate probe "${name}" (${scannedDevice.id}). Connecting...`);

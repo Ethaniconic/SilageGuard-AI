@@ -28,7 +28,7 @@ export async function requestNativeBlePermissions() {
       const isLocationGranted =
         granted[PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION] === PermissionsAndroid.RESULTS.GRANTED;
 
-      return isScanGranted && isConnectGranted && isLocationGranted;
+      return isScanGranted && isConnectGranted;
     } else {
       // Android 11 and lower permissions
       const granted = await PermissionsAndroid.request(

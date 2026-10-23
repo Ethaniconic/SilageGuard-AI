@@ -113,8 +113,8 @@ export async function resolveLiveApiUrl() {
     console.log(`[SilageGuard API] Discovered fastest live backend: ${fastestLiveUrl}`);
     return fastestLiveUrl;
   } catch (err) {
-    console.warn("[SilageGuard API] All concurrent health probes failed, defaulting to cloud candidate.");
-    return candidates.find((u) => u.includes("onrender.com")) || candidates[0] || "https://silageguard-ai.onrender.com";
+    console.warn("[SilageGuard API] All health probes failed. Operating in offline mode.");
+    return null;
   }
 }
 
@@ -124,6 +124,9 @@ export async function resolveLiveApiUrl() {
  */
 export async function checkBackendHealth() {
   const baseUrl = await resolveLiveApiUrl();
+  if (!baseUrl) {
+    return { isOnline: false, error: "Operating in offline field mode (SQLite local storage active)", baseUrl: "Offline" };
+  }
   try {
     const res = await fetch(`${baseUrl}/health`, {
       method: "GET",
@@ -145,6 +148,11 @@ export async function checkBackendHealth() {
 export async function activateModelsAndGradcam() {
   try {
     const baseUrl = await resolveLiveApiUrl();
+    if (!baseUrl) {
+      EdgeInferenceEngine.runSensorRF({ ph: 4.0, moisture: 65, temperature: 26, ambient: 25 });
+      console.log("✓ [STARTUP ACTIVATION] Offline mode active. Edge Random Forest engine pre-warmed.");
+      return { success: true, baseUrl: "Offline", isOffline: true };
+    }
     console.log(`⚡ [STARTUP ACTIVATION] Pre-activating AI models & Grad-CAM on ${baseUrl}...`);
 
     // 1. Warm up backend FastAPI vision + Grad-CAM pipeline
@@ -204,7 +212,34 @@ export async function runInference({
 
   // 1. Resolve active live reachable backend first via fast health check
   const activeBaseUrl = await resolveLiveApiUrl();
-  console.log(`⚡ [INFERENCE] Active live candidate selected: ${activeBaseUrl}`);
+  console.log(`⚡ [INFERENCE] Active live candidate selected: ${activeBaseUrl || "None (Offline mode)"}`);
+
+  // Instant offline streaming when in the field with physical Bluetooth probe
+  if (!activeBaseUrl && hasSensor) {
+    console.log("⚡ [OFFLINE INFERENCE] No cloud/local backend reachable. Streaming response directly via on-device 25-tree Random Forest...");
+    const edgeResult = EdgeInferenceEngine.runOfflineFusion({
+      ph,
+      moisture,
+      temperature,
+      ambient: ambientTemp,
+      imageBase64,
+      cropType,
+    });
+
+    return {
+      success: true,
+      isOffline: true,
+      offlineReason: "Offline mode: evaluated directly on physical Bluetooth probe readings",
+      result: {
+        ...edgeResult,
+        batchId: batchId || edgeResult.batchId,
+        originalPhoto: imageBase64,
+        gradcamImage: null,
+        hotspotBbox: null,
+        hotspotDescription: "Sensor probe screening. No optical hotspot.",
+      },
+    };
+  }
 
   // Build ordered candidates with active candidate first
   const candidates = [

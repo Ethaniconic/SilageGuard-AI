@@ -24,27 +24,13 @@ export function ProbeConnectionGateway({
     setIsScanning(true);
     setErrorMessage(null);
 
-    const res = await bleManager.connect("auto");
+    const res = await bleManager.connect("ble");
     setIsScanning(false);
 
     if (res.success) {
       if (onDeviceConnected) onDeviceConnected();
     } else {
-      setErrorMessage(res.error || "No physical ESP32 probe paired.");
-    }
-  };
-
-  const handleConnectWifi = async () => {
-    setIsScanning(true);
-    setErrorMessage(null);
-
-    const res = await bleManager.connect("wifi");
-    setIsScanning(false);
-
-    if (res.success) {
-      if (onDeviceConnected) onDeviceConnected();
-    } else {
-      setErrorMessage(res.error || "Could not reach ESP32 at http://192.168.4.1/telemetry.");
+      setErrorMessage(res.error || "No physical ESP32 probe detected over Bluetooth.");
     }
   };
 
@@ -130,21 +116,12 @@ export function ProbeConnectionGateway({
           </View>
 
           <AppButton
-            title={isScanning ? t("connectingGatt") : t("pairBleProbe")}
+            title={isScanning ? (t("connectingGatt") || "Scanning Bluetooth...") : (t("pairBleProbe") || "Pair Bluetooth Probe")}
             loading={isScanning}
             variant="primary"
             size="large"
             style={{ marginTop: spacing.md }}
             onPress={handleStartBleScan}
-          />
-
-          <AppButton
-            title="📶 Connect via Probe Wi-Fi (192.168.4.1)"
-            loading={isScanning}
-            variant="secondary"
-            size="medium"
-            style={{ marginTop: spacing.sm }}
-            onPress={handleConnectWifi}
           />
 
           {/* REAL ERROR BANNER (SHOWN WHEN HARDWARE CANNOT BE FOUND) */}
